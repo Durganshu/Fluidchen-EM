@@ -105,22 +105,15 @@ apt-get install -y build-essential cmake libvtk7-dev libfmt-dev gcc-9 g++-9
 apt-get install -y gcc-9 g++-9
 ```
 
-### Setup of VTK and GCC 9 (OSX)
+### Dependencies for macOS
 
-The dependencies can be installed by using `homebrew` package manager as
+In macOS, you can use default `clang` compiler. Do not install `gcc` compiler since it might cause problems with the standard library and VTK. Other dependencies can be installed by using `homebrew` package manager as
 
 ```shell
-brew install gcc
+brew install cmake
+brew install open-mpi
 brew install vtk
 ```
-
-By default, `g++` command is linked to `clang` command in OSX operating systems. In order to use the installed version
-
-```shell
-cmake -DCMAKE_CXX_COMPILER=/usr/local/bin/g++-9 ..
-```
-
-should be used.
 
 ## Using CMake
 
