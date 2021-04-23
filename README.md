@@ -88,7 +88,7 @@ This will affect how we are using the C++ filesystem library, which is available
 ```shell
 apt-get update &&
 apt-get upgrade -y &&
-apt-get install -y build-essential cmake libvtk7-dev libfmt-dev
+apt-get install -y build-essential cmake libvtk7-dev libfmt-dev openmpi-bin libopenmpi-dev
 ```
 
 ### Setup of VTK and GCC 9 (Ubuntu **18.04**)
@@ -101,8 +101,8 @@ apt-get update &&
 apt-get install -y software-properties-common &&
 add-apt-repository -y ppa:ubuntu-toolchain-r/test &&
 apt-get upgrade -y &&
-apt-get install -y build-essential cmake libvtk7-dev libfmt-dev gcc-9 g++-9
-apt-get install -y gcc-9 g++-9
+apt-get install -y build-essential cmake libvtk7-dev libfmt-dev gcc-9 g++-9 
+apt-get install -y gcc-9 g++-9 openmpi-bin libopenmpi-dev
 ```
 
 ### Dependencies for macOS
