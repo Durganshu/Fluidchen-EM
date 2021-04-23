@@ -115,6 +115,43 @@ brew install open-mpi
 brew install vtk
 ```
 
+**macOS Troubleshooting**
+- In macOS, the default `g++` command is linked to `clang++` command, which means, `g++` command does not run the GCC compiler but the Clang compiler. 
+- Setup of GCC compiler is experienced to be cumbersome and clashes with lots of other dependencies, therefore please do not use GCC compiler on this project.
+- If CMake cannot find the correct C++ binary, you can set it by
+```
+export CXX=`which clang++``
+export CMAKE_CXX_COMPILER=`which clang++``
+```
+which is going to set the corresponding environment variables to the path of Clang compiler. Please note that if you run these commands on a terminal session, they are only going to be valid on that terminal session. In order to make these changes permanent, you can add these lines to your `~/.zshrc` file.
+- Although installation of VTK looks simple, sometimes it is possible that CMake cannot find some necessary libraries for VTK, most famous one being Qt5. If you face an error something like:
+```
+CMake Error at /usr/local/lib/cmake/vtk-9.0/VTK-vtk-module-find-packages.cmake:115 (find_package):
+ By not providing "FindQt5.cmake" in CMAKE_MODULE_PATH this project has
+ asked CMake to find a package configuration file provided by "Qt5", but
+ CMake did not find one.
+
+ Could not find a package configuration file provided by "Qt5" (requested
+ version 5.15) with any of the following names:
+
+   Qt5Config.cmake
+   qt5-config.cmake
+
+ Add the installation prefix of "Qt5" to CMAKE_PREFIX_PATH or set "Qt5_DIR"
+ to a directory containing one of the above files.  If "Qt5" provides a
+ separate development package or SDK, be sure it has been installed.
+
+```
+which means that CMake could not find Qt5. Solution is simple fortunately. First, make sure that you have Qt5 installed:
+```
+brew install qt5
+```
+Then extend `CMAKE_PREFIX_PATH`, which are the locations where CMake tries to find packages, by adding following lines to your `.zshrc` file
+```
+export CMAKE_PREFIX_PATH="/usr/local/opt/qt5:$CMAKE_PREFIX_PATH"
+```
+Please not that your installation might be in another location. The most possible another location is `/usr/local/Cellar/qt@5/5.**.*/`, which depends on the Qt5 version. 
+
 ## Using CMake
 
 CMake is a C++ build system generator, which simplifies the building process compared e.g. to a system-specific Makefile. The CMake configuration is defined in the `CMakeList.txt` file.
