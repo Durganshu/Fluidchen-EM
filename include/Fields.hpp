@@ -68,7 +68,7 @@ class Fields {
     /// y-velocity index based access and modify
     double &v(int i, int j);
 
-    /// pressre index based access and modify
+    /// pressure index based access and modify
     double &p(int i, int j);
 
     /// RHS index based access and modify
