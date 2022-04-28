@@ -4,7 +4,7 @@ For your development we ask you to use Git (a version control system) and the Gi
 
 1. [Fork](#fork) (only once, one repository per group, let us know which repository we should look at, if more than one)
 2. [Rename and make it private](#2-rename-and-make-it-private)
-3. [Invite us as developers](#3-invite-us-as-developers) (@gchourdakis, @benjaminrodenberg)
+3. [Invite us as developers](#3-invite-us-as-developers) (@gchourdakis, @ga83dit)
 4. [Clone it](#4-clone-it)
 5. [Work on it](#5-work-on-it)
 6. [Create a merge request to `master` when ready](#6-create-a-merge-request-to-master-when-ready)
