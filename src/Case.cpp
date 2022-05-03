@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <ios>
 #include <iostream>
 #include <map>
 #include <vector>
@@ -178,6 +179,13 @@ void Case::simulate() {
     double dt = _field.dt();
     int timestep = 0;
     double output_counter = 0.0;
+
+    //Apply BCs
+    for(auto &i:_boundaries)
+    {
+        i->apply(_field);
+    }
+    //Calculate Fluxes
 }
 
 void Case::output_vtk(int timestep, int my_rank) {

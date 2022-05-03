@@ -7,6 +7,8 @@ project(CFDLAB VERSION 1.0)
 # Definition of the C++ Standard 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(gpp9 True)
+
 
 add_definitions(-Dsolution_liddriven)
 add_definitions(-Dsolution_energy)
