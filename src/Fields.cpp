@@ -67,8 +67,8 @@ double Fields::calculate_dt(Grid &grid) {
     
     auto factor1 = 1/(1/(grid.dx()*grid.dx()) + 1/(grid.dy()*grid.dy()));
     factor1 = factor1/(2 * _nu);
-    auto factor2 = grid.dx()/max_u;
-    auto factor3 = grid.dy()/max_v;
+    auto factor2 = grid.dx()/std::abs(max_u);
+    auto factor3 = grid.dy()/std::abs(max_v);
     _dt = _tau*std::min(factor1, std::min(factor2, factor3));
     return _dt; 
 }
