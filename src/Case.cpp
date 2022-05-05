@@ -2,13 +2,21 @@
 #include "Enums.hpp"
 
 #include <algorithm>
+#ifdef GCC_VERSION_9_OR_HIGHER
 #include <filesystem>
+#else
+#include <experimental/filesystem>
+#endif
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <vector>
 
+#ifdef GCC_VERSION_9_OR_HIGHER
 namespace filesystem = std::filesystem;
+#else
+namespace filesystem = std::experimental::filesystem;
+#endif
 
 #include <vtkCellData.h>
 #include <vtkDoubleArray.h>
