@@ -2,14 +2,22 @@
 #include "Enums.hpp"
 
 #include <algorithm>
+#ifdef GCC_VERSION_9_OR_HIGHER
 #include <filesystem>
+#else
+#include <experimental/filesystem>
+#endif
 #include <fstream>
 #include <ios>
 #include <iostream>
 #include <map>
 #include <vector>
 
+#ifdef GCC_VERSION_9_OR_HIGHER
 namespace filesystem = std::filesystem;
+#else
+namespace filesystem = std::experimental::filesystem;
+#endif
 
 #include <vtkCellData.h>
 #include <vtkDoubleArray.h>
@@ -82,8 +90,8 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     // Build up the domain
     Domain domain;
-    domain.dx = xlength / (double)imax;
-    domain.dy = ylength / (double)jmax;
+    domain.dx = xlength / static_cast<double>(imax);
+    domain.dy = ylength / static_cast<double>(jmax);
     domain.domain_size_x = imax;
     domain.domain_size_y = jmax;
 

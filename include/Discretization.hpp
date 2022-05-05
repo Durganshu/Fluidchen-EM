@@ -77,11 +77,13 @@ class Discretization {
     static double sor_helper(const Matrix<double> &P, int i, int j);
 
     /**
-     * @brief Linear interpolation
+     * @brief Compute interpolated value in the middle between two grid points via linear interpolation.
      *
-     * @param[in] data to be interpolated
-     * @param[in] x index
-     * @param[in] y index
+     * @param[in] A data to be interpolated
+     * @param[in] i index of first value used for interpolation
+     * @param[in] j index of first value used for interpolation
+     * @param[in] i_offset defines index of the second value used for interpolation as i+i_offset
+     * @param[in] j_offset defines index of the second value used for interpolation as j+j_offset
      * @param[out] result
      *
      */
