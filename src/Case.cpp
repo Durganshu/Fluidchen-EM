@@ -166,11 +166,13 @@ void Case::set_file_names(std::string file_name) {
  * This function is the main simulation loop. In the simulation loop, following steps are required
  * - Calculate and apply boundary conditions for all the boundaries in _boundaries container
  *   using apply() member function of Boundary class    (TO BE DONE IN BOUNDARY.CPP)
- * - Calculate fluxes (F and G) using calculate_fluxes() member function of Fields class. 
- *   Flux consists of diffusion and convection part, which are located in Discretization class (TO BE DONE IN DISCRETIZATION.CPP)
- * - Calculate right-hand-side of PPE using calculate_rs() member function of Fields class 
- * - Iterate the pressure poisson equation until the residual becomes smaller than the desired tolerance (TO DO IN FIELDS.CPP )
- *   or the maximum number of the iterations are performed using solve() member function of PressureSolver class
+ * - Calculate fluxes (F and G) using calculate_fluxes() member function of Fields class.
+ *   Flux consists of diffusion and convection part, which are located in Discretization class (TO BE DONE IN
+ * DISCRETIZATION.CPP)
+ * - Calculate right-hand-side of PPE using calculate_rs() member function of Fields class
+ * - Iterate the pressure poisson equation until the residual becomes smaller than the desired tolerance (TO DO IN
+ * FIELDS.CPP ) or the maximum number of the iterations are performed using solve() member function of PressureSolver
+ * class
  * - Calculate the velocities u and v using calculate_velocities() member function of Fields class
  * - Calculat the maximal timestep size for the next iteration using calculate_dt() member function of Fields class
  * - Write vtk files using output_vtk() function
@@ -188,22 +190,24 @@ void Case::simulate() {
     int timestep = 0;
     double output_counter = 0.0;
 
-    //Apply BCs
-    for(auto &i:_boundaries)
-    {
+    // Apply BCs
+    for (auto &i : _boundaries) {
         i->apply(_field);
     }
-    //Calculate Fluxes
-    _field.calculate_fluxes(_grid);
 
-    //Calculate RS
-    _field.calculate_rs(_grid);
+    while (t < _t_end) {
+        // Calculate Fluxes
+        _field.calculate_fluxes(_grid);
 
-    //Calculate Velocities U and V
-    _field.calculate_velocities(_grid);
+        // Calculate RS
+        _field.calculate_rs(_grid);
 
-    //Calculate Adaptive Timestep
-    dt = _field.calculate_dt(_grid);
+        // Calculate Velocities U and V
+        _field.calculate_velocities(_grid);
+
+        // Calculate Adaptive Timestep
+        dt = _field.calculate_dt(_grid);
+    }
 }
 
 void Case::output_vtk(int timestep, int my_rank) {
