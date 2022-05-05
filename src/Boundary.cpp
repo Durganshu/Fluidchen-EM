@@ -30,18 +30,18 @@ void FixedWallBoundary::apply(Fields &field) {
         else if (i == field.p_matrix().imax()) {
             field.u(i, j) = 0;
             field.v(i + 1, j) = field.v(i, j);
-            field.p(i+1,j)=field.p(i,j);
+            field.p(i + 1, j) = field.p(i, j);
             break;
         }
 
         else if (j == field.p_matrix().jmax()) {
             field.u(i, j + 1) = -field.u(i, j);
             field.v(i, j) = 0;
-            field.p(i,j+1)=field.p(i,j);
+            field.p(i, j + 1) = field.p(i, j);
             break;
-        } else
+        } else 
             std::cout << "Error in FixedWallBoundary::apply() "
-                      << "/n";
+                      << "/n"; //Throw error if the index is on boundary
     }
 }
 
@@ -57,5 +57,12 @@ void MovingWallBoundary::apply(Fields &field) {
     for (auto &elem : _cells) {
         int i = elem->i();
         int j = elem->j();
+        field.u(i, j) = 1;
+        field.v(i, j) = 0;
+
+        //Check if the y-index is jmax
+        if (j != field.p_matrix().jmax())
+            std::cout << "Error in MovingWallBoundary::apply() "
+                      << "/n";
     }
 }
