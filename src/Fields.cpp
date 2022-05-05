@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <math.h>
 
 Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI)
     : _nu(nu), _dt(dt), _tau(tau) {
@@ -60,15 +61,15 @@ double Fields::calculate_dt(Grid &grid) {
         int i = elem->i();
         int j = elem->j();
 
-        if(u(i, j) > max_u) max_u = u(i, j);
+        if(std::fabs(u(i, j)) > max_u) max_u = std::fabs(u(i, j));
 
-        if(v(i, j) > max_v) max_v = v(i, j);
+        if(std::fabs(v(i, j)) > max_v) max_v = std::fabs(v(i, j));
     }
     
     auto factor1 = 1/(1/(grid.dx()*grid.dx()) + 1/(grid.dy()*grid.dy()));
     factor1 = factor1/(2 * _nu);
-    auto factor2 = grid.dx()/std::abs(max_u);
-    auto factor3 = grid.dy()/std::abs(max_v);
+    auto factor2 = grid.dx()/max_u;
+    auto factor3 = grid.dy()/max_v;
     _dt = _tau*std::min(factor1, std::min(factor2, factor3));
     return _dt; 
 }
