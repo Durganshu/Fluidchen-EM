@@ -1,0 +1,15 @@
+utput
+*.vtk
+*.exe
+*~
+*.log
+build
+.vscode
+*.DS_STORE
+CMakeFiles
+Makefile
+doxygen_doc
+compile_commands.json
+.clangd
+
+

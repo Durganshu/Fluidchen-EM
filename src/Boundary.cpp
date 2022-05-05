@@ -16,15 +16,27 @@ void FixedWallBoundary::apply(Fields &field) {
         if (i == 0) {
             field.u(i, j) = 0;
             field.v(i, j) = -field.v(i + 1, j);
-            return;
+            break;
         }
 
-        if (j == 0) {
+        else if (j == 0) {
             field.u(i, j) = -field.u(i, j + 1);
             field.v(i, j) = 0;
-            return;
+            break;
         }
 
+        else if (i == field.p_matrix().imax()) {
+            field.u(i, j) = 0;
+            field.v(i + 1, j) = field.v(i, j);
+            break;
+        }
+
+        else if (j == field.p_matrix().jmax()) {
+            field.u(i, j + 1) = -field.u(i, j);
+            field.v(i, j) = 0;
+            break;
+        }
+        else std::cout<<"Error in FixedWallBoundary::apply() "<<"/n";
         //if (i==field.)
     }
 }
