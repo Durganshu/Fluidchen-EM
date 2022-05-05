@@ -190,21 +190,28 @@ void Case::simulate() {
     int timestep = 0;
     double output_counter = 0.0;
 
-    // Apply BCs
-    for (auto &i : _boundaries) {
-        i->apply(_field);
-    }
-
+    
     while (t < _t_end) {
+        // Apply BCs
+        for (auto &i : _boundaries) {
+            i->apply(_field);
+        }
         // Calculate Fluxes
         _field.calculate_fluxes(_grid);
 
         // Calculate RS
         _field.calculate_rs(_grid);
+        
+        // Apply SOR
+        auto it = 0;
+        while (it < _max_iter ){
+            _pressure_solver->solve(_field, _grid, _boundaries);
+        }
 
         // Calculate Velocities U and V
         _field.calculate_velocities(_grid);
 
+        t = t + dt;
         // Calculate Adaptive Timestep
         dt = _field.calculate_dt(_grid);
     }

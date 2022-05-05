@@ -20,7 +20,7 @@ void Fields::calculate_rs(Grid &grid) {
     auto idt = 1. / _dt; // Calculate 1/dt
     for (auto i = 1; i <= grid.imax(); i++) {
         for (auto j = 1; j <= grid.jmax(); j++) {
-            (idt) * ((f(i, j) - f(i - 1, j) / grid.dx() + (g(i, j) - g(i, j - 1) / grid.dy())));
+            rs(i,j) = (idt) *((f(i,j)-f(i-1,j)/grid.dx()+(g(i,j)-g(i,j-1)/grid.dy())));
         }
     }
 }
@@ -34,7 +34,28 @@ void Fields::calculate_velocities(Grid &grid) {
     }
 }
 
-double Fields::calculate_dt(Grid &grid) { return _dt; }
+double Fields::calculate_dt(Grid &grid) { 
+    
+    auto max_u = 0.0;
+    auto max_v = 0.0;
+
+    for (auto &elem : grid.fluid_cells()) {
+    
+        int i = elem->i();
+        int j = elem->j();
+
+        if(u(i, j) > max_u) max_u = u(i, j);
+
+        if(v(i, j) > max_v) max_v = v(i, j);
+    }
+    
+    auto factor1 = 1/(1/(grid.dx()*grid.dx()) + 1/(grid.dy()*grid.dy()));
+    factor1 = factor1/(2 * _nu);
+    auto factor2 = grid.dx()/max_u;
+    auto factor3 = grid.dy()/max_v;
+    _dt = _tau*std::min(factor1, std::min(factor2, factor3));
+    return _dt; 
+}
 
 double &Fields::p(int i, int j) { return _P(i, j); }
 double &Fields::u(int i, int j) { return _U(i, j); }
@@ -46,3 +67,4 @@ double &Fields::rs(int i, int j) { return _RS(i, j); }
 Matrix<double> &Fields::p_matrix() { return _P; }
 
 double Fields::dt() const { return _dt; }
+
