@@ -6,8 +6,8 @@
 # 0 on success
 # 1 on an incorrect format
 
-if command -v clang-format-8 > /dev/null; then
-    BINARY="clang-format-8"
+if command -v clang-format-11 > /dev/null; then
+    BINARY="clang-format-11"
 elif command -v clang-format > /dev/null; then
     BINARY="clang-format"
 else
