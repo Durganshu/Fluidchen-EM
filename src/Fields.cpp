@@ -14,7 +14,23 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
     _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);
 }
 
-void Fields::calculate_fluxes(Grid &grid) {}
+void Fields::calculate_fluxes(Grid &grid) {
+
+    for (int i = 1; i < grid.imax(); i++) {
+        for (int j = 1; j <= grid.jmax(); j++) {
+            _F(i, j) = _U(i, j) + _dt * ((_nu) * (Discretization::laplacian(_U, i, j)) -
+                                         Discretization::convection_u(_U, _V, i, j));
+        }
+    }
+
+    for (int i = 1; i <=grid.imax(); i++) {
+        for (int j = 1; j < grid.jmax(); j++) {
+
+            _G(i, j) = _V(i, j) + _dt * ((_nu) * (Discretization::laplacian(_V, i, j)) -
+                                         Discretization::convection_v(_U, _V, i, j));
+        }
+    }
+}
 
 void Fields::calculate_rs(Grid &grid) {}
 
