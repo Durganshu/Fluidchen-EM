@@ -1,0 +1,7 @@
+/home/yashas/group-i-cfd-lab/build/CMakeFiles/install/strip.dir
+/home/yashas/group-i-cfd-lab/build/CMakeFiles/install/local.dir
+/home/yashas/group-i-cfd-lab/build/CMakeFiles/install.dir
+/home/yashas/group-i-cfd-lab/build/CMakeFiles/list_install_components.dir
+/home/yashas/group-i-cfd-lab/build/CMakeFiles/rebuild_cache.dir
+/home/yashas/group-i-cfd-lab/build/CMakeFiles/edit_cache.dir
+/home/yashas/group-i-cfd-lab/build/CMakeFiles/fluidchen.dir
