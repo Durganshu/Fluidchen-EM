@@ -25,7 +25,14 @@ void Fields::calculate_rs(Grid &grid) {
     }
 }
 
-void Fields::calculate_velocities(Grid &grid) {}
+void Fields::calculate_velocities(Grid &grid) {
+    for (auto i = 1; i <= grid.imax(); i++) {
+        for (auto j = 1; j <= grid.jmax(); j++) {
+            u(i, j) = f(i, j) - (_dt / grid.dx()) * (p(i + 1, j) - p(i, j));
+            v(i, j) = g(i, j) - (_dt / grid.dy()) * (p(i, j + 1) - p(i, j));
+        }
+    }
+}
 
 double Fields::calculate_dt(Grid &grid) { 
     
