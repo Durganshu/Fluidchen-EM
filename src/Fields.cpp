@@ -20,7 +20,7 @@ void Fields::calculate_rs(Grid &grid) {
     auto idt = 1. / _dt; // Calculate 1/dt
     for (auto i = 1; i <= grid.imax(); i++) {
         for (auto j = 1; j <= grid.jmax(); j++) {
-            (idt) *((f(i,j)-f(i-1,j)/grid.dx()+(g(i,j)-g(i,j-1)/grid.dy())));
+            rs(i,j) = (idt) *((f(i,j)-f(i-1,j)/grid.dx()+(g(i,j)-g(i,j-1)/grid.dy())));
         }
     }
 }

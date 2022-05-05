@@ -201,7 +201,13 @@ void Case::simulate() {
 
         // Calculate RS
         _field.calculate_rs(_grid);
-
+        
+        // Apply SOR
+        auto it = 0;
+        while (it < _max_iter ){
+            _pressure_solver.solve(_field, _grid, _boundaries);
+        }
+        
         // Calculate Velocities U and V
         _field.calculate_velocities(_grid);
 
