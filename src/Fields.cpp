@@ -20,12 +20,19 @@ void Fields::calculate_rs(Grid &grid) {
     auto idt = 1. / _dt; // Calculate 1/dt
     for (auto i = 1; i <= grid.imax(); i++) {
         for (auto j = 1; j <= grid.jmax(); j++) {
-            (idt) *((f(i,j)-f(i-1,j)/grid.dx()+(g(i,j)-g(i,j-1)/grid.dy())));
+            (idt) * ((f(i, j) - f(i - 1, j) / grid.dx() + (g(i, j) - g(i, j - 1) / grid.dy())));
         }
     }
 }
 
-void Fields::calculate_velocities(Grid &grid) {}
+void Fields::calculate_velocities(Grid &grid) {
+    for (auto i = 1; i <= grid.imax(); i++) {
+        for (auto j = 1; j <= grid.jmax(); j++) {
+            u(i, j) = f(i, j) - (_dt / grid.dx()) * (p(i + 1, j) - p(i, j));
+            v(i, j) = g(i, j) - (_dt / grid.dy()) * (p(i, j + 1) - p(i, j));
+        }
+    }
+}
 
 double Fields::calculate_dt(Grid &grid) { return _dt; }
 
