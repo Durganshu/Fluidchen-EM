@@ -205,12 +205,12 @@ void Case::simulate() {
         // Apply SOR
         auto it = 0;
         while (it < _max_iter ){
-            _pressure_solver.solve(_field, _grid, _boundaries);
+            _pressure_solver->solve(_field, _grid, _boundaries);
         }
 
         // Calculate Velocities U and V
         _field.calculate_velocities(_grid);
-        
+
         t = t + dt;
         // Calculate Adaptive Timestep
         dt = _field.calculate_dt(_grid);

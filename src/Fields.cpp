@@ -32,21 +32,20 @@ double Fields::calculate_dt(Grid &grid) {
     auto max_u = 0.0;
     auto max_v = 0.0;
 
-    for (auto &elem : grid.fluid_cells) {
-        for (auto &elem2 : _elem) {
-            int i = elem2->i();
-            int j = elem2->j();
+    for (auto &elem : grid.fluid_cells()) {
+    
+        int i = elem->i();
+        int j = elem->j();
 
-            if(field.u(i, j) > max_u) max_u = field.u(i, j);
+        if(u(i, j) > max_u) max_u = u(i, j);
 
-            if(field.v(i, j) > max_v) max_v = field.v(i, j);
-        }
+        if(v(i, j) > max_v) max_v = v(i, j);
     }
     
-    auto factor1 = 1/(1/(grid.dx*grid.dx) + 1/(grid.dy*grid.dy));
+    auto factor1 = 1/(1/(grid.dx()*grid.dx()) + 1/(grid.dy()*grid.dy()));
     factor1 = factor1/(2 * _nu);
-    auto factor2 = grid.dx/max_u;
-    auto factor2 = grid.dy/max_v;
+    auto factor2 = grid.dx()/max_u;
+    auto factor3 = grid.dy()/max_v;
     _dt = _tau*std::min(factor1, std::min(factor2, factor3));
     return _dt; 
 }
