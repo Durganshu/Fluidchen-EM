@@ -1,4 +1,5 @@
 #include "Boundary.hpp"
+#include "Enums.hpp"
 #include <cmath>
 #include <iostream>
 
@@ -13,35 +14,32 @@ void FixedWallBoundary::apply(Fields &field) {
         int i = elem->i();
         int j = elem->j();
 
-        if (i == 0) {
+        if (elem->is_border(border_position::TOP)) {
             field.u(i, j) = 0;
             field.v(i, j) = -field.v(i + 1, j);
             field.p(i, j) = field.p(i + 1, j);
-            break;
+            std::cout<<"i,j="<<i<<","<<j<<"\n";
         }
 
-        else if (j == 0) {
+        else if (elem->is_border(border_position::RIGHT)) {
             field.u(i, j) = -field.u(i, j + 1);
             field.v(i, j) = 0;
             field.p(i, j) = field.p(i, j + 1);
-            break;
         }
 
-        else if (i == field.p_matrix().imax()) {
+        else if (elem->is_border(border_position::LEFT)) {
             field.u(i, j) = 0;
             field.v(i + 1, j) = field.v(i, j);
             field.p(i + 1, j) = field.p(i, j);
-            break;
         }
 
-        else if (j == field.p_matrix().jmax()) {
+        else if (elem->is_border(border_position::BOTTOM)) {
             field.u(i, j + 1) = -field.u(i, j);
             field.v(i, j) = 0;
             field.p(i, j + 1) = field.p(i, j);
-            break;
         } else
             std::cout << "Error in FixedWallBoundary::apply() "
-                      << "/n"; // Throw error if the index is on boundary
+                      << "\n"; // Throw error if the index is not on boundary
     }
 }
 
@@ -59,8 +57,5 @@ void MovingWallBoundary::apply(Fields &field) {
         int j = elem->j();
         field.u(i, j) = 1;
         field.v(i, j) = 0;
-
-        // Check if the y-index is jmax
-        //if (j != field.p_matrix().jmax()) std::cout << "Error in MovingWallBoundary::apply(), j=" << j << "\n";
     }
 }

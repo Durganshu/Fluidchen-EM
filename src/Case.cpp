@@ -2,6 +2,7 @@
 #include "Enums.hpp"
 
 #include <algorithm>
+#include <iterator>
 #ifdef GCC_VERSION_9_OR_HIGHER
 #include <filesystem>
 #else
@@ -215,11 +216,19 @@ void Case::simulate() {
             it++;
         }
 
-        if(it>=_max_iter) std::cout<<"SOR Max Iter Reached!\nSOR Residue="<<res<<"\n";
+        //if(it>=_max_iter) std::cout<<"SOR Max Iter Reached!\nSOR Residue="<<res<<"\n";
 
         // Calculate Velocities U and V
         //std::cout<<"Calculating Velocities"<<"\n";
         _field.calculate_velocities(_grid);
+
+        output_counter+=dt;
+
+        if(output_counter>=_output_freq||t==0) {
+            output_vtk(t);
+            output_counter=0;
+            std::cout<<"Printing Data";
+        }
 
         t = t + dt;
 
@@ -227,8 +236,8 @@ void Case::simulate() {
         //std::cout<<"Calculating dt"<<"\n";
         dt = _field.calculate_dt(_grid);
 
-        std::cout<<"Simulation Time:"<<t<<"\n"
-        <<"dt="<<dt<<"\n";
+        //std::cout<<"Simulation Time:"<<t<<"\n"
+        //<<"dt="<<dt<<"\n";
     }
 }
 
