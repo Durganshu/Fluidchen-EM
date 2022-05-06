@@ -192,7 +192,7 @@ void Case::simulate() {
     double output_counter = 0.0;
 
     
-    while (t < _t_end) {
+    while (t < dt+1) {
         // Apply BCs
         //std::cout<<"Applying BCs"<<"\n";
         for (auto &i : _boundaries) {
@@ -227,7 +227,7 @@ void Case::simulate() {
         if(output_counter>=_output_freq||t==0) {
             output_vtk(t);
             output_counter=0;
-            std::cout<<"Printing Data";
+            //std::cout<<"Printing Data";
         }
 
         t = t + dt;
