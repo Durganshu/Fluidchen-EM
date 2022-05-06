@@ -192,7 +192,7 @@ void Case::simulate() {
     double output_counter = 0.0;
 
     
-    while (t < dt+1) {
+    while (t < _t_end) {
         // Apply BCs
         //std::cout<<"Applying BCs"<<"\n";
         for (auto &i : _boundaries) {
