@@ -217,7 +217,7 @@ void Case::simulate() {
             it++;
         }
 
-        if(it>=_max_iter) std::cout<<"SOR Max Iter Reached!\nSOR Residue="<<res<<"\n";
+        //if(it>=_max_iter) std::cout<<"SOR Max Iter Reached!\nSOR Residue="<<res<<"\n";
 
         // Calculate Velocities U and V
         //std::cout<<"Calculating Velocities"<<"\n";
@@ -241,9 +241,10 @@ void Case::simulate() {
         //std::cout<<"Calculating dt"<<"\n";
         dt = _field.calculate_dt(_grid);
 
-        std::cout<<"Simulation Time:"<<t<<"\n"
-        <<"dt="<<dt<<"\n";
+        //std::cout<<"Simulation Time:"<<t<<"\n"
+        //<<"dt="<<dt<<"\n";
     }
+    output_vtk(t);
 }
 
 void Case::output_vtk(int timestep, int my_rank) {
