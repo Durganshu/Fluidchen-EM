@@ -16,7 +16,9 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
 }
 
 void Fields::calculate_fluxes(Grid &grid) {
-    int GX, GY = 0; //To look for it in other classes
+    int GY = 0; //To look for it in other classes
+    int GX = 0;
+    //std::cout<<GX<<"\n";
     //imax = 50 = jmax
     for (int i = 1; i < grid.imax(); i++) {
         for (int j = 1; j <= grid.jmax(); j++) {
