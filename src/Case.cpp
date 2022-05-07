@@ -192,13 +192,21 @@ void Case::simulate() {
     double output_counter = 0.0;
 
     
-    while (t < _t_end) {
+    while (t < dt) {
         // Apply BCs
         //std::cout<<"Applying BCs"<<"\n";
         for (auto &i : _boundaries) {
             i->apply(_field);
         }
 
+         output_counter+=dt;
+
+        if(output_counter>=_output_freq||t==0) {
+            output_vtk(t);
+            output_counter=0;
+            //std::cout<<"Printing Data";
+        }
+        
         // Calculate Fluxes
         //std::cout<<"Calculating Fluxes"<<"\n";
         _field.calculate_fluxes(_grid);
@@ -211,7 +219,7 @@ void Case::simulate() {
         //std::cout<<"Performing SOR"<<"\n";
         auto it = 0;
         double res=1000.;
-        while (it < _max_iter && res>_tolerance){
+        while (it <= _max_iter && res>=_tolerance){
             res=_pressure_solver->solve(_field, _grid, _boundaries);
             it++;
         }
@@ -222,13 +230,7 @@ void Case::simulate() {
         //std::cout<<"Calculating Velocities"<<"\n";
         _field.calculate_velocities(_grid);
 
-        output_counter+=dt;
-
-        if(output_counter>=_output_freq||t==0) {
-            output_vtk(t);
-            output_counter=0;
-            //std::cout<<"Printing Data";
-        }
+    
 
         t = t + dt;
 
