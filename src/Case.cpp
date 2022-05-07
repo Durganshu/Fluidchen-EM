@@ -166,14 +166,12 @@ void Case::set_file_names(std::string file_name) {
 /**
  * This function is the main simulation loop. In the simulation loop, following steps are required
  * - Calculate and apply boundary conditions for all the boundaries in _boundaries container
- *   using apply() member function of Boundary class    (TO BE DONE IN BOUNDARY.CPP)
+ *   using apply() member function of Boundary class
  * - Calculate fluxes (F and G) using calculate_fluxes() member function of Fields class.
- *   Flux consists of diffusion and convection part, which are located in Discretization class (TO BE DONE IN
- * DISCRETIZATION.CPP)
+ *   Flux consists of diffusion and convection part, which are located in Discretization class 
  * - Calculate right-hand-side of PPE using calculate_rs() member function of Fields class
- * - Iterate the pressure poisson equation until the residual becomes smaller than the desired tolerance (TO DO IN
- * FIELDS.CPP ) or the maximum number of the iterations are performed using solve() member function of PressureSolver
- * class
+ * - Iterate the pressure poisson equation until the residual becomes smaller than the desired tolerance 
+ *   or the maximum number of the iterations are performed using solve() member function of PressureSolver class
  * - Calculate the velocities u and v using calculate_velocities() member function of Fields class
  * - Calculat the maximal timestep size for the next iteration using calculate_dt() member function of Fields class
  * - Write vtk files using output_vtk() function
@@ -193,23 +191,19 @@ void Case::simulate() {
 
     
     while (t < _t_end) {
+        
         // Apply BCs
-        //std::cout<<"Applying BCs"<<"\n";
         for (auto &i : _boundaries) {
             i->apply(_field);
         }
-
         
         // Calculate Fluxes
-        //std::cout<<"Calculating Fluxes"<<"\n";
         _field.calculate_fluxes(_grid);
 
-        // Calculate RS
-        //std::cout<<"Calculating RS"<<"\n";
+        // Calculate RHS of PPE
         _field.calculate_rs(_grid);
         
         // Apply SOR
-        //std::cout<<"Performing SOR"<<"\n";
         auto it = 0;
         double res=1000.;
         while (it <= _max_iter && res>=_tolerance){
@@ -220,30 +214,27 @@ void Case::simulate() {
         //if(it>=_max_iter) std::cout<<"SOR Max Iter Reached!\nSOR Residue="<<res<<"\n";
 
         // Calculate Velocities U and V
-        //std::cout<<"Calculating Velocities"<<"\n";
         _field.calculate_velocities(_grid);
 
         /**********************************************************/
-        // Need to check for last time step
+        // Storing the values in the VTK file
         output_counter+=dt;
 
-        if(output_counter>=_output_freq||t==0) {
+        if(output_counter >= _output_freq || t==0) {
             output_vtk(t);
             output_counter=0;
-            //std::cout<<"Printing Data";
         }
         /**********************************************************/
         
-
+        // Updating current time step
         t = t + dt;
 
         // Calculate Adaptive Timestep
-        //std::cout<<"Calculating dt"<<"\n";
         dt = _field.calculate_dt(_grid);
 
-        //std::cout<<"Simulation Time:"<<t<<"\n"
-        //<<"dt="<<dt<<"\n";
     }
+
+    // Storing values at the last time step
     output_vtk(t);
 }
 

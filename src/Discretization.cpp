@@ -15,16 +15,16 @@ Discretization::Discretization(double dx, double dy, double gamma) {
 }
 //Convection in x direction
 double Discretization::convection_u(const Matrix<double> &U, const Matrix<double> &V, int i, int j) {
-    auto val = (1 / _dx) * ((((U(i, j) + U(i + 1, j)) * (U(i, j) + U(i + 1, j))) * 0.25) -
-                        (((U(i - 1, j) + U(i, j)) * (U(i - 1, j) + U(i, j))) * 0.25)) +
-           _gamma * (1 / _dx) *
-               ((((std::fabs(U(i, j) + U(i + 1, j)) * ((U(i, j) - U(i + 1, j)))) * 0.25)) -
-                ((std::fabs(U(i - 1, j) + U(i, j)) * (U(i - 1, j) - U(i, j))) * 0.25)) +
-           (1 / _dy) * (((((V(i, j) + V(i + 1, j)) * (U(i, j) + U(i, j + 1))) * 0.25) -
-                         ((V(i, j - 1) + V(i + 1, j - 1)) * (U(i, j - 1) + U(i, j))) * 0.25)) +
-           _gamma * (1 / _dy) *
-               ((((std::fabs(V(i, j) + V(i + 1, j)) * ((U(i, j) - U(i, j + 1)))) * 0.25)) -
-                ((std::fabs(V(i, j - 1) + V(i + 1, j - 1)) * (U(i, j - 1) - U(i, j))) * 0.25));
+    // auto val = (1 / _dx) * ((((U(i, j) + U(i + 1, j)) * (U(i, j) + U(i + 1, j))) * 0.25) -
+    //                     (((U(i - 1, j) + U(i, j)) * (U(i - 1, j) + U(i, j))) * 0.25)) +
+    //        _gamma * (1 / _dx) *
+    //            ((((std::fabs(U(i, j) + U(i + 1, j)) * ((U(i, j) - U(i + 1, j)))) * 0.25)) -
+    //             ((std::fabs(U(i - 1, j) + U(i, j)) * (U(i - 1, j) - U(i, j))) * 0.25)) +
+    //        (1 / _dy) * (((((V(i, j) + V(i + 1, j)) * (U(i, j) + U(i, j + 1))) * 0.25) -
+    //                      ((V(i, j - 1) + V(i + 1, j - 1)) * (U(i, j - 1) + U(i, j))) * 0.25)) +
+    //        _gamma * (1 / _dy) *
+    //            ((((std::fabs(V(i, j) + V(i + 1, j)) * ((U(i, j) - U(i, j + 1)))) * 0.25)) -
+    //             ((std::fabs(V(i, j - 1) + V(i + 1, j - 1)) * (U(i, j - 1) - U(i, j))) * 0.25));
 
 
     //std::cout<<val<<"\n";

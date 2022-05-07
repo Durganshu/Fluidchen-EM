@@ -16,13 +16,11 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
 }
 
 void Fields::calculate_fluxes(Grid &grid) {
-    int GY = 0; //To look for it in other classes
-    int GX = 0;
-    //std::cout<<GX<<"\n";
+
     //imax = 50 = jmax
     for (int i = 1; i < grid.imax(); i++) {
         for (int j = 1; j <= grid.jmax(); j++) {
-            _F(i, j) = GX + _U(i, j) + _dt * ((_nu * Discretization::laplacian(_U, i, j)) -
+            _F(i, j) = _gx + _U(i, j) + _dt * ((_nu * Discretization::laplacian(_U, i, j)) -
                                          Discretization::convection_u(_U, _V, i, j));
         }
     }
@@ -30,7 +28,7 @@ void Fields::calculate_fluxes(Grid &grid) {
     for (int i = 1; i <=grid.imax(); i++) {
         for (int j = 1; j < grid.jmax(); j++) {
 
-            _G(i, j) = GY + _V(i, j) + _dt * ((_nu * Discretization::laplacian(_V, i, j)) -
+            _G(i, j) = _gy + _V(i, j) + _dt * ((_nu * Discretization::laplacian(_V, i, j)) -
                                          Discretization::convection_v(_U, _V, i, j));
         }
     }
@@ -68,8 +66,6 @@ double Fields::calculate_dt(Grid &grid) {
         
         int i = elem->i();
         int j = elem->j();
-
-        //std::cout<<"i,j="<<i<<","<<j<<"\n";
 
         if(std::fabs(_U(i, j)) > max_u) max_u = std::fabs(_U(i, j));
 
