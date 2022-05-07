@@ -76,10 +76,11 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
     _cells(i, j).set_neighbour(&_cells(i, j + 1), border_position::TOP);
     _cells(i, j).set_neighbour(&_cells(i + 1, j), border_position::RIGHT);
     if (_cells(i, j).neighbour(border_position::TOP)->type() == cell_type::FLUID) {
-        _cells(i, j).add_border(border_position::TOP);
+        _cells(i, j).add_border(border_position::TOP);    
     }
     if (_cells(i, j).neighbour(border_position::RIGHT)->type() == cell_type::FLUID) {
         _cells(i, j).add_border(border_position::RIGHT);
+        
     }
     // Top-Left Corner
     i = 0;
@@ -87,10 +88,11 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
     _cells(i, j).set_neighbour(&_cells(i, j - 1), border_position::BOTTOM);
     _cells(i, j).set_neighbour(&_cells(i + 1, j), border_position::RIGHT);
     if (_cells(i, j).neighbour(border_position::BOTTOM)->type() == cell_type::FLUID) {
-        _cells(i, j).add_border(border_position::BOTTOM);
+        _cells(i, j).add_border(border_position::BOTTOM);   
     }
     if (_cells(i, j).neighbour(border_position::RIGHT)->type() == cell_type::FLUID) {
         _cells(i, j).add_border(border_position::RIGHT);
+        
     }
 
     // Top-Right Corner
@@ -99,10 +101,11 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
     _cells(i, j).set_neighbour(&_cells(i, j - 1), border_position::BOTTOM);
     _cells(i, j).set_neighbour(&_cells(i - 1, j), border_position::LEFT);
     if (_cells(i, j).neighbour(border_position::BOTTOM)->type() == cell_type::FLUID) {
-        _cells(i, j).add_border(border_position::BOTTOM);
+        _cells(i, j).add_border(border_position::BOTTOM); 
     }
     if (_cells(i, j).neighbour(border_position::LEFT)->type() == cell_type::FLUID) {
         _cells(i, j).add_border(border_position::LEFT);
+        
     }
 
     // Bottom-Right Corner
@@ -124,6 +127,7 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
         _cells(i, j).set_neighbour(&_cells(i, j + 1), border_position::TOP);
         if (_cells(i, j).neighbour(border_position::RIGHT)->type() == cell_type::FLUID) {
             _cells(i, j).add_border(border_position::RIGHT);
+            
         }
         if (_cells(i, j).neighbour(border_position::LEFT)->type() == cell_type::FLUID) {
             _cells(i, j).add_border(border_position::LEFT);
@@ -131,6 +135,7 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
         if (_cells(i, j).neighbour(border_position::TOP)->type() == cell_type::FLUID) {
             _cells(i, j).add_border(border_position::TOP);
         }
+        
     }
 
     // Top Cells
@@ -195,15 +200,19 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
             if (_cells(i, j).type() != cell_type::FLUID) {
                 if (_cells(i, j).neighbour(border_position::LEFT)->type() == cell_type::FLUID) {
                     _cells(i, j).add_border(border_position::LEFT);
+                    
                 }
                 if (_cells(i, j).neighbour(border_position::RIGHT)->type() == cell_type::FLUID) {
                     _cells(i, j).add_border(border_position::RIGHT);
+                    
                 }
                 if (_cells(i, j).neighbour(border_position::BOTTOM)->type() == cell_type::FLUID) {
                     _cells(i, j).add_border(border_position::BOTTOM);
+                    
                 }
                 if (_cells(i, j).neighbour(border_position::TOP)->type() == cell_type::FLUID) {
                     _cells(i, j).add_border(border_position::TOP);
+                    
                 }
             }
         }

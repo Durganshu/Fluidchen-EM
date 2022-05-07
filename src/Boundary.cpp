@@ -1,4 +1,5 @@
 #include "Boundary.hpp"
+#include "Enums.hpp"
 #include <cmath>
 #include <iostream>
 
@@ -12,36 +13,53 @@ void FixedWallBoundary::apply(Fields &field) {
     for (auto &elem : _cells) {
         int i = elem->i();
         int j = elem->j();
+        //std::cout<<"i,j="<<i<<","<<j<<"\n";
+        
+        // TOP implies that the top border of the cell exists i.e.
+        // these cells should be in the "bottommost row"
+        if (elem->is_border(border_position::TOP)) {
+            field.u(i, j) = -field.u(i, j + 1);
+            field.v(i, j) = 0;
+            field.p(i, j) = field.p(i , j + 1);
+            field.g(i, j) = field.v(i, j);
+            //std::cout<<"i,j="<<i<<","<<j<<"\n";
+        }
 
-        if (i == 0) {
+        // RIGHT implies that the right border of the cell exists i.e.
+        // these cells should be in the "leftmost column"
+        else if (elem->is_border(border_position::RIGHT)) {
             field.u(i, j) = 0;
             field.v(i, j) = -field.v(i + 1, j);
             field.p(i, j) = field.p(i + 1, j);
-            break;
+            field.f(i, j) = field.u(i, j);
+            //std::cout<<"i,j="<<i<<","<<j<<"\n";
         }
 
-        else if (j == 0) {
-            field.u(i, j) = -field.u(i, j + 1);
-            field.v(i, j) = 0;
-            field.p(i, j) = field.p(i, j + 1);
-            break;
+        // LEFT implies that the left border of the cell exists i.e.
+        // these cells should be in the "rightmost column"
+        else if (elem->is_border(border_position::LEFT)) {
+            field.u(i - 1, j) = 0;
+            //field.v(i - 1, j) = -field.v(i, j);
+            field.v(i, j) = -field.v(i - 1, j);
+            //field.p(i - 1, j) = field.p(i, j);
+            field.p(i, j) = field.p(i - 1, j);
+            field.f(i - 1, j) = field.u(i - 1, j);
+            //std::cout<<"i,j="<<i<<","<<j<<"\n";
         }
 
-        else if (i == field.p_matrix().imax()) {
-            field.u(i, j) = 0;
-            field.v(i + 1, j) = field.v(i, j);
-            field.p(i + 1, j) = field.p(i, j);
-            break;
-        }
+        //There won't be any top row in the fixed wall boundary
+        // else if (elem->is_border(border_position::BOTTOM)) {
+        //     field.u(i, j + 1) = -field.u(i, j);
+        //     field.v(i, j) = 0;
+        //     field.p(i, j + 1) = field.p(i, j);
+        //     std::cout<<"i,j="<<i<<","<<j<<"\n";
+        // } 
+        else{
+                      //<< "\n"; // Throw error if the index is not on boundary
+            // std::cout << "Corner cells:";
+            // std::cout<<"i,j="<<i<<","<<j<<"\n";
+            }//<< "\n"; // Throw error if the index is not on boundary
 
-        else if (j == field.p_matrix().jmax()) {
-            field.u(i, j + 1) = -field.u(i, j);
-            field.v(i, j) = 0;
-            field.p(i, j + 1) = field.p(i, j);
-            break;
-        } else 
-            std::cout << "Error in FixedWallBoundary::apply() "
-                      << "/n"; //Throw error if the index is on boundary
     }
 }
 
@@ -57,12 +75,13 @@ void MovingWallBoundary::apply(Fields &field) {
     for (auto &elem : _cells) {
         int i = elem->i();
         int j = elem->j();
-        field.u(i, j) = 1;
-        field.v(i, j) = 0;
-
-        //Check if the y-index is jmax
-        if (j != field.p_matrix().jmax())
-            std::cout << "Error in MovingWallBoundary::apply() "
-                      << "/n";
+        //std::cout<<"i,j="<<i<<","<<j<<"\n";
+        //field.u(i, j) = 2*1 - field.u(i, j - 1);
+        //std::cout<<_wall_velocity.begin()->second<<"\n";
+        field.u(i, j) = 2 * (_wall_velocity.begin()->second) - field.u(i, j - 1);
+        field.v(i, j - 1) = 0;
+        field.p(i, j) = field.p(i, j - 1);
+        field.g(i, j - 1) = field.v(i, j - 1);
+        //std::cout<<"i,j="<<i<<","<<j<<" : u = "<< field.u(i, j)<<"\n";
     }
 }

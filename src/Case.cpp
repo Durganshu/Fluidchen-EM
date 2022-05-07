@@ -2,6 +2,7 @@
 #include "Enums.hpp"
 
 #include <algorithm>
+#include <iterator>
 #ifdef GCC_VERSION_9_OR_HIGHER
 #include <filesystem>
 #else
@@ -193,27 +194,55 @@ void Case::simulate() {
     
     while (t < _t_end) {
         // Apply BCs
+        //std::cout<<"Applying BCs"<<"\n";
         for (auto &i : _boundaries) {
             i->apply(_field);
         }
+
+        
         // Calculate Fluxes
+        //std::cout<<"Calculating Fluxes"<<"\n";
         _field.calculate_fluxes(_grid);
 
         // Calculate RS
+        //std::cout<<"Calculating RS"<<"\n";
         _field.calculate_rs(_grid);
         
         // Apply SOR
+        //std::cout<<"Performing SOR"<<"\n";
         auto it = 0;
-        while (it < _max_iter ){
-            _pressure_solver->solve(_field, _grid, _boundaries);
+        double res=1000.;
+        while (it <= _max_iter && res>=_tolerance){
+            res=_pressure_solver->solve(_field, _grid, _boundaries);
+            it++;
         }
 
+        if(it>=_max_iter) std::cout<<"SOR Max Iter Reached!\nSOR Residue="<<res<<"\n";
+
         // Calculate Velocities U and V
+        //std::cout<<"Calculating Velocities"<<"\n";
         _field.calculate_velocities(_grid);
 
+        /**********************************************************/
+        // Need to check for last time step
+        output_counter+=dt;
+
+        if(output_counter>=_output_freq||t==0) {
+            output_vtk(t);
+            output_counter=0;
+            //std::cout<<"Printing Data";
+        }
+        /**********************************************************/
+        
+
         t = t + dt;
+
         // Calculate Adaptive Timestep
+        //std::cout<<"Calculating dt"<<"\n";
         dt = _field.calculate_dt(_grid);
+
+        std::cout<<"Simulation Time:"<<t<<"\n"
+        <<"dt="<<dt<<"\n";
     }
 }
 
