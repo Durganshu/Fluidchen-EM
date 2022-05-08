@@ -13,13 +13,13 @@ void FixedWallBoundary::apply(Fields &field) {
     for (auto &elem : _cells) {
         int i = elem->i();
         int j = elem->j();
-        
+
         // TOP implies that the top border of the cell exists i.e.
         // these cells should be in the "bottommost row"
         if (elem->is_border(border_position::TOP)) {
             field.u(i, j) = -field.u(i, j + 1);
             field.v(i, j) = 0;
-            field.p(i, j) = field.p(i , j + 1);
+            field.p(i, j) = field.p(i, j + 1);
             field.g(i, j) = field.v(i, j);
         }
 
@@ -40,14 +40,6 @@ void FixedWallBoundary::apply(Fields &field) {
             field.p(i, j) = field.p(i - 1, j);
             field.f(i - 1, j) = field.u(i - 1, j);
         }
-
-        //There won't be any top row in the fixed wall boundary
-        // This else may be used to access the corner cells in the FixedWallBoundary 
-        else{
-            // std::cout << "Corner cells:";
-            // std::cout<<"i,j="<<i<<","<<j<<"\n";
-            }
-
     }
 }
 

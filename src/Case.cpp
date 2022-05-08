@@ -168,9 +168,9 @@ void Case::set_file_names(std::string file_name) {
  * - Calculate and apply boundary conditions for all the boundaries in _boundaries container
  *   using apply() member function of Boundary class
  * - Calculate fluxes (F and G) using calculate_fluxes() member function of Fields class.
- *   Flux consists of diffusion and convection part, which are located in Discretization class 
+ *   Flux consists of diffusion and convection part, which are located in Discretization class
  * - Calculate right-hand-side of PPE using calculate_rs() member function of Fields class
- * - Iterate the pressure poisson equation until the residual becomes smaller than the desired tolerance 
+ * - Iterate the pressure poisson equation until the residual becomes smaller than the desired tolerance
  *   or the maximum number of the iterations are performed using solve() member function of PressureSolver class
  * - Calculate the velocities u and v using calculate_velocities() member function of Fields class
  * - Calculat the maximal timestep size for the next iteration using calculate_dt() member function of Fields class
@@ -188,54 +188,64 @@ void Case::simulate() {
     double dt = _field.dt();
     int timestep = 0;
     double output_counter = 0.0;
+    uint8_t ctr=0;
 
-    
     while (t < _t_end) {
-        
+
         // Apply BCs
         for (auto &i : _boundaries) {
             i->apply(_field);
         }
-        
+
+        if (t == 0) output_vtk(t);
+
         // Calculate Fluxes
         _field.calculate_fluxes(_grid);
 
         // Calculate RHS of PPE
         _field.calculate_rs(_grid);
-        
-        // Apply SOR
-        auto it = 0;
-        double res=1000.;
-        while (it <= _max_iter && res>=_tolerance){
-            res=_pressure_solver->solve(_field, _grid, _boundaries);
+
+        // Perform SOR Iterations
+        int it = 0;
+        double res = 1000.;
+        while (it <= _max_iter && res >= _tolerance) {
+            res = _pressure_solver->solve(_field, _grid, _boundaries);
             it++;
         }
 
-        //if(it>=_max_iter) std::cout<<"SOR Max Iter Reached!\nSOR Residue="<<res<<"\n";
+        if (it >= _max_iter) std::cout << "\nSOR Max Iteration Reached!\nSOR Residue=" << res << "\n\n";
 
         // Calculate Velocities U and V
         _field.calculate_velocities(_grid);
 
-        /**********************************************************/
         // Storing the values in the VTK file
-        output_counter+=dt;
-
-        if(output_counter >= _output_freq || t==0) {
+        output_counter += dt;
+        if (output_counter >= _output_freq || t == 0) {
             output_vtk(t);
-            output_counter=0;
+            output_counter = 0;
+            std::cout << "\nWriting Data at t=" << t << "s\n\n";
         }
-        /**********************************************************/
-        
-        // Updating current time step
+
+        // Printing info and checking for errors once in 5 runs of the loop
+        if(ctr==5){
+            ctr=0;
+            std::cout << "Simulation Time=" << t << "s         Time Step=" << dt << "s\n";
+            
+            if (check_err( _field, _grid.imax(), _grid.jmax())) exit(0);  //Check for unphysical behaviour
+        }
+        ctr++;
+
+        // Updating current time
         t = t + dt;
 
-        // Calculate Adaptive Timestep
+        // Calculate Adaptive Time step
         dt = _field.calculate_dt(_grid);
-
     }
 
     // Storing values at the last time step
     output_vtk(t);
+
+    std::cout << "\nSimulation Complete!\n";
 }
 
 void Case::output_vtk(int timestep, int my_rank) {
@@ -325,4 +335,26 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     domain.jmax = jmax_domain + 2;
     domain.size_x = imax_domain;
     domain.size_y = jmax_domain;
+}
+
+bool Case::check_err(Fields &field, int imax, int jmax) {
+    for (int i = 0; i < imax + 2; i++) {
+        for (int j = 0; j < jmax + 2; j++) {
+            if (std::isnan(field.u(i, j)) || std::isinf(field.u(i, j))){
+                std::cout << "\nError!!!!!!!!!!\n Value of x-velocity at " << i << "," << j << "is:" << field.u(i,j) <<"\n Execution terminated!\n" ;
+                return true;
+            }
+
+            if (std::isnan(field.v(i, j)) || std::isinf(field.v(i, j))){
+                std::cout << "\nError!!!!!!!!!!\n Value of y-velocity at " << i << "," << j << "is:" << field.v(i,j) <<"\n Execution terminated!\n" ;
+                return true;
+            }
+
+            if (std::isnan(field.p(i, j)) || std::isinf(field.v(i, j))){
+                std::cout << "\nError!!!!!!!!!!\n Value of pressure at " << i << "," << j << "is:" << field.p(i,j) <<"\n Execution terminated!\n" ;
+                return true;
+            }
+        }
+    }
+    return false;
 }

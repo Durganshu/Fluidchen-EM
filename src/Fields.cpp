@@ -17,19 +17,19 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
 
 void Fields::calculate_fluxes(Grid &grid) {
 
-    //imax = 50 = jmax
+    // imax = 50 = jmax
     for (int i = 1; i < grid.imax(); i++) {
         for (int j = 1; j <= grid.jmax(); j++) {
-            _F(i, j) = _gx + _U(i, j) + _dt * ((_nu * Discretization::laplacian(_U, i, j)) -
-                                         Discretization::convection_u(_U, _V, i, j));
+            _F(i, j) = _gx + _U(i, j) +
+                       _dt * ((_nu * Discretization::laplacian(_U, i, j)) - Discretization::convection_u(_U, _V, i, j));
         }
     }
 
-    for (int i = 1; i <=grid.imax(); i++) {
+    for (int i = 1; i <= grid.imax(); i++) {
         for (int j = 1; j < grid.jmax(); j++) {
 
-            _G(i, j) = _gy + _V(i, j) + _dt * ((_nu * Discretization::laplacian(_V, i, j)) -
-                                         Discretization::convection_v(_U, _V, i, j));
+            _G(i, j) = _gy + _V(i, j) +
+                       _dt * ((_nu * Discretization::laplacian(_V, i, j)) - Discretization::convection_v(_U, _V, i, j));
         }
     }
 }
@@ -38,8 +38,7 @@ void Fields::calculate_rs(Grid &grid) {
     auto idt = 1. / _dt; // Calculate 1/dt
     for (auto i = 1; i <= grid.imax(); i++) {
         for (auto j = 1; j <= grid.jmax(); j++) {
-            rs(i,j) = idt *(((_F(i,j)-_F(i-1,j))/grid.dx()) + 
-                        ((_G(i,j)-_G(i,j-1))/grid.dy()));
+            rs(i, j) = idt * (((_F(i, j) - _F(i - 1, j)) / grid.dx()) + ((_G(i, j) - _G(i, j - 1)) / grid.dy()));
         }
     }
 }
@@ -57,27 +56,27 @@ void Fields::calculate_velocities(Grid &grid) {
     }
 }
 
-double Fields::calculate_dt(Grid &grid) { 
-    
+double Fields::calculate_dt(Grid &grid) {
+
     auto max_u = 0.0;
     auto max_v = 0.0;
 
     for (auto &elem : grid.fluid_cells()) {
-        
+
         int i = elem->i();
         int j = elem->j();
 
-        if(std::fabs(_U(i, j)) > max_u) max_u = std::fabs(_U(i, j));
+        if (std::fabs(_U(i, j)) > max_u) max_u = std::fabs(_U(i, j));
 
-        if(std::fabs(_V(i, j)) > max_v) max_v = std::fabs(_V(i, j));
+        if (std::fabs(_V(i, j)) > max_v) max_v = std::fabs(_V(i, j));
     }
-    
-    auto factor1 = 1/(1/(grid.dx()*grid.dx()) + 1/(grid.dy()*grid.dy()));
-    factor1 = factor1/(2 * _nu);
-    auto factor2 = grid.dx()/max_u;
-    auto factor3 = grid.dy()/max_v;
-    _dt = _tau*std::min(factor1, std::min(factor2, factor3));
-    return _dt; 
+
+    auto factor1 = 1 / (1 / (grid.dx() * grid.dx()) + 1 / (grid.dy() * grid.dy()));
+    factor1 = factor1 / (2 * _nu);
+    auto factor2 = grid.dx() / max_u;
+    auto factor3 = grid.dy() / max_v;
+    _dt = _tau * std::min(factor1, std::min(factor2, factor3));
+    return _dt;
 }
 
 double &Fields::p(int i, int j) { return _P(i, j); }
@@ -90,4 +89,3 @@ double &Fields::rs(int i, int j) { return _RS(i, j); }
 Matrix<double> &Fields::p_matrix() { return _P; }
 
 double Fields::dt() const { return _dt; }
-
