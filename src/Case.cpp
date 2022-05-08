@@ -3,6 +3,8 @@
 
 #include <algorithm>
 #include <iterator>
+#include <chrono>
+
 #ifdef GCC_VERSION_9_OR_HIGHER
 #include <filesystem>
 #else
@@ -190,6 +192,8 @@ void Case::simulate() {
     double output_counter = 0.0;
     uint8_t ctr=0;
 
+    auto start=std::chrono::steady_clock::now();
+
     while (t < _t_end) {
 
         // Apply BCs
@@ -246,6 +250,8 @@ void Case::simulate() {
     output_vtk(t);
 
     std::cout << "\nSimulation Complete!\n";
+    auto end = std::chrono::steady_clock::now();
+    cout<<"Software Runtime:"<<std::chrono::duration_cast<std::chrono::seconds>(end-start).count()<<"s\n\n";
 }
 
 void Case::output_vtk(int timestep, int my_rank) {
