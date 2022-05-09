@@ -36,8 +36,8 @@ Case::Case(std::string file_name, int argn, char **args) {
     const int MAX_LINE_LENGTH = 1024;
     std::ifstream file(file_name);
     double nu;      /* viscosity   */
-    double UI;      /* velocity x-direction */
-    double VI;      /* velocity y-direction */
+    double UI = 0.0;      /* velocity x-direction */
+    double VI = 0.0;      /* velocity y-direction */
     double PI;      /* pressure */
     double GX;      /* gravitation x-direction */
     double GY;      /* gravitation y-direction */
@@ -194,14 +194,14 @@ void Case::simulate() {
 
     auto start=std::chrono::steady_clock::now();
 
+    output_vtk(t); // Writing intial data
+
     while (t < _t_end) {
 
         // Apply BCs
         for (auto &i : _boundaries) {
             i->apply(_field);
         }
-
-        if (t == 0) output_vtk(t);
 
         // Calculate Fluxes
         _field.calculate_fluxes(_grid);
@@ -224,7 +224,7 @@ void Case::simulate() {
 
         // Storing the values in the VTK file
         output_counter += dt;
-        if (output_counter >= _output_freq || t == 0) {
+        if (output_counter >= _output_freq) {
             output_vtk(t);
             output_counter = 0;
             std::cout << "\nWriting Data at t=" << t << "s\n\n";
