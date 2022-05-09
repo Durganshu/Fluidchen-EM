@@ -347,17 +347,17 @@ bool Case::check_err(Fields &field, int imax, int jmax) {
     for (int i = 0; i < imax + 2; i++) {
         for (int j = 0; j < jmax + 2; j++) {
             if (std::isnan(field.u(i, j)) || std::isinf(field.u(i, j))){
-                std::cout << "\nError!!!!!!!!!!\n Value of x-velocity at " << i << "," << j << "is:" << field.u(i,j) <<"\n Execution terminated!\n" ;
+                std::cout << "\nError!!!!!!!!!!\nValue of x-velocity at " << i << "," << j << " is:" << field.u(i,j) <<"\nExecution terminated!\n" ;
                 return true;
             }
 
             if (std::isnan(field.v(i, j)) || std::isinf(field.v(i, j))){
-                std::cout << "\nError!!!!!!!!!!\n Value of y-velocity at " << i << "," << j << "is:" << field.v(i,j) <<"\n Execution terminated!\n" ;
+                std::cout << "\nError!!!!!!!!!!\nValue of y-velocity at " << i << "," << j << " is:" << field.v(i,j) <<"\nExecution terminated!\n" ;
                 return true;
             }
 
             if (std::isnan(field.p(i, j)) || std::isinf(field.v(i, j))){
-                std::cout << "\nError!!!!!!!!!!\n Value of pressure at " << i << "," << j << "is:" << field.p(i,j) <<"\n Execution terminated!\n" ;
+                std::cout << "\nError!!!!!!!!!!\nValue of pressure at " << i << "," << j << " is:" << field.p(i,j) <<"\nExecution terminated!\n" ;
                 return true;
             }
         }
