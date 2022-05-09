@@ -12,6 +12,16 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(gpp9 True)
 
+# flags for the compiler in debug mode.
+SET( CMAKE_CXX_FLAGS_DEBUG " -pg -g" )
+
+# flags for the compiler in release mode
+SET( CMAKE_CXX_FLAGS_RELEASE " -O3 -s -DNDEBUG" )
+
+IF( NOT CMAKE_BUILD_TYPE )
+  SET( CMAKE_BUILD_TYPE RELEASE )
+ENDIF()
+
 
 # Creating the executable of our project and the required dependencies
 # the executable is called fluidchen
