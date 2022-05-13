@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <iterator>
 #include <chrono>
+#include <string>
 
 #ifdef GCC_VERSION_9_OR_HIGHER
 #include <filesystem>
@@ -52,6 +53,25 @@ Case::Case(std::string file_name, int argn, char **args) {
     int itermax;    /* max. number of iterations for pressure per time step */
     double eps;     /* accuracy bound for pressure*/
 
+    
+    double UIN;  /* X- Inlet Velocity*/
+    double VIN; /* Y- Inlet velocity   */
+    
+
+    /* WALL CLUSTERS  */
+    int num_of_walls; /* Number of walls   */
+    double wall_temp_3 = -1;  /* Wall temperature -1 for Adiabatic Wall  */
+    double wall_temp_4 = -1;
+    double wall_temp_5 = -1; 
+
+    /* ENERGY VARIABLES*/
+    double TI;  /* Initial temperature*/
+    bool energy_eq = false;    /* True: Energy equation enabled*/
+    double beta;    /* Thermal Expansion Coefficient  */
+    double alpha;   /* Thermal diffusivity   */
+
+
+
     if (file.is_open()) {
 
         std::string var;
@@ -78,6 +98,21 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "itermax") file >> itermax;
                 if (var == "imax") file >> imax;
                 if (var == "jmax") file >> jmax;
+
+                if (var == "UIN") file >>  UIN;
+                if (var == "VIN") file >> VIN;
+                if (var == "num_of_walls") file >> num_of_walls;
+                if (var == "wall_temp_3") file >> wall_temp_3;
+                if (var == "wall_temp_4") file >> wall_temp_4;
+                if (var == "wall_temp_5") file >> wall_temp_5;
+                if (var == "TI") file >> TI;
+                if (var == "energy_eq") {
+                    std::string temp;
+                    file >> temp;
+                    if(temp == "on") energy_eq = true; }
+                if (var == "beta") file >> beta;
+                if (var == "alpha") file >> alpha;
+                
             }
         }
     }
