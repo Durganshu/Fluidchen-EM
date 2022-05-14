@@ -99,6 +99,7 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "imax") file >> imax;
                 if (var == "jmax") file >> jmax;
 
+                if (var == "geo_file") file >> _geom_name;
                 if (var == "UIN") file >>  UIN;
                 if (var == "VIN") file >> VIN;
                 if (var == "num_of_walls") file >> num_of_walls;
