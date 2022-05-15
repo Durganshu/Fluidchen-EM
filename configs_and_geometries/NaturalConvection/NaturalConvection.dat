@@ -73,7 +73,7 @@ beta         0.00021
 alpha        0.000142857
 
 #--------------------------------------------
-#          wall clusterss
+#          wall clusters
 # num_of_walls:     number of walls
 # wall_temp<num>    wall temperature
 # - enter -1 for adiabatic wall

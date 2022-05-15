@@ -2,8 +2,8 @@
 #include "Enums.hpp"
 
 #include <algorithm>
-#include <iterator>
 #include <chrono>
+#include <iterator>
 #include <string>
 
 #ifdef GCC_VERSION_9_OR_HIGHER
@@ -36,41 +36,39 @@ Case::Case(std::string file_name, int argn, char **args) {
     // Read input parameters
     const int MAX_LINE_LENGTH = 1024;
     std::ifstream file(file_name);
-    double nu;      /* viscosity   */
-    double UI = 0.0;      /* velocity x-direction */
-    double VI = 0.0;      /* velocity y-direction */
-    double PI;      /* pressure */
-    double GX;      /* gravitation x-direction */
-    double GY;      /* gravitation y-direction */
-    double xlength; /* length of the domain x-dir.*/
-    double ylength; /* length of the domain y-dir.*/
-    double dt;      /* time step */
-    int imax;       /* number of cells x-direction*/
-    int jmax;       /* number of cells y-direction*/
-    double gamma;   /* uppwind differencing factor*/
-    double omg;     /* relaxation factor */
-    double tau;     /* safety factor for time step*/
-    int itermax;    /* max. number of iterations for pressure per time step */
-    double eps;     /* accuracy bound for pressure*/
+    double nu;       /* viscosity   */
+    double UI = 0.0; /* velocity x-direction */
+    double VI = 0.0; /* velocity y-direction */
+    double PI;       /* pressure */
+    double GX;       /* gravitation x-direction */
+    double GY;       /* gravitation y-direction */
+    double xlength;  /* length of the domain x-dir.*/
+    double ylength;  /* length of the domain y-dir.*/
+    double dt;       /* time step */
+    int imax;        /* number of cells x-direction*/
+    int jmax;        /* number of cells y-direction*/
+    double gamma;    /* uppwind differencing factor*/
+    double omg;      /* relaxation factor */
+    double tau;      /* safety factor for time step*/
+    int itermax;     /* max. number of iterations for pressure per time step */
+    double eps;      /* accuracy bound for pressure*/
 
-    
-    double UIN;  /* X- Inlet Velocity*/
-    double VIN; /* Y- Inlet velocity   */
-    
+    double UIN; /* X- Inlet Velocity*/
+    double VIN; /* Y- Inlet velocity*/
 
-    /* WALL CLUSTERS  */
+    double POUT = 0;  /* Outflow Pressure (Default Initialized to 0)
+ 
+       /* WALL CLUSTERS  */
     int num_of_walls; /* Number of walls   */
-    double wall_temp_3 = -1;  /* Wall temperature -1 for Adiabatic Wall  */
+    double wall_temp_3 = -1;
     double wall_temp_4 = -1;
-    double wall_temp_5 = -1; 
+    double wall_temp_5 = -1; /* Wall temperature -1 for Adiabatic Wall  */
 
     /* ENERGY VARIABLES*/
-    double TI;  /* Initial temperature*/
-    bool energy_eq = false;    /* True: Energy equation enabled*/
-    double beta;    /* Thermal Expansion Coefficient  */
-    double alpha;   /* Thermal diffusivity   */
-
-
+    double TI;              /* Initial temperature*/
+    bool energy_eq = false; /* Set to True: Energy equation enabled*/
+    double beta;            /* Thermal Expansion Coefficient  */
+    double alpha;           /* Thermal diffusivity   */
 
     if (file.is_open()) {
 
@@ -100,8 +98,9 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "jmax") file >> jmax;
 
                 if (var == "geo_file") file >> _geom_name;
-                if (var == "UIN") file >>  UIN;
+                if (var == "UIN") file >> UIN;
                 if (var == "VIN") file >> VIN;
+                if (var == "POUT") file >> POUT;
                 if (var == "num_of_walls") file >> num_of_walls;
                 if (var == "wall_temp_3") file >> wall_temp_3;
                 if (var == "wall_temp_4") file >> wall_temp_4;
@@ -110,10 +109,10 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "energy_eq") {
                     std::string temp;
                     file >> temp;
-                    if(temp == "on") energy_eq = true; }
+                    if (temp == "on") energy_eq = true;
+                }
                 if (var == "beta") file >> beta;
                 if (var == "alpha") file >> alpha;
-                
             }
         }
     }
@@ -151,6 +150,21 @@ Case::Case(std::string file_name, int argn, char **args) {
     }
     if (not _grid.fixed_wall_cells().empty()) {
         _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
+    }
+    if (not _grid.cold_fixed_wall_cells().empty()) {
+        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.cold_fixed_wall_cells(), wall_temp_3));
+    }
+    if (not _grid.hot_fixed_wall_cells().empty()) {
+        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.hot_fixed_wall_cells(), wall_temp_4));
+    }
+    if (not _grid.adiabatic_fixed_wall_cells().empty()) {
+        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.adiabatic_fixed_wall_cells(), wall_temp_5));
+    }
+    if (not _grid.inflow_cells().empty()) {
+        _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.fixed_wall_cells(), UIN, VIN));
+    }
+    if (not _grid.outflow_cells().empty()) {
+        _boundaries.push_back(std::make_unique<OutflowBoundary>(_grid.fixed_wall_cells(),POUT));
     }
 }
 
@@ -226,9 +240,9 @@ void Case::simulate() {
     double dt = _field.dt();
     int timestep = 0;
     double output_counter = 0.0;
-    uint8_t ctr=0;
+    uint8_t ctr = 0;
 
-    auto start=std::chrono::steady_clock::now();
+    auto start = std::chrono::steady_clock::now();
 
     output_vtk(t); // Writing intial data
 
@@ -267,11 +281,11 @@ void Case::simulate() {
         }
 
         // Printing info and checking for errors once in 5 runs of the loop
-        if(ctr==5){
-            ctr=0;
+        if (ctr == 5) {
+            ctr = 0;
             std::cout << "Simulation Time=" << t << "s         Time Step=" << dt << "s\n";
-            
-            if (check_err( _field, _grid.imax(), _grid.jmax())) exit(0);  //Check for unphysical behaviour
+
+            if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0); // Check for unphysical behaviour
         }
         ctr++;
 
@@ -287,7 +301,7 @@ void Case::simulate() {
 
     std::cout << "\nSimulation Complete!\n";
     auto end = std::chrono::steady_clock::now();
-    cout<<"Software Runtime:"<<std::chrono::duration_cast<std::chrono::seconds>(end-start).count()<<"s\n\n";
+    cout << "Software Runtime:" << std::chrono::duration_cast<std::chrono::seconds>(end - start).count() << "s\n\n";
 }
 
 void Case::output_vtk(int timestep, int my_rank) {
@@ -382,18 +396,21 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
 bool Case::check_err(Fields &field, int imax, int jmax) {
     for (int i = 0; i < imax + 2; i++) {
         for (int j = 0; j < jmax + 2; j++) {
-            if (std::isnan(field.u(i, j)) || std::isinf(field.u(i, j))){
-                std::cout << "\nError!!!!!!!!!!\nValue of x-velocity at " << i << "," << j << " is:" << field.u(i,j) <<"\nExecution terminated!\n" ;
+            if (std::isnan(field.u(i, j)) || std::isinf(field.u(i, j))) {
+                std::cout << "\nError!!!!!!!!!!\nValue of x-velocity at " << i << "," << j << " is:" << field.u(i, j)
+                          << "\nExecution terminated!\n";
                 return true;
             }
 
-            if (std::isnan(field.v(i, j)) || std::isinf(field.v(i, j))){
-                std::cout << "\nError!!!!!!!!!!\nValue of y-velocity at " << i << "," << j << " is:" << field.v(i,j) <<"\nExecution terminated!\n" ;
+            if (std::isnan(field.v(i, j)) || std::isinf(field.v(i, j))) {
+                std::cout << "\nError!!!!!!!!!!\nValue of y-velocity at " << i << "," << j << " is:" << field.v(i, j)
+                          << "\nExecution terminated!\n";
                 return true;
             }
 
-            if (std::isnan(field.p(i, j)) || std::isinf(field.v(i, j))){
-                std::cout << "\nError!!!!!!!!!!\nValue of pressure at " << i << "," << j << " is:" << field.p(i,j) <<"\nExecution terminated!\n" ;
+            if (std::isnan(field.p(i, j)) || std::isinf(field.v(i, j))) {
+                std::cout << "\nError!!!!!!!!!!\nValue of pressure at " << i << "," << j << " is:" << field.p(i, j)
+                          << "\nExecution terminated!\n";
                 return true;
             }
         }

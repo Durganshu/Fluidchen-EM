@@ -61,3 +61,10 @@ void MovingWallBoundary::apply(Fields &field) {
         field.g(i, j - 1) = field.v(i, j - 1);
     }
 }
+
+InflowBoundary::InflowBoundary(std::vector<Cell *> cells, double inflow_x_velocity, double inflow_y_velocity)
+    : _cells(cells),_x_velocity(inflow_x_velocity),_y_velocity(inflow_y_velocity) {}
+void InflowBoundary::apply(Fields &field) {}
+OutflowBoundary::OutflowBoundary(std::vector<Cell *> cells, double outflow_pressure)
+    : _cells(cells),_outflow_pressure(outflow_pressure) {}
+void InflowBoundary::apply(Fields &field) {}
