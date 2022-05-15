@@ -67,4 +67,4 @@ InflowBoundary::InflowBoundary(std::vector<Cell *> cells, double inflow_x_veloci
 void InflowBoundary::apply(Fields &field) {}
 OutflowBoundary::OutflowBoundary(std::vector<Cell *> cells, double outflow_pressure)
     : _cells(cells),_outflow_pressure(outflow_pressure) {}
-void InflowBoundary::apply(Fields &field) {}
+void OutflowBoundary::apply(Fields &field) {}
