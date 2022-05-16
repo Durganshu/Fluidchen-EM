@@ -143,6 +143,10 @@ Case::Case(std::string file_name, int argn, char **args) {
     _max_iter = itermax;
     _tolerance = eps;
 
+    std::map<int,double> temp1= {{3,wall_temp_3}};
+    std::map<int,double> temp2= {{4,wall_temp_4}};
+    std::map<int,double> temp3 ={{5,wall_temp_5}};
+
     // Construct boundaries
     if (not _grid.moving_wall_cells().empty()) {
         _boundaries.push_back(
@@ -152,13 +156,13 @@ Case::Case(std::string file_name, int argn, char **args) {
         _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
     }
     if (not _grid.cold_fixed_wall_cells().empty()) {
-        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.cold_fixed_wall_cells(), std::map<int,double>(3,wall_temp_3));
+        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.cold_fixed_wall_cells(), temp1));
     }
     if (not _grid.hot_fixed_wall_cells().empty()) {
-        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.hot_fixed_wall_cells(), std::map<int,double>(4,wall_temp_4));
+        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.hot_fixed_wall_cells(), temp2));
     }
     if (not _grid.adiabatic_fixed_wall_cells().empty()) {
-        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.adiabatic_fixed_wall_cells(),std::map<int,double>(5,wall_temp_5));
+        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.adiabatic_fixed_wall_cells(),temp3));
     }
     if (not _grid.inflow_cells().empty()) {
         _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.fixed_wall_cells(), UIN, VIN));
@@ -246,7 +250,7 @@ void Case::simulate() {
 
     output_vtk(t); // Writing intial data
 
-    while (t < _t_end) {
+    while (t < dt) {
 
         // Apply BCs
         for (auto &i : _boundaries) {
