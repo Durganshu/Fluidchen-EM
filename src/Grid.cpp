@@ -57,7 +57,7 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
             else if (geometry_data.at(i_geom).at(j_geom) == 1) {
                 _cells(i, j) = Cell(i, j, cell_type::INFLOW, geometry_data.at(i_geom).at(j_geom));
                 _inflow_cells.push_back(&_cells(i, j));
-                
+                //std::cout << "i = " << i<<", "<<"j = "<<j<<"\n";
             } 
             else if (geometry_data.at(i_geom).at(j_geom) == 2) {
                 _cells(i, j) = Cell(i, j, cell_type::OUTFLOW, geometry_data.at(i_geom).at(j_geom));

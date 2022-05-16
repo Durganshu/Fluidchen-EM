@@ -13,7 +13,13 @@ void FixedWallBoundary::apply(Fields &field) {
     for (auto &elem : _cells) {
         int i = elem->i();
         int j = elem->j();
-
+        
+        if (check_neighbours(elem) > 2){
+            std::cout<<"Cell at i = "<< i<<", j = "<<j<<
+                " has more than two cells as neighbours. Kindly fix the geometry file. Exiting!"<< "\n";
+            exit(0);
+        }
+        //std::cout << "i = " << i<<", "<<"j = "<<j<<"\n";
         // TOP implies that the top border of the cell exists i.e.
         // these cells should be in the "bottommost row"
         if (elem->is_border(border_position::TOP)) {
@@ -42,6 +48,23 @@ void FixedWallBoundary::apply(Fields &field) {
         }
     }
 }
+int FixedWallBoundary::check_neighbours(Cell * cell){
+    int number_of_fluid_neighbours = 0;
+    if (cell->is_border(border_position::TOP) && 
+        cell->neighbour(border_position::TOP)->type() == cell_type::FLUID)
+        number_of_fluid_neighbours++;
+    if (cell->is_border(border_position::BOTTOM) && 
+        cell->neighbour(border_position::BOTTOM)->type() == cell_type::FLUID)
+        number_of_fluid_neighbours++;
+    if (cell->is_border(border_position::LEFT) && 
+        cell->neighbour(border_position::LEFT)->type() == cell_type::FLUID)
+        number_of_fluid_neighbours++;
+    if (cell->is_border(border_position::RIGHT) && 
+        cell->neighbour(border_position::RIGHT)->type() == cell_type::FLUID)
+        number_of_fluid_neighbours++;
+    
+    return number_of_fluid_neighbours;
+}
 
 MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, double wall_velocity) : _cells(cells) {
     _wall_velocity.insert(std::pair(LidDrivenCavity::moving_wall_id, wall_velocity));
@@ -64,7 +87,30 @@ void MovingWallBoundary::apply(Fields &field) {
 
 InflowBoundary::InflowBoundary(std::vector<Cell *> cells, double inflow_x_velocity, double inflow_y_velocity)
     : _cells(cells),_x_velocity(inflow_x_velocity),_y_velocity(inflow_y_velocity) {}
-void InflowBoundary::apply(Fields &field) {}
+
+void InflowBoundary::apply(Fields &field) {
+    for (auto &elem : _cells) {
+        int i = elem->i();
+        int j = elem->j();
+        //std::cout << "i = " << i<<", "<<"j = "<<j<<"\n";
+        field.u(i, j) = _x_velocity;
+        field.v(i, j) = _y_velocity;
+        field.p(i, j) = field.p(i + 1, j);
+        //field.g(i, j - 1) = field.v(i, j - 1);
+    }
+}
+
 OutflowBoundary::OutflowBoundary(std::vector<Cell *> cells, double outflow_pressure)
     : _cells(cells),_outflow_pressure(outflow_pressure) {}
-void OutflowBoundary::apply(Fields &field) {}
+
+void OutflowBoundary::apply(Fields &field) {
+    for (auto &elem : _cells) {
+        int i = elem->i();
+        int j = elem->j();
+        // std::cout << "i = " << i<<", "<<"j = "<<j<<"\n";
+        field.u(i - 1, j) = field.u(i, j);
+        field.v(i, j) = field.v(i - 1, j);
+        field.p(i, j) = _outflow_pressure;
+        //field.g(i, j - 1) = field.v(i, j - 1);
+    }
+}

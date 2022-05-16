@@ -30,6 +30,7 @@ class FixedWallBoundary : public Boundary {
   public:
     FixedWallBoundary(std::vector<Cell *> cells);
     FixedWallBoundary(std::vector<Cell *> cells, std::map<int, double> wall_temperature);
+    int check_neighbours(Cell * cell);
     virtual ~FixedWallBoundary() = default;
     virtual void apply(Fields &field);
 
