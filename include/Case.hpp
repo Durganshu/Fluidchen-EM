@@ -38,6 +38,12 @@ class Case {
      */
     void simulate();
 
+    /**
+     * @brief Prints introductory message
+     */
+    void printIntro();
+    void writeIntro(std::ofstream &);
+
   private:
     /// Plain case name without paths
     std::string _case_name;
