@@ -238,7 +238,7 @@ void Case::simulate() {
 
     double t = 0.0;
     double dt = _field.dt();
-    //int timestep = 0;
+    int timestep = 0;
     double output_counter = 0.0;
     uint8_t ctr = 0;
 
@@ -304,7 +304,7 @@ void Case::simulate() {
     cout << "Software Runtime:" << std::chrono::duration_cast<std::chrono::seconds>(end - start).count() << "s\n\n";
 }
 
-void Case::output_vtk(double timestep, int my_rank) {
+void Case::output_vtk(int timestep, int my_rank) {
     // Create a new structured grid
     vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();
 
