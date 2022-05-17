@@ -47,7 +47,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     double dt;       /* time step */
     int imax;        /* number of cells x-direction*/
     int jmax;        /* number of cells y-direction*/
-    double gamma;    /* uppwind differencing factor*/
+    double gamma;    /* upwind differencing factor*/
     double omg;      /* relaxation factor */
     double tau;      /* safety factor for time step*/
     int itermax;     /* max. number of iterations for pressure per time step */
@@ -56,7 +56,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     double UIN; /* X- Inlet Velocity*/
     double VIN; /* Y- Inlet velocity*/
 
-    double POUT = 0;  /* Outflow Pressure (Default Initialized to 0)
+    double dP ;  /* Pressure Drop across the channel */
  
        /* WALL CLUSTERS  */
     int num_of_walls; /* Number of walls   */
@@ -100,7 +100,7 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "geo_file") file >> _geom_name;
                 if (var == "UIN") file >> UIN;
                 if (var == "VIN") file >> VIN;
-                if (var == "POUT") file >> POUT;
+                if (var == "dP") file >> dP;
                 if (var == "num_of_walls") file >> num_of_walls;
                 if (var == "wall_temp_3") file >> wall_temp_3;
                 if (var == "wall_temp_4") file >> wall_temp_4;
@@ -165,10 +165,10 @@ Case::Case(std::string file_name, int argn, char **args) {
         _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.adiabatic_fixed_wall_cells(),temp3));
     }
     if (not _grid.inflow_cells().empty()) {
-        _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.inflow_cells(), UIN, VIN));
+        _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.inflow_cells(), UIN, VIN, dP));
     }
     if (not _grid.outflow_cells().empty()) {
-        _boundaries.push_back(std::make_unique<OutflowBoundary>(_grid.outflow_cells(),POUT));
+        _boundaries.push_back(std::make_unique<OutflowBoundary>(_grid.outflow_cells()));
     }
 }
 
@@ -258,7 +258,7 @@ void Case::simulate() {
 
     output_vtk(timestep++); // Writing intial data
 
-    while (t < 4) {
+    while (t < _t_end) {
 
         // Apply BCs
         for (auto &i : _boundaries) {

@@ -90,8 +90,8 @@ void MovingWallBoundary::apply(Fields &field) {
     }
 }
 
-InflowBoundary::InflowBoundary(std::vector<Cell *> cells, double inflow_x_velocity, double inflow_y_velocity)
-    : _cells(cells),_x_velocity(inflow_x_velocity),_y_velocity(inflow_y_velocity) {}
+InflowBoundary::InflowBoundary(std::vector<Cell *> cells, double inflow_x_velocity, double inflow_y_velocity, double inflow_pressure)
+    : _cells(cells),_x_velocity(inflow_x_velocity),_y_velocity(inflow_y_velocity), _pressure(inflow_pressure) {}
 
 void InflowBoundary::apply(Fields &field) {
     for (auto &elem : _cells) {
@@ -100,13 +100,15 @@ void InflowBoundary::apply(Fields &field) {
         
         field.u(i, j) = _x_velocity;
         field.v(i, j) = _y_velocity;
-        field.p(i, j) = field.p(elem->neighbour(border_position::RIGHT)->i(), j);
+        field.p(i, j) = _pressure;
+        field.f(i, j) = field.u(i, j);
+        field.g(i, j) = field.v(i, j);
         
     }
 }
 
-OutflowBoundary::OutflowBoundary(std::vector<Cell *> cells, double outflow_pressure)
-    : _cells(cells),_outflow_pressure(outflow_pressure) {}
+OutflowBoundary::OutflowBoundary(std::vector<Cell *> cells)
+    : _cells(cells) {}
 
 void OutflowBoundary::apply(Fields &field) {
     for (auto &elem : _cells) {
@@ -115,7 +117,10 @@ void OutflowBoundary::apply(Fields &field) {
         
         field.u(elem->neighbour(border_position::LEFT)->i(), j) = field.u(i, j);
         field.v(i, j) = field.v(elem->neighbour(border_position::LEFT)->i(), j);
-        field.p(i, j) = _outflow_pressure;
+        field.p(i, j) = 0; 
+        field.f(i, j) = field.u(i, j);
+        field.g(i, j) = field.v(i, j);
+       
     
     }
 }
