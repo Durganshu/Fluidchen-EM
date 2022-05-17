@@ -8,9 +8,10 @@ void printIntro();
 int main(int argn, char **args) {
 
     if (argn > 1) {
-        printIntro();
+        //printIntro();
         std::string file_name{args[1]};
         Case problem(file_name, argn, args);
+        problem.printIntro();
         problem.simulate();
 
     } else {
