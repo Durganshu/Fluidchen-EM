@@ -250,7 +250,7 @@ void Case::simulate() {
 
     output_vtk(timestep++); // Writing intial data
 
-    while (t < _t_end) {
+    while (t < dt) {
 
         // Apply BCs
         for (auto &i : _boundaries) {

@@ -15,36 +15,39 @@ void FixedWallBoundary::apply(Fields &field) {
         int j = elem->j();
         
         if (check_neighbours(elem) > 2){
-            std::cout<<"Cell at i = "<< i<<", j = "<<j<<
-                " has more than two cells as neighbours. Kindly fix the geometry file. Exiting!"<< "\n";
+            std::cout<<"Boundary cell at i = "<< i<<", j = "<<j<<
+                " has more than two fluid cells as neighbours. Please fix the geometry file. Exiting!"<< "\n";
             exit(0);
         }
         //std::cout << "i = " << i<<", "<<"j = "<<j<<"\n";
         // TOP implies that the top border of the cell exists i.e.
         // these cells should be in the "bottommost row"
         if (elem->is_border(border_position::TOP)) {
-            field.u(i, j) = -field.u(i, j + 1);
+            // std::cout << "i = " << i<<", "<<"j = "<<elem->neighbour(border_position::TOP)->j()<<"\n";
+            field.u(i, j) = -field.u(i, elem->neighbour(border_position::TOP)->j());
             field.v(i, j) = 0;
-            field.p(i, j) = field.p(i, j + 1);
+            field.p(i, j) = field.p(i, elem->neighbour(border_position::TOP)->j());
             field.g(i, j) = field.v(i, j);
         }
 
         // RIGHT implies that the right border of the cell exists i.e.
         // these cells should be in the "leftmost column"
         else if (elem->is_border(border_position::RIGHT)) {
+            //std::cout << "i = " << i<<", "<<"j = "<<j<<"\n";
             field.u(i, j) = 0;
-            field.v(i, j) = -field.v(i + 1, j);
-            field.p(i, j) = field.p(i + 1, j);
+            field.v(i, j) = -field.v(elem->neighbour(border_position::RIGHT)->i(), j);
+            field.p(i, j) = field.p(elem->neighbour(border_position::RIGHT)->i(), j);
             field.f(i, j) = field.u(i, j);
         }
 
         // LEFT implies that the left border of the cell exists i.e.
         // these cells should be in the "rightmost column"
         else if (elem->is_border(border_position::LEFT)) {
-            field.u(i - 1, j) = 0;
-            field.v(i, j) = -field.v(i - 1, j);
-            field.p(i, j) = field.p(i - 1, j);
-            field.f(i - 1, j) = field.u(i - 1, j);
+            //std::cout << "i = " << elem->neighbour(border_position::LEFT)->i()<<", "<<"j = "<<j<<"\n";
+            field.u(elem->neighbour(border_position::LEFT)->i(), j) = 0;
+            field.v(i, j) = -field.v(elem->neighbour(border_position::LEFT)->i(), j);
+            field.p(i, j) = field.p(elem->neighbour(border_position::LEFT)->i(), j);
+            field.f(elem->neighbour(border_position::LEFT)->i(), j) = field.u(elem->neighbour(border_position::LEFT)->i(), j);
         }
     }
 }
@@ -78,10 +81,12 @@ void MovingWallBoundary::apply(Fields &field) {
     for (auto &elem : _cells) {
         int i = elem->i();
         int j = elem->j();
-        field.u(i, j) = 2 * (_wall_velocity.begin()->second) - field.u(i, j - 1);
-        field.v(i, j - 1) = 0;
-        field.p(i, j) = field.p(i, j - 1);
-        field.g(i, j - 1) = field.v(i, j - 1);
+        //std::cout << "i = " << i<<", "<<"j = "<<j<<"\n";
+        //std::cout << "i = " << i<<", "<<"j = "<<elem->neighbour(border_position::BOTTOM)->j()<<"\n";
+        field.u(i, j) = 2 * (_wall_velocity.begin()->second) - field.u(i, elem->neighbour(border_position::BOTTOM)->j());
+        field.v(i, elem->neighbour(border_position::BOTTOM)->j()) = 0;
+        field.p(i, j) = field.p(i, elem->neighbour(border_position::BOTTOM)->j());
+        //field.g(i, j - 1) = field.v(i, elem->neighbour(border_position::BOTTOM)->j());
     }
 }
 
@@ -92,11 +97,11 @@ void InflowBoundary::apply(Fields &field) {
     for (auto &elem : _cells) {
         int i = elem->i();
         int j = elem->j();
-        //std::cout << "i = " << i<<", "<<"j = "<<j<<"\n";
+        
         field.u(i, j) = _x_velocity;
         field.v(i, j) = _y_velocity;
-        field.p(i, j) = field.p(i + 1, j);
-        //field.g(i, j - 1) = field.v(i, j - 1);
+        field.p(i, j) = field.p(elem->neighbour(border_position::RIGHT)->i(), j);
+        
     }
 }
 
@@ -107,10 +112,10 @@ void OutflowBoundary::apply(Fields &field) {
     for (auto &elem : _cells) {
         int i = elem->i();
         int j = elem->j();
-        // std::cout << "i = " << i<<", "<<"j = "<<j<<"\n";
-        field.u(i - 1, j) = field.u(i, j);
-        field.v(i, j) = field.v(i - 1, j);
+        
+        field.u(elem->neighbour(border_position::LEFT)->i(), j) = field.u(i, j);
+        field.v(i, j) = field.v(elem->neighbour(border_position::LEFT)->i(), j);
         field.p(i, j) = _outflow_pressure;
-        //field.g(i, j - 1) = field.v(i, j - 1);
+    
     }
 }
