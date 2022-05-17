@@ -248,9 +248,9 @@ void Case::simulate() {
 
     auto start = std::chrono::steady_clock::now();
 
-    output_vtk(t); // Writing intial data
+    output_vtk(timestep++); // Writing intial data
 
-    while (t < dt) {
+    while (t < _t_end) {
 
         // Apply BCs
         for (auto &i : _boundaries) {
@@ -279,7 +279,7 @@ void Case::simulate() {
         // Storing the values in the VTK file
         output_counter += dt;
         if (output_counter >= _output_freq) {
-            output_vtk(t);
+            output_vtk(timestep++);
             output_counter = 0;
             std::cout << "\nWriting Data at t=" << t << "s\n\n";
         }
@@ -301,7 +301,7 @@ void Case::simulate() {
     }
 
     // Storing values at the last time step
-    output_vtk(t);
+    output_vtk(timestep);
 
     std::cout << "\nSimulation Complete!\n";
     auto end = std::chrono::steady_clock::now();
@@ -381,7 +381,7 @@ void Case::output_vtk(int timestep, int my_rank) {
 
     // Create Filename
     std::string outputname =
-        _dict_name + '/' + _case_name + "_" + std::to_string(my_rank) + "." + std::to_string(timestep) + ".vtk";
+       _dict_name + '/' + _case_name + "_" + std::to_string(my_rank) + "." + std::to_string(timestep) + ".vtk";
 
     writer->SetFileName(outputname.c_str());
     writer->SetInputData(structuredGrid);
