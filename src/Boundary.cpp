@@ -19,16 +19,27 @@ void FixedWallBoundary::apply(Fields &field) {
                 " has more than two fluid cells as neighbours. Please fix the geometry file. Exiting!"<< "\n";
             exit(0);
         }
-        //std::cout << "i = " << i<<", "<<"j = "<<j<<"\n";
+        
         // TOP implies that the top border of the cell exists i.e.
         // these cells should be in the "bottommost row"
         if (elem->is_border(border_position::TOP)) {
-            // std::cout << "i = " << i<<", "<<"j = "<<elem->neighbour(border_position::TOP)->j()<<"\n";
+            //std::cout << "i = " << i<<", "<<"j = "<<j<<"\n";
+             //std::cout << "i = " << i<<", "<<"j = "<<elem->neighbour(border_position::TOP)->j()<<"\n";
             field.u(i, j) = -field.u(i, elem->neighbour(border_position::TOP)->j());
             field.v(i, j) = 0;
             field.p(i, j) = field.p(i, elem->neighbour(border_position::TOP)->j());
             field.g(i, j) = field.v(i, j);
         }
+
+        // BOTTOM implies that the bottom border of the cell exists i.e.
+        // these cells should be in the "topmost row"
+       if (elem->is_border(border_position::BOTTOM)) {
+            //std::cout << "i = " << i<<", "<<"j = "<<elem->neighbour(border_position::BOTTOM)->j()<<"\n";
+            field.u(i, j) = -field.u(i, elem->neighbour(border_position::BOTTOM)->j());
+            field.v(i, elem->neighbour(border_position::BOTTOM)->j()) = 0;
+            field.p(i, j) = field.p(i, elem->neighbour(border_position::BOTTOM)->j());
+            field.g(i, elem->neighbour(border_position::BOTTOM)->j()) = field.v(i, elem->neighbour(border_position::BOTTOM)->j());
+        } 
 
         // RIGHT implies that the right border of the cell exists i.e.
         // these cells should be in the "leftmost column"
@@ -99,10 +110,10 @@ void InflowBoundary::apply(Fields &field) {
         int j = elem->j();
         
         field.u(i, j) = _x_velocity;
-        field.v(i, j) = _y_velocity;
+        field.v(i, j) = 2*_y_velocity-field.v(elem->neighbour(border_position::RIGHT)->i(),j);
         field.p(i, j) = _pressure;
         field.f(i, j) = field.u(i, j);
-        field.g(i, j) = field.v(i, j);
+        //field.g(i, j) = field.v(i, j);
         
     }
 }
@@ -115,11 +126,11 @@ void OutflowBoundary::apply(Fields &field) {
         int i = elem->i();
         int j = elem->j();
         
-        field.u(elem->neighbour(border_position::LEFT)->i(), j) = field.u(i, j);
+        field.u(elem->neighbour(border_position::LEFT)->i(), j)=field.u(i, j) ; 
         field.v(i, j) = field.v(elem->neighbour(border_position::LEFT)->i(), j);
-        field.p(i, j) = 0; 
-        field.f(i, j) = field.u(i, j);
-        field.g(i, j) = field.v(i, j);
+        field.p(i, j) = 0.0; 
+        field.f(elem->neighbour(border_position::LEFT)->i(), j) = field.u(elem->neighbour(border_position::LEFT)->i(), j);
+        //field.g(i, j) = field.v(i, j);
        
     
     }
