@@ -344,6 +344,12 @@ void Case::output_vtk(int timestep, int my_rank) {
         x = _grid.domain().imin * dx;
         { x += dx; }
         for (int row = 0; row < _grid.domain().size_x + 1; row++) {
+            // if (_grid.cell(row, col).type() == cell_type::FLUID){
+            //     points->InsertNextPoint(x, y, z);
+            // }
+            // else{
+            //     continue;
+            // }
             points->InsertNextPoint(x, y, z);
             x += dx;
         }
@@ -365,6 +371,14 @@ void Case::output_vtk(int timestep, int my_rank) {
     Velocity->SetNumberOfComponents(3);
 
     // Print pressure and temperature from bottom to top
+
+    // for (const auto &elem : _grid.fluid_cells()) {
+    //     int i = elem->i();
+    //     int j = elem->j();
+    //     double pressure = _field.p(i, j);
+    //     Pressure->InsertNextTuple(&pressure);
+    
+    // }
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {
         for (int i = 1; i < _grid.domain().size_x + 1; i++) {
             double pressure = _field.p(i, j);
@@ -377,6 +391,13 @@ void Case::output_vtk(int timestep, int my_rank) {
     vel[2] = 0; // Set z component to 0
 
     // Print Velocity from bottom to top
+    // for (const auto &elem : _grid.fluid_cells()) {
+    //     int i = elem->i();
+    //     int j = elem->j();
+    //     vel[0] = (_field.u(i, j) + _field.u(i, j + 1)) * 0.5;
+    //     vel[1] = (_field.v(i, j) + _field.v(i + 1, j)) * 0.5;
+    //     Velocity->InsertNextTuple(vel);
+    // }
     for (int j = 0; j < _grid.domain().size_y + 1; j++) {
         for (int i = 0; i < _grid.domain().size_x + 1; i++) {
             vel[0] = (_field.u(i, j) + _field.u(i, j + 1)) * 0.5;
@@ -470,7 +491,7 @@ void Case::writeIntro(std::ofstream &output_file) {
 }
 
 void Case::printIntro() {
-    std::cout << "\n\n\n\nWelcome to FluidChen Flow Solver!\nThis project wqas developed as a part of Computational "
+    std::cout << "\n\n\n\nWelcome to FluidChen Flow Solver!\nThis project was developed as a part of Computational "
                  "Fluid Dynamics Lab course.\n\n\n\n";
     std::cout << "                                                     ..::::::..\n"
               << "                                                 .^!7?7^:::.:^^:\n"
