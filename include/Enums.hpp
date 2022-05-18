@@ -28,10 +28,10 @@ enum class cell_type {
     FLUID,
     INFLOW,
     OUTFLOW,
-    FIXED_WALL,
     COLD_FIXED_WALL,
     HOT_FIXED_WALL,
     ADIABATIC_FIXED_WALL,
+    FIXED_WALL,
     MOVING_WALL,
     DEFAULT
 };

@@ -47,7 +47,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     double dt;       /* time step */
     int imax;        /* number of cells x-direction*/
     int jmax;        /* number of cells y-direction*/
-    double gamma;    /* uppwind differencing factor*/
+    double gamma;    /* upwind differencing factor*/
     double omg;      /* relaxation factor */
     double tau;      /* safety factor for time step*/
     int itermax;     /* max. number of iterations for pressure per time step */
@@ -56,7 +56,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     double UIN; /* X- Inlet Velocity*/
     double VIN; /* Y- Inlet velocity*/
 
-    double POUT = 0;  /* Outflow Pressure (Default Initialized to 0)
+    double dP ;  /* Pressure Drop across the channel */
  
        /* WALL CLUSTERS  */
     int num_of_walls; /* Number of walls   */
@@ -100,7 +100,7 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "geo_file") file >> _geom_name;
                 if (var == "UIN") file >> UIN;
                 if (var == "VIN") file >> VIN;
-                if (var == "POUT") file >> POUT;
+                if (var == "dP") file >> dP;
                 if (var == "num_of_walls") file >> num_of_walls;
                 if (var == "wall_temp_3") file >> wall_temp_3;
                 if (var == "wall_temp_4") file >> wall_temp_4;
@@ -143,6 +143,10 @@ Case::Case(std::string file_name, int argn, char **args) {
     _max_iter = itermax;
     _tolerance = eps;
 
+    std::map<int,double> temp1= {{3,wall_temp_3}};
+    std::map<int,double> temp2= {{4,wall_temp_4}};
+    std::map<int,double> temp3 ={{5,wall_temp_5}};
+
     // Construct boundaries
     if (not _grid.moving_wall_cells().empty()) {
         _boundaries.push_back(
@@ -152,19 +156,19 @@ Case::Case(std::string file_name, int argn, char **args) {
         _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.fixed_wall_cells()));
     }
     if (not _grid.cold_fixed_wall_cells().empty()) {
-        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.cold_fixed_wall_cells(), wall_temp_3));
+        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.cold_fixed_wall_cells(), temp1));
     }
     if (not _grid.hot_fixed_wall_cells().empty()) {
-        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.hot_fixed_wall_cells(), wall_temp_4));
+        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.hot_fixed_wall_cells(), temp2));
     }
     if (not _grid.adiabatic_fixed_wall_cells().empty()) {
-        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.adiabatic_fixed_wall_cells(), wall_temp_5));
+        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.adiabatic_fixed_wall_cells(),temp3));
     }
     if (not _grid.inflow_cells().empty()) {
-        _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.fixed_wall_cells(), UIN, VIN));
+        _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.inflow_cells(), UIN, VIN, dP));
     }
     if (not _grid.outflow_cells().empty()) {
-        _boundaries.push_back(std::make_unique<OutflowBoundary>(_grid.fixed_wall_cells(),POUT));
+        _boundaries.push_back(std::make_unique<OutflowBoundary>(_grid.outflow_cells()));
     }
 }
 
@@ -236,15 +240,23 @@ void Case::set_file_names(std::string file_name) {
  */
 void Case::simulate() {
 
+    std::ofstream output_file;
+    std::string outputname =
+       _dict_name + '/' + _case_name + ".log";
+    output_file.open(outputname);
+
+    //output_file << "Welcome to Fluidchen!!!\n";
+    writeIntro(output_file);
+
     double t = 0.0;
     double dt = _field.dt();
     int timestep = 0;
     double output_counter = 0.0;
-    uint8_t ctr = 0;
+    uint8_t counter = 0; //Counter for printing values on the console
 
     auto start = std::chrono::steady_clock::now();
 
-    output_vtk(t); // Writing intial data
+    output_vtk(timestep++); // Writing intial data
 
     while (t < _t_end) {
 
@@ -267,7 +279,10 @@ void Case::simulate() {
             it++;
         }
 
-        if (it >= _max_iter) std::cout << "\nSOR Max Iteration Reached!\nSOR Residue=" << res << "\n\n";
+        if (it >= _max_iter){
+            output_file << "\nSOR Max Iteration Reached!\nSOR Residue=" << res << "\n\n";
+            std::cout << "\nSOR Max Iteration Reached!\nSOR Residue=" << res << "\n\n";
+        }
 
         // Calculate Velocities U and V
         _field.calculate_velocities(_grid);
@@ -275,19 +290,22 @@ void Case::simulate() {
         // Storing the values in the VTK file
         output_counter += dt;
         if (output_counter >= _output_freq) {
-            output_vtk(t);
+            output_vtk(timestep++);
             output_counter = 0;
             std::cout << "\nWriting Data at t=" << t << "s\n\n";
         }
 
+        // Writing simulation data in a log file
+        output_file << "Simulation Time=" << t << "s         Time Step=" << dt << "s\n";
+        
         // Printing info and checking for errors once in 5 runs of the loop
-        if (ctr == 5) {
-            ctr = 0;
+        if (counter == 10) {
+            counter = 0;
             std::cout << "Simulation Time=" << t << "s         Time Step=" << dt << "s\n";
 
             if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0); // Check for unphysical behaviour
         }
-        ctr++;
+        counter++;
 
         // Updating current time
         t = t + dt;
@@ -297,11 +315,12 @@ void Case::simulate() {
     }
 
     // Storing values at the last time step
-    output_vtk(t);
+    output_vtk(timestep);
 
     std::cout << "\nSimulation Complete!\n";
     auto end = std::chrono::steady_clock::now();
     cout << "Software Runtime:" << std::chrono::duration_cast<std::chrono::seconds>(end - start).count() << "s\n\n";
+    output_file.close();
 }
 
 void Case::output_vtk(int timestep, int my_rank) {
@@ -377,7 +396,7 @@ void Case::output_vtk(int timestep, int my_rank) {
 
     // Create Filename
     std::string outputname =
-        _dict_name + '/' + _case_name + "_" + std::to_string(my_rank) + "." + std::to_string(timestep) + ".vtk";
+       _dict_name + '/' + _case_name + "_" + std::to_string(my_rank) + "." + std::to_string(timestep) + ".vtk";
 
     writer->SetFileName(outputname.c_str());
     writer->SetInputData(structuredGrid);
@@ -416,4 +435,68 @@ bool Case::check_err(Fields &field, int imax, int jmax) {
         }
     }
     return false;
+}
+
+void Case::writeIntro(std::ofstream &output_file) {
+    output_file << "Welcome to FluidChen Flow Solver!\nThis project wqas developed as a part of Computational "
+                 "Fluid Dynamics Lab course.\n\n\n\n";
+    output_file << "                                                     ..::::::..\n"
+              << "                                                 .^!7?7^:::.:^^:\n"
+              << "                                              .~?55YY!..:~:   .\n"
+              << "                                            :7Y5GGP5YJ?77:...:^^^.\n"
+              << "                                          :?Y5YG#BGG5J7~^::::^~~~:\n"
+              << "                                        .7Y5YYYB&#P7:.\n"
+              << "                                       :J55YYYYB#!\n"
+              << "                                      ^Y5YYYYYYP~\n"
+              << "                                     :Y5YYYYYYYJ.\n"
+              << "                                     J5YYYYYYYJ?!..::::.\n"
+              << "                                    ~YYYYYYYYYJ?7~^:::::\n"
+              << "                                    7YYYYYYYYJJ?77^\n"
+              << "                                    ?JJJYYYYJJJ???!\n"
+              << "                                    ?JJJJJJJJJJJJJJ~\n"
+              << "                                    !???JJJJJJYYYYYY^ \n"
+              << "                                    ^????JJJYYYY555P5^\n"
+              << "                                    .????JJJYY55PPPPGJ\n"
+              << "                                     ^???JJY55PPPGGGBY\n"
+              << "                                      !JJJYY5PPPGGGBP:\n"
+              << "                                       ^?Y55PPPGGBGJ:\n"
+              << "                                         :~7JJYJ?!:\n\n\n"
+              <<
+
+        "               ?G???7. 5J     JY    J5  YY .P5?Y57   :!~^^^~^  ?.   !~  ?!:^^:  Y7.   J\n"
+              << "               JG      PY     Y5    YP  55 .B7  :GY .J.        J~:::?~  ?~.::   J:7~  J.\n"
+              << "               JB777:  PY     YG.   P5  55 .B7  .PY .J.        J~:^:?~  ?!:::   J  ~7:J.\n"
+              << "               JP      5P???! :Y5??Y5:  5Y .G5?J5?.  :7~^:^~^  J.   !~  ?~::::  J   :7Y\n\n\n\n";
+}
+
+void Case::printIntro() {
+    std::cout << "\n\n\n\nWelcome to FluidChen Flow Solver!\nThis project wqas developed as a part of Computational "
+                 "Fluid Dynamics Lab course.\n\n\n\n";
+    std::cout << "                                                     ..::::::..\n"
+              << "                                                 .^!7?7^:::.:^^:\n"
+              << "                                              .~?55YY!..:~:   .\n"
+              << "                                            :7Y5GGP5YJ?77:...:^^^.\n"
+              << "                                          :?Y5YG#BGG5J7~^::::^~~~:\n"
+              << "                                        .7Y5YYYB&#P7:.\n"
+              << "                                       :J55YYYYB#!\n"
+              << "                                      ^Y5YYYYYYP~\n"
+              << "                                     :Y5YYYYYYYJ.\n"
+              << "                                     J5YYYYYYYJ?!..::::.\n"
+              << "                                    ~YYYYYYYYYJ?7~^:::::\n"
+              << "                                    7YYYYYYYYJJ?77^\n"
+              << "                                    ?JJJYYYYJJJ???!\n"
+              << "                                    ?JJJJJJJJJJJJJJ~\n"
+              << "                                    !???JJJJJJYYYYYY^ \n"
+              << "                                    ^????JJJYYYY555P5^\n"
+              << "                                    .????JJJYY55PPPPGJ\n"
+              << "                                     ^???JJY55PPPGGGBY\n"
+              << "                                      !JJJYY5PPPGGGBP:\n"
+              << "                                       ^?Y55PPPGGBGJ:\n"
+              << "                                         :~7JJYJ?!:\n\n\n"
+              <<
+
+        "               ?G???7. 5J     JY    J5  YY .P5?Y57   :!~^^^~^  ?.   !~  ?!:^^:  Y7.   J\n"
+              << "               JG      PY     Y5    YP  55 .B7  :GY .J.        J~:::?~  ?~.::   J:7~  J.\n"
+              << "               JB777:  PY     YG.   P5  55 .B7  .PY .J.        J~:^:?~  ?!:::   J  ~7:J.\n"
+              << "               JP      5P???! :Y5??Y5:  5Y .G5?J5?.  :7~^:^~^  J.   !~  ?~::::  J   :7Y\n\n\n\n";
 }

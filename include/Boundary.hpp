@@ -30,6 +30,7 @@ class FixedWallBoundary : public Boundary {
   public:
     FixedWallBoundary(std::vector<Cell *> cells);
     FixedWallBoundary(std::vector<Cell *> cells, std::map<int, double> wall_temperature);
+    int check_neighbours(Cell * cell);
     virtual ~FixedWallBoundary() = default;
     virtual void apply(Fields &field);
 
@@ -40,11 +41,11 @@ class FixedWallBoundary : public Boundary {
 
 /**
  * @brief Inflow boundary condition for the outer boundaries of the domain.
- * Dirichlet for velocities, Neumann for pressure
+ * Dirichlet for velocities and pressure
  */
 class InflowBoundary : public Boundary {
   public:
-    InflowBoundary(std::vector<Cell *> cells, double inflow_x_velocity, double inflow_y_velocity);
+    InflowBoundary(std::vector<Cell *> cells, double inflow_x_velocity, double inflow_y_velocity, double inflow_pressure);
     virtual ~InflowBoundary() = default;
     virtual void apply(Fields &field);
 
@@ -52,21 +53,21 @@ class InflowBoundary : public Boundary {
     std::vector<Cell *> _cells;
     double _x_velocity;
     double _y_velocity;
+    double _pressure;
 };
 
 /**
  * @brief Outflow boundary condition for the outer boundaries of the domain.
- * Dirichlet for velocities, Neumann for pressure
+ * Dirichlet for pressure, Neumann for velocities
  */
 class OutflowBoundary : public Boundary {
   public:
-    OutflowBoundary(std::vector<Cell *> cells, double outflow_pressure);
+    OutflowBoundary(std::vector<Cell *> cells);
     virtual ~OutflowBoundary() = default;
     virtual void apply(Fields &field);
 
   private:
     std::vector<Cell *> _cells;
-    double _outflow_pressure;
 };
 
 /**

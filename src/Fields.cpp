@@ -16,44 +16,40 @@ Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, 
 }
 
 void Fields::calculate_fluxes(Grid &grid) {
-
-    // imax = 50 = jmax
-    for (int i = 1; i < grid.imax(); i++) {
-        for (int j = 1; j <= grid.jmax(); j++) {
+    for (const auto &elem : grid.fluid_cells()) {
+        int i = elem->i();
+        int j = elem->j();
+        if (i < grid.imax())
             _F(i, j) = _gx + _U(i, j) +
                        _dt * ((_nu * Discretization::laplacian(_U, i, j)) - Discretization::convection_u(_U, _V, i, j));
-        }
-    }
-
-    for (int i = 1; i <= grid.imax(); i++) {
-        for (int j = 1; j < grid.jmax(); j++) {
-
+        if (j < grid.jmax())
             _G(i, j) = _gy + _V(i, j) +
                        _dt * ((_nu * Discretization::laplacian(_V, i, j)) - Discretization::convection_v(_U, _V, i, j));
-        }
     }
 }
 
 void Fields::calculate_rs(Grid &grid) {
     auto idt = 1. / _dt; // Calculate 1/dt
-    for (auto i = 1; i <= grid.imax(); i++) {
-        for (auto j = 1; j <= grid.jmax(); j++) {
-            rs(i, j) = idt * (((_F(i, j) - _F(i - 1, j)) / grid.dx()) + ((_G(i, j) - _G(i, j - 1)) / grid.dy()));
-        }
+    for (const auto &elem : grid.fluid_cells()) {
+        int i = elem->i();
+        int j = elem->j();
+        rs(i, j) = idt * (((_F(i, j) - _F(i - 1, j)) / grid.dx()) + ((_G(i, j) - _G(i, j - 1)) / grid.dy()));
     }
 }
 
 void Fields::calculate_velocities(Grid &grid) {
-    for (auto i = 1; i < grid.imax(); i++) {
-        for (auto j = 1; j <= grid.jmax(); j++) {
-            _U(i, j) = _F(i, j) - (_dt / grid.dx()) * (_P(i + 1, j) - _P(i, j));
-        }
-    }
-    for (auto i = 1; i <= grid.imax(); i++) {
-        for (auto j = 1; j < grid.jmax(); j++) {
-            _V(i, j) = _G(i, j) - (_dt / grid.dy()) * (_P(i, j + 1) - _P(i, j));
-        }
-    }
+
+    for (const auto &elem : grid.fluid_cells()) {
+        int i = elem->i();
+        int j = elem->j();
+
+        if (i < grid.imax())
+        _U(i, j) = _F(i, j) - (_dt / grid.dx()) * (_P(i + 1, j) - _P(i, j));
+
+        if (j < grid.jmax())
+        _V(i, j) = _G(i, j) - (_dt / grid.dy()) * (_P(i, j + 1) - _P(i, j));
+
+}
 }
 
 double Fields::calculate_dt(Grid &grid) {
