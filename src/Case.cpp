@@ -66,7 +66,6 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     /* ENERGY VARIABLES*/
     double TI;              /* Initial temperature*/
-    bool energy_eq = false; /* Set to True: Energy equation enabled*/
     double beta;            /* Thermal Expansion Coefficient  */
     double alpha;           /* Thermal diffusivity   */
 
@@ -109,7 +108,7 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "energy_eq") {
                     std::string temp;
                     file >> temp;
-                    if (temp == "on") energy_eq = true;
+                    if (temp == "on") _energy_eq = true;
                 }
                 if (var == "beta") file >> beta;
                 if (var == "alpha") file >> alpha;
@@ -136,7 +135,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     build_domain(domain, imax, jmax);
 
     _grid = Grid(_geom_name, domain);
-    if (!energy_eq) {
+    if (!_energy_eq) {
         _field = Fields(_grid, nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI);
     } else {
         _field = Fields(_grid, nu, alpha, beta, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI);
@@ -261,7 +260,7 @@ void Case::simulate() {
 
     output_vtk(timestep++); // Writing intial data
 
-    if (!energy_eq)
+    if (!_energy_eq)
         while (t < _t_end) {
 
             // Apply BCs

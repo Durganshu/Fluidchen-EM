@@ -43,7 +43,7 @@ class Fields {
      * @param[in] initial temperature
      *
      */
-    Fields::Fields(Grid &grid, double nu, double alpha, double beta, double dt, double tau, int imax, int jmax, double UI, double VI, double PI,
+    Fields(Grid &grid, double nu, double alpha, double beta, double dt, double tau, int imax, int jmax, double UI, double VI, double PI,
                    double TI);
 
     /**
