@@ -360,6 +360,19 @@ void Case::output_vtk(int timestep, int my_rank) {
     structuredGrid->SetDimensions(_grid.domain().size_x + 1, _grid.domain().size_y + 1, 1);
     structuredGrid->SetPoints(points);
 
+    std::vector<vtkIdType> fixed_wall_cells;
+    for (int i = 0; i < _grid.imax(); i++) {
+        for (int j = 0; j < _grid.jmax(); j++) {
+            if (_grid.cell(i, j).type() != cell_type::FLUID) {
+                fixed_wall_cells.push_back(i + j * _grid.imax());
+            }
+        }
+    }
+
+    for (auto t{0}; t < fixed_wall_cells.size(); t++) {
+        structuredGrid->BlankCell(fixed_wall_cells.at(t));
+    }
+
     // Pressure Array
     vtkDoubleArray *Pressure = vtkDoubleArray::New();
     Pressure->SetName("pressure");
@@ -371,14 +384,7 @@ void Case::output_vtk(int timestep, int my_rank) {
     Velocity->SetNumberOfComponents(3);
 
     // Print pressure and temperature from bottom to top
-
-    // for (const auto &elem : _grid.fluid_cells()) {
-    //     int i = elem->i();
-    //     int j = elem->j();
-    //     double pressure = _field.p(i, j);
-    //     Pressure->InsertNextTuple(&pressure);
     
-    // }
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {
         for (int i = 1; i < _grid.domain().size_x + 1; i++) {
             double pressure = _field.p(i, j);
@@ -391,13 +397,6 @@ void Case::output_vtk(int timestep, int my_rank) {
     vel[2] = 0; // Set z component to 0
 
     // Print Velocity from bottom to top
-    // for (const auto &elem : _grid.fluid_cells()) {
-    //     int i = elem->i();
-    //     int j = elem->j();
-    //     vel[0] = (_field.u(i, j) + _field.u(i, j + 1)) * 0.5;
-    //     vel[1] = (_field.v(i, j) + _field.v(i + 1, j)) * 0.5;
-    //     Velocity->InsertNextTuple(vel);
-    // }
     for (int j = 0; j < _grid.domain().size_y + 1; j++) {
         for (int i = 0; i < _grid.domain().size_x + 1; i++) {
             vel[0] = (_field.u(i, j) + _field.u(i, j + 1)) * 0.5;
