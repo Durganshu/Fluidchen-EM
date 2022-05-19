@@ -4,15 +4,25 @@
 #include <iostream>
 #include <math.h>
 
-Fields::Fields(double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI)
+Fields::Fields(Grid &grid, double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI)
     : _nu(nu), _dt(dt), _tau(tau) {
-    _U = Matrix<double>(imax + 2, jmax + 2, UI);
-    _V = Matrix<double>(imax + 2, jmax + 2, VI);
-    _P = Matrix<double>(imax + 2, jmax + 2, PI);
+
+    _U = Matrix<double>(imax + 2, jmax + 2);
+    _V = Matrix<double>(imax + 2, jmax + 2);
+    _P = Matrix<double>(imax + 2, jmax + 2);
 
     _F = Matrix<double>(imax + 2, jmax + 2, 0.0);
     _G = Matrix<double>(imax + 2, jmax + 2, 0.0);
     _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);
+
+    for (const auto &elem : grid.fluid_cells()) {
+        int i = elem->i();
+        int j = elem->j();
+
+        _U(i, j) = UI;
+        _V(i, j) = VI;
+        _P(i, j) = PI;
+    }
 }
 
 void Fields::calculate_fluxes(Grid &grid) {
@@ -43,13 +53,10 @@ void Fields::calculate_velocities(Grid &grid) {
         int i = elem->i();
         int j = elem->j();
 
-        if (i < grid.imax())
-        _U(i, j) = _F(i, j) - (_dt / grid.dx()) * (_P(i + 1, j) - _P(i, j));
+        if (i < grid.imax()) _U(i, j) = _F(i, j) - (_dt / grid.dx()) * (_P(i + 1, j) - _P(i, j));
 
-        if (j < grid.jmax())
-        _V(i, j) = _G(i, j) - (_dt / grid.dy()) * (_P(i, j + 1) - _P(i, j));
-
-}
+        if (j < grid.jmax()) _V(i, j) = _G(i, j) - (_dt / grid.dy()) * (_P(i, j + 1) - _P(i, j));
+    }
 }
 
 double Fields::calculate_dt(Grid &grid) {

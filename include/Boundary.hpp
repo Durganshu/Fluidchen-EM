@@ -19,6 +19,7 @@ class Boundary {
      * @param[in] Field to be applied
      */
     virtual void apply(Fields &field) = 0;
+    virtual void apply_pressure(Fields &field) = 0;
     virtual ~Boundary() = default;
 };
 
@@ -30,9 +31,10 @@ class FixedWallBoundary : public Boundary {
   public:
     FixedWallBoundary(std::vector<Cell *> cells);
     FixedWallBoundary(std::vector<Cell *> cells, std::map<int, double> wall_temperature);
-    int check_neighbours(Cell * cell);
+    int check_neighbours(Cell *cell);
     virtual ~FixedWallBoundary() = default;
     virtual void apply(Fields &field);
+    virtual void apply_pressure(Fields &field);
 
   private:
     std::vector<Cell *> _cells;
@@ -45,9 +47,11 @@ class FixedWallBoundary : public Boundary {
  */
 class InflowBoundary : public Boundary {
   public:
-    InflowBoundary(std::vector<Cell *> cells, double inflow_x_velocity, double inflow_y_velocity, double inflow_pressure);
+    InflowBoundary(std::vector<Cell *> cells, double inflow_x_velocity, double inflow_y_velocity,
+                   double inflow_pressure);
     virtual ~InflowBoundary() = default;
     virtual void apply(Fields &field);
+    virtual void apply_pressure(Fields &field);
 
   private:
     std::vector<Cell *> _cells;
@@ -65,6 +69,7 @@ class OutflowBoundary : public Boundary {
     OutflowBoundary(std::vector<Cell *> cells);
     virtual ~OutflowBoundary() = default;
     virtual void apply(Fields &field);
+    virtual void apply_pressure(Fields &field);
 
   private:
     std::vector<Cell *> _cells;
@@ -82,6 +87,7 @@ class MovingWallBoundary : public Boundary {
                        std::map<int, double> wall_temperature);
     virtual ~MovingWallBoundary() = default;
     virtual void apply(Fields &field);
+    virtual void apply_pressure(Fields &field);
 
   private:
     std::vector<Cell *> _cells;
