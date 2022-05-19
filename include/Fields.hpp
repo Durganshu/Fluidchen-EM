@@ -75,12 +75,21 @@ class Fields {
 
     /**
      * @brief Adaptive step size calculation using x-velocity condition,
-     * y-velocity condition and CFL condition
+     * y-velocity condition and CFL condition without energy equation
      *
      * @param[in] grid in which the calculations are done
      *
      */
     double calculate_dt(Grid &grid);
+
+    /**
+     * @brief Adaptive step size calculation using x-velocity condition,
+     * y-velocity condition and CFL condition with energy equation
+     *
+     * @param[in] grid in which the calculations are done
+     *
+     */
+    double calculate_dt_e(Grid &grid);
 
     /// x-velocity index based access and modify
     double &u(int i, int j);

@@ -377,7 +377,7 @@ void Case::simulate() {
             t = t + dt;
 
             // Calculate Adaptive Time step
-            dt = _field.calculate_dt(_grid);
+            dt = _field.calculate_dt_e(_grid);
         }
     }
 

@@ -106,6 +106,30 @@ double Fields::calculate_dt(Grid &grid) {
     return _dt;
 }
 
+double Fields::calculate_dt_e(Grid &grid) {
+
+    auto max_u = 0.0;
+    auto max_v = 0.0;
+
+    for (auto &elem : grid.fluid_cells()) {
+
+        int i = elem->i();
+        int j = elem->j();
+
+        if (std::fabs(_U(i, j)) > max_u) max_u = std::fabs(_U(i, j));
+
+        if (std::fabs(_V(i, j)) > max_v) max_v = std::fabs(_V(i, j));
+    }
+
+    auto factor = 1 / (1 / (grid.dx() * grid.dx()) + 1 / (grid.dy() * grid.dy()));
+    auto factor1 = factor / (2 * _nu);
+    auto factor2 = grid.dx() / max_u;
+    auto factor3 = grid.dy() / max_v;
+    auto factor4 = factor/(2*_alpha);
+    _dt = _tau * std::min(std::min(factor1, std::min(factor2, factor3)),factor4);
+    return _dt;
+}
+
 double &Fields::p(int i, int j) { return _P(i, j); }
 double &Fields::u(int i, int j) { return _U(i, j); }
 double &Fields::v(int i, int j) { return _V(i, j); }
