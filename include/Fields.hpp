@@ -15,6 +15,7 @@ class Fields {
     /**
      * @brief Constructor for the fields
      *
+     * @param[in] grid
      * @param[in] kinematic viscosity
      * @param[in] initial timestep size
      * @param[in] adaptive timestep coefficient
@@ -25,7 +26,25 @@ class Fields {
      * @param[in] initial pressure
      *
      */
+
     Fields(Grid &grid, double _nu, double _dt, double _tau, int imax, int jmax, double UI, double VI, double PI);
+    /**
+     * @brief Constructor for the fields
+     *
+     * @param[in] grid
+     * @param[in] kinematic viscosity
+     * @param[in] initial timestep size
+     * @param[in] adaptive timestep coefficient
+     * @param[in] number of cells in x direction
+     * @param[in] number of cells in y direction
+     * @param[in] initial x-velocity
+     * @param[in] initial y-velocity
+     * @param[in] initial pressure
+     * @param[in] initial temperature
+     *
+     */
+    Fields::Fields(Grid &grid, double nu, double alpha, double beta, double dt, double tau, int imax, int jmax, double UI, double VI, double PI,
+                   double TI);
 
     /**
      * @brief Calculates the convective and diffusive fluxes in x and y
@@ -34,6 +53,7 @@ class Fields {
      * @param[in] grid in which the fluxes are calculated
      *
      */
+
     void calculate_fluxes(Grid &grid);
 
     /**
@@ -71,6 +91,9 @@ class Fields {
     /// pressure index based access and modify
     double &p(int i, int j);
 
+    /// temerature index based access and modify
+    double &t(int i, int j);
+
     /// RHS index based access and modify
     double &rs(int i, int j);
 
@@ -93,6 +116,8 @@ class Fields {
     Matrix<double> _V;
     /// pressure matrix
     Matrix<double> _P;
+    /// temerature matrix
+    Matrix<double> _T;
     /// x-momentum flux matrix
     Matrix<double> _F;
     /// y-momentum flux matrix
@@ -102,6 +127,10 @@ class Fields {
 
     /// kinematic viscosity
     double _nu;
+    /// thermal diffusivity
+    double _alpha;
+    /// thermal expansion coefficient
+    double _beta;
     /// gravitional accelearation in x direction
     double _gx{0.0};
     /// gravitional accelearation in y direction

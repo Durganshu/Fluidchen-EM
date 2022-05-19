@@ -25,6 +25,30 @@ Fields::Fields(Grid &grid, double nu, double dt, double tau, int imax, int jmax,
     }
 }
 
+Fields::Fields(Grid &grid, double nu, double alpha, double beta, double dt, double tau, int imax, int jmax, double UI,
+               double VI, double PI, double TI)
+    : _nu(nu), _alpha(alpha), _beta(beta), _dt(dt), _tau(tau) {
+
+    _U = Matrix<double>(imax + 2, jmax + 2);
+    _V = Matrix<double>(imax + 2, jmax + 2);
+    _P = Matrix<double>(imax + 2, jmax + 2);
+    _T = Matrix<double>(imax + 2, jmax + 2);
+
+    _F = Matrix<double>(imax + 2, jmax + 2, 0.0);
+    _G = Matrix<double>(imax + 2, jmax + 2, 0.0);
+    _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);
+
+    for (const auto &elem : grid.fluid_cells()) {
+        int i = elem->i();
+        int j = elem->j();
+
+        _U(i, j) = UI;
+        _V(i, j) = VI;
+        _P(i, j) = PI;
+        _T(i, j) = TI;
+    }
+}
+
 void Fields::calculate_fluxes(Grid &grid) {
     for (const auto &elem : grid.fluid_cells()) {
         int i = elem->i();
@@ -85,6 +109,7 @@ double Fields::calculate_dt(Grid &grid) {
 double &Fields::p(int i, int j) { return _P(i, j); }
 double &Fields::u(int i, int j) { return _U(i, j); }
 double &Fields::v(int i, int j) { return _V(i, j); }
+double &Fields::t(int i, int j) { return _T(i, j); }
 double &Fields::f(int i, int j) { return _F(i, j); }
 double &Fields::g(int i, int j) { return _G(i, j); }
 double &Fields::rs(int i, int j) { return _RS(i, j); }
