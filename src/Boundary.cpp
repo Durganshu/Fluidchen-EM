@@ -29,11 +29,15 @@ void FixedWallBoundary::apply(Fields &field) {
             if (elem->is_border(border_position::RIGHT)) {
                 field.u(i, j) = 0;
                 field.v(i, j) = 0;
-                field.u(i - 1, j) = -field.u(i - 1, j + 1);
+                // field.u(i - 1, j) = -field.u(i - 1, j + 1);
+                // field.v(i, j - 1) = -field.v(i + 1, j - 1);
+                // field.p(i, j) = (field.p(i, j + 1) + field.p(i + 1, j)) / 2.;
+                //field.f(i, j) = 0;
+                //field.g(i, j) = 0;
+
+                field.u(elem->neighbour(border_position::LEFT)->i(), j) = -field.u(elem->neighbour(border_position::LEFT)->i(), elem->neighbour(border_position::TOP)->j());
                 field.v(i, j - 1) = -field.v(i + 1, j - 1);
-                //field.p(i, j) = (field.p(i, j + 1) + field.p(i + 1, j)) / 2.;
-                field.f(i, j) = 0;
-                field.g(i, j) = 0;
+                field.p(i, j) = (field.p(i, j + 1) + field.p(i + 1, j)) / 2.;
             }
 
             else if (elem->is_border(border_position::LEFT)) {
@@ -41,9 +45,9 @@ void FixedWallBoundary::apply(Fields &field) {
                 field.v(i, j) = 0;
                 field.u(i, j) = -field.u(i, j + 1);
                 field.v(i, j - 1) = -field.v(i - 1, j - 1);
-                //field.p(i, j) = (field.p(i, j + 1) + field.p(i - 1, j)) / 2.;
-                field.f(i - 1, j) = 0;
-                field.g(i, j) = 0;
+                field.p(i, j) = (field.p(i, j + 1) + field.p(i - 1, j)) / 2.;
+                //field.f(i - 1, j) = 0;
+                //field.g(i, j) = 0;
 
             }
 
@@ -52,17 +56,19 @@ void FixedWallBoundary::apply(Fields &field) {
                 field.v(i, j) = 0;
                 field.v(i, j - 1) = 0;
                 field.u(i - 1, j) = -(field.u(i - 1, j - 1) + field.u(i - 1, j + 1)) / 2.;
-                //field.p(i, j) = (field.p(i, j + 1) + field.p(i, j - 1)) / 2.;
-                field.g(i, j) = 0;
-                field.g(i, j - 1) = 0;
+                field.p(i, j) = (field.p(i, j + 1) + field.p(i, j - 1)) / 2.;
+                //field.g(i, j) = 0;
+                //field.g(i, j - 1) = 0;
 
             }
 
             else {
-                field.u(i, j) = -field.u(i, elem->neighbour(border_position::TOP)->j());
+                //field.u(i, j) = -field.u(i, elem->neighbour(border_position::TOP)->j());
+                field.u(i, j) = -field.u(i, j+1);
                 field.v(i, j) = 0;
                 //field.p(i, j) = field.p(i, elem->neighbour(border_position::TOP)->j());
-                field.g(i, j) = field.v(i, j);
+                field.p(i, j) = field.p(i, j+1);
+                //field.g(i, j) = field.v(i, j);
             }
 
         }
@@ -76,9 +82,9 @@ void FixedWallBoundary::apply(Fields &field) {
                 field.v(i, j - 1) = 0;
                 field.u(i - 1, j) = -field.u(i - 1, j - 1);
                 field.v(i, j) = -field.v(i + 1, j);
-                //field.p(i, j) = (field.p(i + 1, j) + field.p(i, j - 1)) / 2;
-                field.f(i, j) = 0;
-                field.g(i, j - 1) = 0;
+                field.p(i, j) = (field.p(i + 1, j) + field.p(i, j - 1)) / 2;
+                //field.f(i, j) = 0;
+                //field.g(i, j - 1) = 0;
             }
 
             else if (elem->is_border(border_position::LEFT)) {
@@ -86,18 +92,21 @@ void FixedWallBoundary::apply(Fields &field) {
                 field.v(i, j - 1) = 0;
                 field.u(i, j) = -field.u(i, j - 1);
                 field.v(i, j) = -field.v(i - 1, j);
-                //field.p(i, j) = (field.p(i, j - 1) + field.p(i - 1, j)) / 2;
-                field.f(i - 1, j) = 0;
-                field.g(i, j - 1) = 0;
+                field.p(i, j) = (field.p(i, j - 1) + field.p(i - 1, j)) / 2;
+                //field.f(i - 1, j) = 0;
+                //field.g(i, j - 1) = 0;
 
             }
 
             else {
-                field.u(i, j) = -field.u(i, elem->neighbour(border_position::BOTTOM)->j());
-                field.v(i, elem->neighbour(border_position::BOTTOM)->j()) = 0;
+                //field.u(i, j) = -field.u(i, elem->neighbour(border_position::BOTTOM)->j());
+                field.u(i, j) = -field.u(i, j-1);
+                //field.v(i, elem->neighbour(border_position::BOTTOM)->j()) = 0;
+                field.v(i, j-1) = 0;
                 //field.p(i, j) = field.p(i, elem->neighbour(border_position::BOTTOM)->j());
-                field.g(i, elem->neighbour(border_position::BOTTOM)->j()) =
-                field.v(i, elem->neighbour(border_position::BOTTOM)->j());
+                field.p(i, j) = field.p(i, j-1);
+                //field.g(i, elem->neighbour(border_position::BOTTOM)->j()) =
+                //field.v(i, elem->neighbour(border_position::BOTTOM)->j());
             }
         }
 
@@ -108,19 +117,21 @@ void FixedWallBoundary::apply(Fields &field) {
             if (elem->is_border(border_position::LEFT)) { // Need to verify
                 field.u(i, j) = 0;
                 field.u(i - 1, j) = 0;
-                field.v(i, j - 1) = -(field.v(i + 1, j - 1) + field.v(i - 1, j - 1)) / 2.;
+                //field.v(i, j - 1) = -(field.v(i + 1, j - 1) + field.v(i - 1, j - 1)) / 2.;  (Need to verify, can be set to 0)
                 field.v(i, j) = -(field.v(i + 1, j) + field.v(i - 1, j)) / 2.;
-                //field.p(i, j) = (field.p(i + 1, j) + field.p(i - 1, j)) / 2.;
-                field.f(i, j) = 0;
-                field.f(i - 1, j) = 0;
+                field.p(i, j) = (field.p(i + 1, j) + field.p(i - 1, j)) / 2.;
+                //field.f(i, j) = 0;
+                //field.f(i - 1, j) = 0;
 
             }
 
             else {
                 field.u(i, j) = 0;
-                field.v(i, j) = -field.v(elem->neighbour(border_position::RIGHT)->i(), j);
+                //field.v(i, j) = -field.v(elem->neighbour(border_position::RIGHT)->i(), j);
+                field.v(i, j) = -field.v(i+1, j);
                 //field.p(i, j) = field.p(elem->neighbour(border_position::RIGHT)->i(), j);
-                field.f(i, j) = field.u(i, j);
+                field.p(i, j) = field.p(i+1, j);
+                //field.f(i, j) = field.u(i, j);
             }
         }
 
@@ -128,11 +139,16 @@ void FixedWallBoundary::apply(Fields &field) {
         // these cells should be in the "rightmost column"
         else if (elem->is_border(border_position::LEFT)) {
             // std::cout << "i = " << elem->neighbour(border_position::LEFT)->i()<<", "<<"j = "<<j<<"\n";
-            field.u(elem->neighbour(border_position::LEFT)->i(), j) = 0;
-            field.v(i, j) = -field.v(elem->neighbour(border_position::LEFT)->i(), j);
+            //field.u(elem->neighbour(border_position::LEFT)->i(), j) = 0;
+            //field.v(i, j) = -field.v(elem->neighbour(border_position::LEFT)->i(), j);
             //field.p(i, j) = field.p(elem->neighbour(border_position::LEFT)->i(), j);
-            field.f(elem->neighbour(border_position::LEFT)->i(), j) =
-                field.u(elem->neighbour(border_position::LEFT)->i(), j);
+
+            field.u(i-1, j) = 0;
+            field.v(i, j) = -field.v(i-1, j);
+            field.p(i, j) = field.p(i-1, j);
+
+            //field.f(elem->neighbour(border_position::LEFT)->i(), j) =
+            //    field.u(elem->neighbour(border_position::LEFT)->i(), j);
         }
     }
 }
@@ -154,7 +170,8 @@ void FixedWallBoundary::apply_pressure(Fields &field) {
             } else if (elem->is_border(border_position::BOTTOM)) { // Need to verify
                 field.p(i, j) = (field.p(i, j + 1) + field.p(i, j - 1)) / 2.;
             } else {
-                field.p(i, j) = field.p(i, elem->neighbour(border_position::TOP)->j());
+                //field.p(i, j) = field.p(i, elem->neighbour(border_position::TOP)->j());
+                field.p(i, j) = field.p(i, j+1);
             }
 
         }
@@ -167,7 +184,8 @@ void FixedWallBoundary::apply_pressure(Fields &field) {
             } else if (elem->is_border(border_position::LEFT)) {
                 field.p(i, j) = (field.p(i, j - 1) + field.p(i - 1, j)) / 2;
             } else {
-                field.p(i, j) = field.p(i, elem->neighbour(border_position::BOTTOM)->j());
+                //field.p(i, j) = field.p(i, elem->neighbour(border_position::BOTTOM)->j());
+                field.p(i, j) = field.p(i, j-1);
             }
         }
         // RIGHT implies that the right border of the cell exists i.e.
@@ -177,13 +195,15 @@ void FixedWallBoundary::apply_pressure(Fields &field) {
             if (elem->is_border(border_position::LEFT)) { // Need to verify
                 field.p(i, j) = (field.p(i + 1, j) + field.p(i - 1, j)) / 2.;
             } else {
-                field.p(i, j) = field.p(elem->neighbour(border_position::RIGHT)->i(), j);
+                //field.p(i, j) = field.p(elem->neighbour(border_position::RIGHT)->i(), j);
+                field.p(i, j) = field.p(i+1, j);
             }
         }
         // LEFT implies that the left border of the cell exists i.e.
         // these cells should be in the "rightmost column"
         else if (elem->is_border(border_position::LEFT)) {
-            field.p(i, j) = field.p(elem->neighbour(border_position::LEFT)->i(), j);
+            //field.p(i, j) = field.p(elem->neighbour(border_position::LEFT)->i(), j);
+            field.p(i, j) = field.p(i-1, j);
         }
     }
 }
@@ -219,8 +239,8 @@ void MovingWallBoundary::apply(Fields &field) {
         field.u(i, j) =
             2 * (_wall_velocity.begin()->second) - field.u(i, elem->neighbour(border_position::BOTTOM)->j());
         field.v(i, elem->neighbour(border_position::BOTTOM)->j()) = 0;
-        //field.p(i, j) = field.p(i, elem->neighbour(border_position::BOTTOM)->j());
-        field.g(i, j - 1) = field.v(i, elem->neighbour(border_position::BOTTOM)->j());
+        field.p(i, j) = field.p(i, elem->neighbour(border_position::BOTTOM)->j());
+        //field.g(i, j - 1) = field.v(i, elem->neighbour(border_position::BOTTOM)->j());
     }
 }
 
@@ -244,10 +264,11 @@ void InflowBoundary::apply(Fields &field) {
         int j = elem->j();
 
         field.u(i, j) = _x_velocity;
-        field.v(i, j) = 2 * _y_velocity - field.v(elem->neighbour(border_position::RIGHT)->i(), j);
-        //field.p(i, j) = _pressure;
-        field.f(i, j) = field.u(i, j);
-        field.g(i, j) = field.v(i, j);
+        //field.v(i, j) = 2 * _y_velocity - field.v(elem->neighbour(border_position::RIGHT)->i(), j);
+        field.v(i, j) =  - field.v(i+1, j);
+        field.p(i, j) = _pressure;
+        //field.f(i, j) = field.u(i, j);
+        //field.g(i, j) = field.v(i, j);
     }
 }
 
@@ -266,16 +287,23 @@ void OutflowBoundary::apply(Fields &field) {
         int i = elem->i();
         int j = elem->j();
 
-        field.u(elem->neighbour(border_position::LEFT)->i(), j) = field.u(i, j);
-        field.v(i, j) = field.v(elem->neighbour(border_position::LEFT)->i(), j);
+        //field.u(i, j)=field.u(elem->neighbour(border_position::LEFT)->i(), j);
+        //field.v(i, j) = field.v(elem->neighbour(border_position::LEFT)->i(), j);
         //field.p(i, j) = 0.0;
-        field.f(elem->neighbour(border_position::LEFT)->i(), j) =
-            field.u(elem->neighbour(border_position::LEFT)->i(), j);
+
+        field.u(i, j)=field.u(i-1, j);
+        field.v(i, j) = field.v(i-1, j);
+        field.p(i, j) = 0.0;
+
+        //field.f(elem->neighbour(border_position::LEFT)->i(), j) =
+        //    field.u(elem->neighbour(border_position::LEFT)->i(), j);
     }
 }
 
 void OutflowBoundary::apply_pressure(Fields &field) {
     for (auto &elem : _cells) {
-        field.p(elem->i(), elem->j()) = 0.0;
+        int i = elem->i();
+        int j = elem->j();
+        field.p(i,j) = 0.0;
     }
 }

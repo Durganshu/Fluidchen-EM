@@ -151,6 +151,12 @@ Case::Case(std::string file_name, int argn, char **args) {
     std::map<int, double> temp3 = {{5, wall_temp_5}};
 
     // Construct boundaries
+    if (not _grid.inflow_cells().empty()) {
+        _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.inflow_cells(), UIN, VIN, dP));
+    }
+    if (not _grid.outflow_cells().empty()) {
+        _boundaries.push_back(std::make_unique<OutflowBoundary>(_grid.outflow_cells()));
+    }
     if (not _grid.moving_wall_cells().empty()) {
         _boundaries.push_back(
             std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
@@ -167,12 +173,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     if (not _grid.adiabatic_fixed_wall_cells().empty()) {
         _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.adiabatic_fixed_wall_cells(), temp3));
     }
-    if (not _grid.inflow_cells().empty()) {
-        _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.inflow_cells(), UIN, VIN, dP));
-    }
-    if (not _grid.outflow_cells().empty()) {
-        _boundaries.push_back(std::make_unique<OutflowBoundary>(_grid.outflow_cells()));
-    }
+
 }
 
 void Case::set_file_names(std::string file_name) {
@@ -260,9 +261,10 @@ void Case::simulate() {
 
     output_vtk(timestep++); // Writing intial data
 
-    if (!_energy_eq)
+    if (!_energy_eq){
+        std::cout<<"ENERGY EQUATION OFF"<<std::endl;
         while (t < _t_end) {
-
+            dt = _field.calculate_dt(_grid);
             // Apply BCs
             for (auto &i : _boundaries) {
                 i->apply(_field);
@@ -317,9 +319,11 @@ void Case::simulate() {
             t = t + dt;
 
             // Calculate Adaptive Time step
-            dt = _field.calculate_dt(_grid);
+            
         }
+    }
     else {
+        std::cout<<"ENERGY EQN ON"<<std::endl;
         while (t < _t_end) {
 
             // Apply BCs
