@@ -49,6 +49,8 @@ Fields::Fields(Grid &grid, double nu, double alpha, double beta, double dt, doub
     }
 }
 
+void Fields::calculate_temperatures(Grid &grid){};
+
 void Fields::calculate_fluxes(Grid &grid) {
     for (const auto &elem : grid.fluid_cells()) {
         int i = elem->i();

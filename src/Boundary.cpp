@@ -97,7 +97,7 @@ void FixedWallBoundary::apply(Fields &field) {
                 field.v(i, elem->neighbour(border_position::BOTTOM)->j()) = 0;
                 //field.p(i, j) = field.p(i, elem->neighbour(border_position::BOTTOM)->j());
                 field.g(i, elem->neighbour(border_position::BOTTOM)->j()) =
-                    field.v(i, elem->neighbour(border_position::BOTTOM)->j());
+                field.v(i, elem->neighbour(border_position::BOTTOM)->j());
             }
         }
 
@@ -271,7 +271,6 @@ void OutflowBoundary::apply(Fields &field) {
         //field.p(i, j) = 0.0;
         field.f(elem->neighbour(border_position::LEFT)->i(), j) =
             field.u(elem->neighbour(border_position::LEFT)->i(), j);
-        field.g(i, j) = field.v(i, j);
     }
 }
 

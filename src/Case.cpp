@@ -327,6 +327,9 @@ void Case::simulate() {
                 i->apply(_field);
             }
 
+            //Calculate Temperatures
+            _field.calculate_temperatures(_grid);
+            
             // Calculate Fluxes
             _field.calculate_fluxes(_grid);
 

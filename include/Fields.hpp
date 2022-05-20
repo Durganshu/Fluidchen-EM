@@ -13,7 +13,7 @@ class Fields {
     Fields() = default;
 
     /**
-     * @brief Constructor for the fields
+     * @brief Constructor for the fields for energy equations disabled
      *
      * @param[in] grid
      * @param[in] kinematic viscosity
@@ -29,7 +29,7 @@ class Fields {
 
     Fields(Grid &grid, double _nu, double _dt, double _tau, int imax, int jmax, double UI, double VI, double PI);
     /**
-     * @brief Constructor for the fields
+     * @brief Constructor for the fields for energy equations enabled
      *
      * @param[in] grid
      * @param[in] kinematic viscosity
@@ -43,8 +43,17 @@ class Fields {
      * @param[in] initial temperature
      *
      */
-    Fields(Grid &grid, double nu, double alpha, double beta, double dt, double tau, int imax, int jmax, double UI, double VI, double PI,
-                   double TI);
+    Fields(Grid &grid, double nu, double alpha, double beta, double dt, double tau, int imax, int jmax, double UI,
+           double VI, double PI, double TI);
+
+    /**
+     * @brief Calculates the temperature based on explicit discretization of energy 
+     * equations
+     *
+     * @param[in] grid in which the fluxes are calculated
+     *
+     */
+    void calculate_temperatures(Grid &grid);
 
     /**
      * @brief Calculates the convective and diffusive fluxes in x and y
