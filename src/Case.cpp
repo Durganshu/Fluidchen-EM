@@ -264,7 +264,7 @@ void Case::simulate() {
     if (!_energy_eq){
         std::cout<<"ENERGY EQUATION OFF"<<std::endl;
         while (t < _t_end) {
-            dt = _field.calculate_dt(_grid);
+            
             // Apply BCs
             for (auto &i : _boundaries) {
                 i->apply(_field);
@@ -319,7 +319,7 @@ void Case::simulate() {
             t = t + dt;
 
             // Calculate Adaptive Time step
-            
+            dt = _field.calculate_dt(_grid);
         }
     }
     else {
@@ -411,7 +411,7 @@ void Case::output_vtk(int timestep, int my_rank) {
 
     { y += dy; }
     { x += dx; }
-
+    
     double z = 0;
     for (int col = 0; col < _grid.domain().size_y + 1; col++) {
         x = _grid.domain().imin * dx;
@@ -419,10 +419,11 @@ void Case::output_vtk(int timestep, int my_rank) {
         for (int row = 0; row < _grid.domain().size_x + 1; row++) {
             points->InsertNextPoint(x, y, z);
             x += dx;
+            
         }
         y += dy;
     }
-
+    std::cout<<count1<<std::endl;
     // Specify the dimensions of the grid
     structuredGrid->SetDimensions(_grid.domain().size_x + 1, _grid.domain().size_y + 1, 1);
     structuredGrid->SetPoints(points);
@@ -438,13 +439,15 @@ void Case::output_vtk(int timestep, int my_rank) {
     Velocity->SetNumberOfComponents(3);
 
     // Print pressure and temperature from bottom to top
+    
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {
         for (int i = 1; i < _grid.domain().size_x + 1; i++) {
             double pressure = _field.p(i, j);
             Pressure->InsertNextTuple(&pressure);
+            
         }
     }
-
+    std::cout<<count2<<std::endl;
     // Temp Velocity
     float vel[3];
     vel[2] = 0; // Set z component to 0

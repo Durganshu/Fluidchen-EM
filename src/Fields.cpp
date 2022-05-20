@@ -63,7 +63,7 @@ void Fields::calculate_fluxes(Grid &grid) {
                        _dt * ((_nu * Discretization::laplacian(_V, i, j)) - Discretization::convection_v(_U, _V, i, j) + _gy);
     }
 
-    ////Applying Flux BC to fixed
+    ////Applying Flux BC to fixed walls
     for (auto &elem : grid.fixed_wall_cells()) {
         int i = elem->i();
         int j = elem->j();
