@@ -49,18 +49,32 @@ Fields::Fields(Grid &grid, double nu, double alpha, double beta, double dt, doub
     }
 }
 
-void Fields::calculate_temperatures(Grid &grid){};
+void Fields::calculate_temperatures(Grid &grid){
+    for (const auto &elem : grid.fluid_cells()){
+        int i = elem->i();
+        int j = elem->j();
+        _T(i, j) = _T(i, j) + _dt * (-Discretization::convection_t(_U, _V, _T, i, j) 
+                        + _alpha*Discretization::laplacian(_T, i, j));
+    }
+}
 
-void Fields::calculate_fluxes(Grid &grid) {
+void Fields::calculate_fluxes(Grid &grid, bool energy_eq) {
     for (const auto &elem : grid.fluid_cells()) {
         int i = elem->i();
         int j = elem->j();
-        //if (i < grid.imax())
-            _F(i, j) =  _U(i, j) +
-                       _dt * ((_nu * Discretization::laplacian(_U, i, j)) - Discretization::convection_u(_U, _V, i, j) + _gx);
-        //if (j < grid.jmax())
-            _G(i, j) = _V(i, j) +
-                       _dt * ((_nu * Discretization::laplacian(_V, i, j)) - Discretization::convection_v(_U, _V, i, j) + _gy);
+    
+        _F(i, j) =  _U(i, j) +
+                       _dt * ((_nu * Discretization::laplacian(_U, i, j)) - 
+                       Discretization::convection_u(_U, _V, i, j) + (1 - energy_eq)*_gx);
+        
+        _G(i, j) = _V(i, j) +
+                       _dt * ((_nu * Discretization::laplacian(_V, i, j)) - 
+                       Discretization::convection_v(_U, _V, i, j) + (1 - energy_eq)*_gy);
+        
+        if (energy_eq){
+            _F(i,j) -= _gx * _dt * (_beta*0.5*(_T(i, j) + _T(i + 1, j)));
+            _G(i,j) -= _gy * _dt *(_beta*0.5*(_T(i, j) + _T(i, j + 1)));
+        }
     }
 
     ////Applying Flux BC to fixed walls
@@ -184,8 +198,11 @@ void Fields::calculate_fluxes(Grid &grid) {
 
         _F(elem->neighbour(border_position::LEFT)->i(), j) =
             _U(elem->neighbour(border_position::LEFT)->i(), j);
-        //_F(i-1, j) =_U(i-1, j);
     }
+
+}
+
+void calculate_fluxes_e(Grid &grid){
 
 }
 
@@ -207,10 +224,8 @@ void Fields::calculate_velocities(Grid &grid) {
         int j = elem->j();
 
         _U(i, j) = _F(i, j) - (_dt / grid.dx()) * (_P(elem->neighbour(border_position::RIGHT)->i(), j) - _P(i, j)); 
-        //_U(i, j) = _F(i, j) - (_dt / grid.dx()) * (_P(i + 1, j) - _P(i, j));
 
         _V(i, j) = _G(i, j) - (_dt / grid.dy()) * (_P(i, elem->neighbour(border_position::TOP)->j()) - _P(i, j));
-        //_V(i, j) = _G(i, j) - (_dt / grid.dy()) * (_P(i, j + 1) - _P(i, j));
     }
 }
 

@@ -63,7 +63,8 @@ class Fields {
      *
      */
 
-    void calculate_fluxes(Grid &grid);
+    void calculate_fluxes(Grid &grid, bool energy_eq = 0);
+    
 
     /**
      * @brief Right hand side calculations using the fluxes for the pressure

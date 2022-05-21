@@ -269,10 +269,10 @@ void Case::simulate() {
             for (auto &i : _boundaries) {
                 i->apply(_field);
             }
-
+            
             // Calculate Fluxes
             _field.calculate_fluxes(_grid);
-
+        
             // Calculate RHS of PPE
             _field.calculate_rs(_grid);
 
@@ -332,7 +332,7 @@ void Case::simulate() {
             _field.calculate_temperatures(_grid);
             
             // Calculate Fluxes
-            _field.calculate_fluxes(_grid);
+            _field.calculate_fluxes(_grid, _energy_eq);
 
             // Calculate RHS of PPE
             _field.calculate_rs(_grid);

@@ -193,6 +193,9 @@ void FixedWallBoundary::apply_pressure(Fields &field) {
         }
     }
 }
+
+void FixedWallBoundary::apply_temperature(Fields &field){}
+
 int FixedWallBoundary::check_neighbours(Cell *cell) {
     int number_of_fluid_neighbours = 0;
     if (cell->is_border(border_position::TOP) && cell->neighbour(border_position::TOP)->type() == cell_type::FLUID)

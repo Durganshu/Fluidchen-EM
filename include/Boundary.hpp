@@ -35,6 +35,7 @@ class FixedWallBoundary : public Boundary {
     virtual ~FixedWallBoundary() = default;
     virtual void apply(Fields &field);
     virtual void apply_pressure(Fields &field);
+    virtual void apply_temperature(Fields &field);
 
   private:
     std::vector<Cell *> _cells;
