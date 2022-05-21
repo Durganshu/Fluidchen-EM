@@ -250,7 +250,7 @@ void InflowBoundary::apply(Fields &field) {
 
         field.u(i, j) = _x_velocity;
         field.v(i, j) =  - field.v(elem->neighbour(border_position::RIGHT)->i(), j);
-        field.p(i, j) = _pressure;
+        field.p(i, j) = field.p(elem->neighbour(border_position::RIGHT)->i(),j);
         //field.f(i, j) = field.u(i, j);
         //field.g(i, j) = field.v(i, j);
     }
@@ -260,7 +260,7 @@ void InflowBoundary::apply_pressure(Fields &field) {
     for (auto &elem : _cells) {
         int i = elem->i();
         int j = elem->j();
-        field.p(i, j) = _pressure;
+        field.p(i, j) = field.p(elem->neighbour(border_position::RIGHT)->i(),j);
     }
 }
 
