@@ -77,7 +77,8 @@ void Fields::calculate_fluxes(Grid &grid) {
             }
 
             else if (elem->is_border(border_position::LEFT)) {
-                _F(i - 1, j) = 0.0;
+                _F(elem->neighbour(border_position::LEFT)->i(), j) = 0.0;
+                //_F(i - 1, j) = 0.0;
                 _G(i, j) = 0.0;
 
             }
@@ -85,7 +86,8 @@ void Fields::calculate_fluxes(Grid &grid) {
             else if (elem->is_border(border_position::BOTTOM)) { // Need to verify
           
                 _G(i, j) = 0.0;
-                _G(i, j - 1) = 0.0;
+                //_G(i, j - 1) = 0.0;
+                _G(i, elem->neighbour(border_position::BOTTOM)->j()) = 0.0;
 
             }
 
@@ -103,22 +105,25 @@ void Fields::calculate_fluxes(Grid &grid) {
             if (elem->is_border(border_position::RIGHT)) {
 
                 _F(i, j) = 0.0;
-                _G(i, j - 1) = 0.0;
+                //_G(i, j - 1) = 0.0;
+                _G(i, elem->neighbour(border_position::BOTTOM)->j()) = 0.0;
             }
+
 
             else if (elem->is_border(border_position::LEFT)) {
  
-                _F(i - 1, j) = 0.0;
-                _G(i, j - 1) = 0.0;
-
+                //_F(i - 1, j) = 0.0;
+                //_G(i, j - 1) = 0.0;
+                _F(elem->neighbour(border_position::LEFT)->i(), j) = 0.0;
+                _G(i, elem->neighbour(border_position::BOTTOM)->j()) = 0.0;
             }
 
             else {
               
-                // _G(i, elem->neighbour(border_position::BOTTOM)->j()) =
-                // _V(i, elem->neighbour(border_position::BOTTOM)->j());
+                _G(i, elem->neighbour(border_position::BOTTOM)->j()) =
+                _V(i, elem->neighbour(border_position::BOTTOM)->j());
 
-                _G(i,j-1) =_V(i, j-1);
+                //_G(i,j-1) =_V(i, j-1);
             }
         }
 
@@ -129,12 +134,13 @@ void Fields::calculate_fluxes(Grid &grid) {
             if (elem->is_border(border_position::LEFT)) { // Need to verify
                
                 _F(i, j) = 0.0;
-                _F(i - 1, j) = 0.0;
+                //_F(i - 1, j) = 0.0;
+                _F(elem->neighbour(border_position::LEFT)->i(), j) = 0.0;
 
             }
 
             else {
-            
+                
                 _F(i, j) = _U(i, j);
             }
         }
@@ -144,10 +150,10 @@ void Fields::calculate_fluxes(Grid &grid) {
         else if (elem->is_border(border_position::LEFT)) {
             // std::cout << "i = " << elem->neighbour(border_position::LEFT)->i()<<", "<<"j = "<<j<<"\n";
 
-            // _F(elem->neighbour(border_position::LEFT)->i(), j) =
-                // _U(elem->neighbour(border_position::LEFT)->i(), j);
+            _F(elem->neighbour(border_position::LEFT)->i(), j) =
+                 _U(elem->neighbour(border_position::LEFT)->i(), j);
 
-            _F(i-1, j) =_U(i-1, j);
+            //_F(i-1, j) =_U(i-1, j);
         }
     
     
@@ -158,7 +164,8 @@ void Fields::calculate_fluxes(Grid &grid) {
         int i = elem->i();
         int j = elem->j();
 
-    _G(i, j - 1) = _V(i, elem->neighbour(border_position::BOTTOM)->j());
+        _G(i, elem->neighbour(border_position::BOTTOM)->j()) = _V(i, elem->neighbour(border_position::BOTTOM)->j());
+        //_G(i, j - 1) = _V(i, elem->neighbour(border_position::BOTTOM)->j());
     }
 
     // Flux setup for inflow cells
@@ -175,9 +182,9 @@ void Fields::calculate_fluxes(Grid &grid) {
         int i = elem->i();
         int j = elem->j();
 
-/*         _F(elem->neighbour(border_position::LEFT)->i(), j) =
-            _U(elem->neighbour(border_position::LEFT)->i(), j); */
-        _F(i-1, j) =_U(i-1, j);
+        _F(elem->neighbour(border_position::LEFT)->i(), j) =
+            _U(elem->neighbour(border_position::LEFT)->i(), j);
+        //_F(i-1, j) =_U(i-1, j);
     }
 
 }
@@ -187,7 +194,9 @@ void Fields::calculate_rs(Grid &grid) {
     for (const auto &elem : grid.fluid_cells()) {
         int i = elem->i();
         int j = elem->j();
-        rs(i, j) = idt * (((_F(i, j) - _F(i - 1, j)) / grid.dx()) + ((_G(i, j) - _G(i, j - 1)) / grid.dy()));
+        rs(i, j) = idt * (((_F(i, j) - _F(elem->neighbour(border_position::LEFT)->i(), j)) / grid.dx()) + 
+                                        ((_G(i, j) - _G(i, elem->neighbour(border_position::BOTTOM)->j())) / grid.dy()));
+        //rs(i, j) = idt * (((_F(i, j) - _F(i - 1, j)) / grid.dx()) + ((_G(i, j) - _G(i, j - 1)) / grid.dy()));
     }
 }
 
@@ -197,11 +206,11 @@ void Fields::calculate_velocities(Grid &grid) {
         int i = elem->i();
         int j = elem->j();
 
-         
-        _U(i, j) = _F(i, j) - (_dt / grid.dx()) * (_P(i + 1, j) - _P(i, j));
+        _U(i, j) = _F(i, j) - (_dt / grid.dx()) * (_P(elem->neighbour(border_position::RIGHT)->i(), j) - _P(i, j)); 
+        //_U(i, j) = _F(i, j) - (_dt / grid.dx()) * (_P(i + 1, j) - _P(i, j));
 
-         
-        _V(i, j) = _G(i, j) - (_dt / grid.dy()) * (_P(i, j + 1) - _P(i, j));
+        _V(i, j) = _G(i, j) - (_dt / grid.dy()) * (_P(i, elem->neighbour(border_position::TOP)->j()) - _P(i, j));
+        //_V(i, j) = _G(i, j) - (_dt / grid.dy()) * (_P(i, j + 1) - _P(i, j));
     }
 }
 

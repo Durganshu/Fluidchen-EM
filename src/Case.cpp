@@ -287,11 +287,6 @@ void Case::simulate() {
                 it++;
             }
 
-            if (it >= _max_iter) {
-                output_file << "\nSOR Max Iteration Reached!\nSOR Residue=" << res << "\n\n";
-                std::cout << "\nSOR Max Iteration Reached!\nSOR Residue=" << res << "\n\n";
-            }
-
             // Calculate Velocities U and V
             _field.calculate_velocities(_grid);
 
@@ -304,13 +299,15 @@ void Case::simulate() {
             }
 
             // Writing simulation data in a log file
-            output_file << "Simulation Time=" << t << "s         Time Step=" << dt << "s\n";
+            output_file << "Simulation Time=" << t << "s\tTime Step=" << dt << "s\tSOR Iterations= "
+                            <<it <<"\tSOR Residual= " <<res <<"\n";
+            
 
             // Printing info and checking for errors once in 5 runs of the loop
             if (counter == 10) {
                 counter = 0;
-                std::cout << "Simulation Time=" << t << "s         Time Step=" << dt << "s\n";
-
+                std::cout << "Simulation Time=" << t << "s\tTime Step=" << dt << "s\tSOR Iterations= "
+                            <<it <<"\tSOR Residual= " <<res <<"\n";
                 if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0); // Check for unphysical behaviour
             }
             counter++;
@@ -324,7 +321,7 @@ void Case::simulate() {
     }
     else {
         std::cout<<"ENERGY EQN ON"<<std::endl;
-        while (t < _t_end) {
+        while (t < dt) {
 
             // Apply BCs
             for (auto &i : _boundaries) {
@@ -351,11 +348,6 @@ void Case::simulate() {
                 it++;
             }
 
-            if (it >= _max_iter) {
-                output_file << "\nSOR Max Iteration Reached!\nSOR Residue=" << res << "\n\n";
-                std::cout << "\nSOR Max Iteration Reached!\nSOR Residue=" << res << "\n\n";
-            }
-
             // Calculate Velocities U and V
             _field.calculate_velocities(_grid);
 
@@ -368,12 +360,14 @@ void Case::simulate() {
             }
 
             // Writing simulation data in a log file
-            output_file << "Simulation Time=" << t << "s         Time Step=" << dt << "s\n";
+            output_file << "Simulation Time=" << t << "s\tTime Step=" << dt << "s\tSOR Iterations= "
+                            <<it <<"\tSOR Residual= " <<res <<"\n";
 
             // Printing info and checking for errors once in 5 runs of the loop
             if (counter == 10) {
                 counter = 0;
-                std::cout << "Simulation Time=" << t << "s         Time Step=" << dt << "s\n";
+                std::cout << "Simulation Time=" << t << "s\tTime Step=" << dt << "s\tSOR Iterations= "
+                            <<it <<"\tSOR Residual= " <<res <<"\n";
 
                 if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0); // Check for unphysical behaviour
             }
@@ -423,7 +417,7 @@ void Case::output_vtk(int timestep, int my_rank) {
         }
         y += dy;
     }
-    std::cout<<count1<<std::endl;
+    
     // Specify the dimensions of the grid
     structuredGrid->SetDimensions(_grid.domain().size_x + 1, _grid.domain().size_y + 1, 1);
     structuredGrid->SetPoints(points);
@@ -447,7 +441,7 @@ void Case::output_vtk(int timestep, int my_rank) {
             
         }
     }
-    std::cout<<count2<<std::endl;
+    
     // Temp Velocity
     float vel[3];
     vel[2] = 0; // Set z component to 0
