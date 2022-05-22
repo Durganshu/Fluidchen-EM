@@ -171,6 +171,299 @@ void Fields::calculate_fluxes(Grid &grid, bool energy_eq) {
         }
     
     
+    } 
+
+    /***************************************/
+    // For cold fixed_wall_cells  (NEED TO MAKE SURE THAT ENERGY EQUATION IS ON)
+    /***************************************/ 
+    for (auto &elem : grid.cold_fixed_wall_cells()) {
+        int i = elem->i();
+        int j = elem->j();
+
+     if (elem->is_border(border_position::TOP)) {
+            // std::cout << "i = " << i<<", "<<"j = "<<j<<"\n";
+            // std::cout << "i = " << i<<", "<<"j = "<<elem->neighbour(border_position::TOP)->j()<<"\n";
+            if (elem->is_border(border_position::RIGHT)) {
+                _F(i, j) = 0.0;
+                _G(i, j) = 0.0;
+            }
+
+            else if (elem->is_border(border_position::LEFT)) {
+                _F(elem->neighbour(border_position::LEFT)->i(), j) = 0.0;
+                //_F(i - 1, j) = 0.0;
+                _G(i, j) = 0.0;
+
+            }
+
+            else if (elem->is_border(border_position::BOTTOM)) { // Need to verify
+          
+                _G(i, j) = 0.0;
+                //_G(i, j - 1) = 0.0;
+                _G(i, elem->neighbour(border_position::BOTTOM)->j()) = 0.0;
+
+            }
+
+            else {
+              
+                _G(i, j) = _V(i, j);
+            }
+
+        }
+
+        // BOTTOM implies that the bottom border of the cell exists i.e.
+        // these cells should be in the "topmost row"
+        else if (elem->is_border(border_position::BOTTOM)) {
+            // std::cout << "i = " << i<<", "<<"j = "<<elem->neighbour(border_position::BOTTOM)->j()<<"\n";
+            if (elem->is_border(border_position::RIGHT)) {
+
+                _F(i, j) = 0.0;
+                //_G(i, j - 1) = 0.0;
+                _G(i, elem->neighbour(border_position::BOTTOM)->j()) = 0.0;
+            }
+
+
+            else if (elem->is_border(border_position::LEFT)) {
+ 
+                //_F(i - 1, j) = 0.0;
+                //_G(i, j - 1) = 0.0;
+                _F(elem->neighbour(border_position::LEFT)->i(), j) = 0.0;
+                _G(i, elem->neighbour(border_position::BOTTOM)->j()) = 0.0;
+            }
+
+            else {
+              
+                _G(i, elem->neighbour(border_position::BOTTOM)->j()) =
+                _V(i, elem->neighbour(border_position::BOTTOM)->j());
+
+                //_G(i,j-1) =_V(i, j-1);
+            }
+        }
+
+        // RIGHT implies that the right border of the cell exists i.e.
+        // these cells should be in the "leftmost column"
+        else if (elem->is_border(border_position::RIGHT)) {
+            // std::cout << "i = " << i<<", "<<"j = "<<j<<"\n";
+            if (elem->is_border(border_position::LEFT)) { // Need to verify
+               
+                _F(i, j) = 0.0;
+                //_F(i - 1, j) = 0.0;
+                _F(elem->neighbour(border_position::LEFT)->i(), j) = 0.0;
+
+            }
+
+            else {
+                
+                _F(i, j) = _U(i, j);
+            }
+        }
+
+        // LEFT implies that the left border of the cell exists i.e.
+        // these cells should be in the "rightmost column"
+        else if (elem->is_border(border_position::LEFT)) {
+            // std::cout << "i = " << elem->neighbour(border_position::LEFT)->i()<<", "<<"j = "<<j<<"\n";
+
+            _F(elem->neighbour(border_position::LEFT)->i(), j) =
+                 _U(elem->neighbour(border_position::LEFT)->i(), j);
+
+            //_F(i-1, j) =_U(i-1, j);
+        }
+    
+    
+    }
+
+    /***************************************/
+    // For hot fixed_wall_cells (NEED TO MAKE SURE THAT ENERGY EQUATION IS ON)
+    /***************************************/
+    for (auto &elem : grid.hot_fixed_wall_cells()) {
+        int i = elem->i();
+        int j = elem->j();
+
+     if (elem->is_border(border_position::TOP)) {
+            // std::cout << "i = " << i<<", "<<"j = "<<j<<"\n";
+            // std::cout << "i = " << i<<", "<<"j = "<<elem->neighbour(border_position::TOP)->j()<<"\n";
+            if (elem->is_border(border_position::RIGHT)) {
+                _F(i, j) = 0.0;
+                _G(i, j) = 0.0;
+            }
+
+            else if (elem->is_border(border_position::LEFT)) {
+                _F(elem->neighbour(border_position::LEFT)->i(), j) = 0.0;
+                //_F(i - 1, j) = 0.0;
+                _G(i, j) = 0.0;
+
+            }
+
+            else if (elem->is_border(border_position::BOTTOM)) { // Need to verify
+          
+                _G(i, j) = 0.0;
+                //_G(i, j - 1) = 0.0;
+                _G(i, elem->neighbour(border_position::BOTTOM)->j()) = 0.0;
+
+            }
+
+            else {
+              
+                _G(i, j) = _V(i, j);
+            }
+
+        }
+
+        // BOTTOM implies that the bottom border of the cell exists i.e.
+        // these cells should be in the "topmost row"
+        else if (elem->is_border(border_position::BOTTOM)) {
+            // std::cout << "i = " << i<<", "<<"j = "<<elem->neighbour(border_position::BOTTOM)->j()<<"\n";
+            if (elem->is_border(border_position::RIGHT)) {
+
+                _F(i, j) = 0.0;
+                //_G(i, j - 1) = 0.0;
+                _G(i, elem->neighbour(border_position::BOTTOM)->j()) = 0.0;
+            }
+
+
+            else if (elem->is_border(border_position::LEFT)) {
+ 
+                //_F(i - 1, j) = 0.0;
+                //_G(i, j - 1) = 0.0;
+                _F(elem->neighbour(border_position::LEFT)->i(), j) = 0.0;
+                _G(i, elem->neighbour(border_position::BOTTOM)->j()) = 0.0;
+            }
+
+            else {
+              
+                _G(i, elem->neighbour(border_position::BOTTOM)->j()) =_V(i, elem->neighbour(border_position::BOTTOM)->j());
+
+                //_G(i,j-1) =_V(i, j-1);
+            }
+        }
+
+        // RIGHT implies that the right border of the cell exists i.e.
+        // these cells should be in the "leftmost column"
+        else if (elem->is_border(border_position::RIGHT)) {
+            // std::cout << "i = " << i<<", "<<"j = "<<j<<"\n";
+            if (elem->is_border(border_position::LEFT)) { // Need to verify
+               
+                _F(i, j) = 0.0;
+                //_F(i - 1, j) = 0.0;
+                _F(elem->neighbour(border_position::LEFT)->i(), j) = 0.0;
+
+            }
+
+            else {
+                
+                _F(i, j) = _U(i, j);
+            }
+        }
+
+        // LEFT implies that the left border of the cell exists i.e.
+        // these cells should be in the "rightmost column"
+        else if (elem->is_border(border_position::LEFT)) {
+            // std::cout << "i = " << elem->neighbour(border_position::LEFT)->i()<<", "<<"j = "<<j<<"\n";
+
+            _F(elem->neighbour(border_position::LEFT)->i(), j) =
+                 _U(elem->neighbour(border_position::LEFT)->i(), j);
+
+            //_F(i-1, j) =_U(i-1, j);
+        }
+    
+    
+    }
+
+    /***************************************/
+    // For adiabatic fixed_wall_cells  (NEED TO MAKE SURE THAT ENERGY EQUATION IS ON)
+    /***************************************/
+    for (auto &elem : grid.adiabatic_fixed_wall_cells()) {
+        int i = elem->i();
+        int j = elem->j();
+
+     if (elem->is_border(border_position::TOP)) {
+            // std::cout << "i = " << i<<", "<<"j = "<<j<<"\n";
+            // std::cout << "i = " << i<<", "<<"j = "<<elem->neighbour(border_position::TOP)->j()<<"\n";
+            if (elem->is_border(border_position::RIGHT)) {
+                _F(i, j) = 0.0;
+                _G(i, j) = 0.0;
+            }
+
+            else if (elem->is_border(border_position::LEFT)) {
+                _F(elem->neighbour(border_position::LEFT)->i(), j) = 0.0;
+                //_F(i - 1, j) = 0.0;
+                _G(i, j) = 0.0;
+
+            }
+
+            else if (elem->is_border(border_position::BOTTOM)) { // Need to verify
+          
+                _G(i, j) = 0.0;
+                //_G(i, j - 1) = 0.0;
+                _G(i, elem->neighbour(border_position::BOTTOM)->j()) = 0.0;
+
+            }
+
+            else {
+              
+                _G(i, j) = _V(i, j);
+            }
+
+        }
+
+        // BOTTOM implies that the bottom border of the cell exists i.e.
+        // these cells should be in the "topmost row"
+        else if (elem->is_border(border_position::BOTTOM)) {
+            // std::cout << "i = " << i<<", "<<"j = "<<elem->neighbour(border_position::BOTTOM)->j()<<"\n";
+            if (elem->is_border(border_position::RIGHT)) {
+
+                _F(i, j) = 0.0;
+                //_G(i, j - 1) = 0.0;
+                _G(i, elem->neighbour(border_position::BOTTOM)->j()) = 0.0;
+            }
+
+
+            else if (elem->is_border(border_position::LEFT)) {
+ 
+                //_F(i - 1, j) = 0.0;
+                //_G(i, j - 1) = 0.0;
+                _F(elem->neighbour(border_position::LEFT)->i(), j) = 0.0;
+                _G(i, elem->neighbour(border_position::BOTTOM)->j()) = 0.0;
+            }
+
+            else {
+              
+                _G(i, elem->neighbour(border_position::BOTTOM)->j()) =
+                _V(i, elem->neighbour(border_position::BOTTOM)->j());
+
+                //_G(i,j-1) =_V(i, j-1);
+            }
+        }
+
+        // RIGHT implies that the right border of the cell exists i.e.
+        // these cells should be in the "leftmost column"
+        else if (elem->is_border(border_position::RIGHT)) {
+            // std::cout << "i = " << i<<", "<<"j = "<<j<<"\n";
+            if (elem->is_border(border_position::LEFT)) { // Need to verify
+               
+                _F(i, j) = 0.0;
+                //_F(i - 1, j) = 0.0;
+                _F(elem->neighbour(border_position::LEFT)->i(), j) = 0.0;
+
+            }
+
+            else {
+                
+                _F(i, j) = _U(i, j);
+            }
+        }
+
+        // LEFT implies that the left border of the cell exists i.e.
+        // these cells should be in the "rightmost column"
+        else if (elem->is_border(border_position::LEFT)) {
+            // std::cout << "i = " << elem->neighbour(border_position::LEFT)->i()<<", "<<"j = "<<j<<"\n";
+
+            _F(elem->neighbour(border_position::LEFT)->i(), j) =
+                 _U(elem->neighbour(border_position::LEFT)->i(), j);
+
+            //_F(i-1, j) =_U(i-1, j);
+        }
+    
+    
     }
 
     // Flux setup for Moving wall cells
@@ -202,9 +495,7 @@ void Fields::calculate_fluxes(Grid &grid, bool energy_eq) {
 
 }
 
-void calculate_fluxes_e(Grid &grid){
 
-}
 
 void Fields::calculate_rs(Grid &grid) {
     auto idt = 1. / _dt; // Calculate 1/dt

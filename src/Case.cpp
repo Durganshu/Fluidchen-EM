@@ -321,16 +321,19 @@ void Case::simulate() {
     }
     else {
         std::cout<<"ENERGY EQN ON"<<std::endl;
-        while (t < dt) {
+        while (t < 2*dt) {
 
             // Apply BCs
             for (auto &i : _boundaries) {
                 i->apply(_field);
+                i->apply_temperature(_field);
             }
+
 
             //Calculate Temperatures
             _field.calculate_temperatures(_grid);
             
+            std::cout<<_energy_eq;
             // Calculate Fluxes
             _field.calculate_fluxes(_grid, _energy_eq);
 
@@ -343,6 +346,8 @@ void Case::simulate() {
             while (it <= _max_iter && res >= _tolerance) {
                 for (auto &i : _boundaries) {
                     i->apply_pressure(_field);
+                    i->apply_temperature(_field);
+
                 }
                 res = _pressure_solver->solve(_field, _grid, _boundaries);
                 it++;
@@ -367,7 +372,7 @@ void Case::simulate() {
             if (counter == 10) {
                 counter = 0;
                 std::cout << "Simulation Time=" << t << "s\tTime Step=" << dt << "s\tSOR Iterations= "
-                            <<it <<"\tSOR Residual= " <<res <<"\n";
+                           <<it <<"\tSOR Residual= " <<res <<"\n";
 
                 if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0); // Check for unphysical behaviour
             }
@@ -403,6 +408,10 @@ void Case::output_vtk(int timestep, int my_rank) {
     double x = _grid.domain().imin * dx;
     double y = _grid.domain().jmin * dy;
 
+    std::ofstream temp_file;
+    temp_file.open ("temperature.log"),
+    temp_file << "Writing temperature values\n";
+
     { y += dy; }
     { x += dx; }
     
@@ -432,6 +441,11 @@ void Case::output_vtk(int timestep, int my_rank) {
     Velocity->SetName("velocity");
     Velocity->SetNumberOfComponents(3);
 
+    // Temperature Array
+    vtkDoubleArray *Temperature = vtkDoubleArray::New();
+    Temperature->SetName("temperature");
+    Temperature->SetNumberOfComponents(1);
+
     // Print pressure and temperature from bottom to top
     
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {
@@ -455,11 +469,30 @@ void Case::output_vtk(int timestep, int my_rank) {
         }
     }
 
+    if (_energy_eq == true){
+        // Print Temperature from bottom to top
+        for (int j = 1; j < _grid.domain().size_y + 1; j++) {
+            for (int i = 1; i < _grid.domain().size_x + 1; i++) {
+                double temperature = _field.t(i, j);
+                Temperature->InsertNextTuple(&temperature);
+                temp_file << "(" <<i << ", "<<j << ", " <<_field.t(i, j) <<")";
+            }
+            temp_file << "\n";
+        }
+
+
+        // Add Temperature to Structured Grid
+        structuredGrid->GetCellData()->AddArray(Temperature);
+    }
+    temp_file.close();    
     // Add Pressure to Structured Grid
     structuredGrid->GetCellData()->AddArray(Pressure);
 
     // Add Velocity to Structured Grid
     structuredGrid->GetPointData()->AddArray(Velocity);
+
+    
+
 
     // Write Grid
     vtkSmartPointer<vtkStructuredGridWriter> writer = vtkSmartPointer<vtkStructuredGridWriter>::New();
