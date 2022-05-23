@@ -322,7 +322,7 @@ void Case::simulate() {
     }
     else {
         std::cout<<"ENERGY EQN ON"<<std::endl;
-        while (t < 3*dt) {
+        while (t < _t_end) {
 
             // Apply BCs
             for (auto &i : _boundaries) {

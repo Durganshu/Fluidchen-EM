@@ -137,7 +137,6 @@ class Fields {
     Matrix<double> _P;
     /// temerature matrix
     Matrix<double> _T;
-      Matrix<double> _T_new;  //Temporary matrix to store temperature values for a particulat iteration
     /// x-momentum flux matrix
     Matrix<double> _F;
     /// y-momentum flux matrix
