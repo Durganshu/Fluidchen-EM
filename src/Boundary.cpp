@@ -74,7 +74,6 @@ void FixedWallBoundary::apply(Fields &field) {
                 field.u(i, j) = -field.u(i, elem->neighbour(border_position::TOP)->j());
                 field.v(i, j) = 0;
                 field.p(i, j) = field.p(i, elem->neighbour(border_position::TOP)->j());
-                
             }
 
         }
@@ -209,14 +208,14 @@ void FixedWallBoundary::apply_pressure(Fields &field) {
     }
 }
 
-void FixedWallBoundary::apply_temperature(Fields &field) {
+void FixedWallBoundary::apply_temperature(Fields &field) const {
 
     // Storing the value of wall temperature
-    double wall_id = _wall_temperature.begin()->first;
-    double wall_temperature = _wall_temperature.begin()->second;
+    const double wall_id = _wall_temperature.begin()->first;
+    const double wall_temperature = _wall_temperature.begin()->second;
     // std::cout << temp1 <<" " << temp2 << "\n";
 
-    std::cout<<wall_id<<std::endl;
+    // std::cout<<wall_id<<std::endl;
 
     for (auto &elem : _cells) {
         int i = elem->i();
@@ -226,18 +225,17 @@ void FixedWallBoundary::apply_temperature(Fields &field) {
 
         // For cold and hot walls
 
-        // std::cout << "i, j = "<< i<< ", " <<j <<"  "<< wall_id
-        //       <<" " << wall_temperature << "\n" ;
+        // std::cout << "i, j = " << i << ", " << j << "  " << wall_id << " " << wall_temperature << "\n";
         if (elem->is_border(border_position::LEFT)) {
             if (0) {
             }
 
             // For rightmost boundary
             else {
-                if (wall_temperature == _wall_temperature[3] || wall_temperature == _wall_temperature[4]) {
-                    //std::cout << "i, j = "<< i<< ", " <<j <<"  "<< wall_id
-                    //     <<" " << wall_temperature << "\n" ;
-                     //field.t(i, j) = 2*wall_temperature - field.t(i-1, j);
+                if (wall_id == 3 || wall_id == 4) {
+                    // std::cout << "i, j = "<< i<< ", " <<j <<"  "<< wall_id
+                    //      <<" " << wall_temperature << "\n" ;
+                    // field.t(i, j) = 2*wall_temperature - field.t(i-1, j);
                     field.t(i, j) = 2 * wall_temperature - field.t(elem->neighbour(border_position::LEFT)->i(), j);
                 } else {
                     // std::cout << "i, j = "<< i<< ", " <<j <<"  "<< wall_id
@@ -254,20 +252,19 @@ void FixedWallBoundary::apply_temperature(Fields &field) {
 
             // For leftmost boundary
             else {
-                if (wall_temperature == _wall_temperature[3] || wall_temperature == _wall_temperature[4]) {
-                    //std::cout << "i, j = "<< i<< ", " <<j <<"  "<< wall_id
-                    //    <<" " << wall_temperature << "\n" ; 
-                    // field.t(i, j) = 2*_wall_temperature - field.t(i+1, j);
+                if (wall_id == 3 || wall_id == 4) {
+                    // std::cout << "i, j = "<< i<< ", " <<j <<"  "<< wall_id
+                    //     <<" " << wall_temperature << "\n" ;
+                    //  field.t(i, j) = 2*_wall_temperature - field.t(i+1, j);
                     field.t(i, j) = 2 * wall_temperature - field.t(elem->neighbour(border_position::RIGHT)->i(), j);
                 }
 
-                else{
+                else {
                     /* std::cout << "i, j = "<< i<< ", " <<j <<"  "<< wall_id
                         <<" " << wall_temperature << "\n" ; */
                     // field.t(i, j) = field.t(i+1, j);
                     field.t(i, j) = field.t(elem->neighbour(border_position::RIGHT)->i(), j);
                 }
-                
             }
         }
 
@@ -278,19 +275,17 @@ void FixedWallBoundary::apply_temperature(Fields &field) {
             // For bottommost boundary
             else {
 
-                if (wall_temperature == _wall_temperature[3] || wall_temperature == _wall_temperature[4]) {
-                   /*  std::cout << "i, j = "<< i<< ", " <<j <<"  "<< wall_id
-                        <<" " << wall_temperature << "\n" ; */
+                if (wall_id == 3 || wall_id == 4) {
+                    /*  std::cout << "i, j = "<< i<< ", " <<j <<"  "<< wall_id
+                         <<" " << wall_temperature << "\n" ; */
                     // field.t(i, j) = 2*_wall_temperature - field.t(i, j + 1);
                     field.t(i, j) = 2 * wall_temperature - field.t(i, elem->neighbour(border_position::TOP)->j());
-                }
-                else {
-                    //std::cout << "i, j = "<< i<< ", " <<j <<"  "<< wall_id
-                    //    <<" " << wall_temperature << "\n" ; 
-                    // field.t(i, j) = field.t(i, j + 1);
+                } else {
+                    // std::cout << "i, j = "<< i<< ", " <<j <<"  "<< wall_id
+                    //     <<" " << wall_temperature << "\n" ;
+                    //  field.t(i, j) = field.t(i, j + 1);
                     field.t(i, j) = field.t(i, elem->neighbour(border_position::TOP)->j());
                 }
-                
             }
         }
 
@@ -300,13 +295,12 @@ void FixedWallBoundary::apply_temperature(Fields &field) {
 
             // For topmost boundary
             else {
-                if (wall_temperature == _wall_temperature[3] || wall_temperature == _wall_temperature[4]) {
+                if (wall_id == 3 || wall_id == 4) {
                     /* std::cout << "i, j = "<< i<< ", " <<j <<"  "<< wall_id
                         <<" " << wall_temperature << "\n" ; */
                     // field.t(i, j) = 2*_wall_temperature - field.t(i, j - 1);
                     field.t(i, j) = 2 * wall_temperature - field.t(i, elem->neighbour(border_position::BOTTOM)->j());
-                }
-                else {
+                } else {
                     /* std::cout << "i, j = "<< i<< ", " <<j <<"  "<< wall_id
                         <<" " << wall_temperature << "\n" ; */
                     // field.t(i, j) = field.t(i, j - 1);
@@ -365,7 +359,7 @@ void MovingWallBoundary::apply_pressure(Fields &field) {
     }
 }
 
-void MovingWallBoundary::apply_temperature(Fields &field) {}
+void MovingWallBoundary::apply_temperature(Fields &field) const {}
 
 InflowBoundary::InflowBoundary(std::vector<Cell *> cells, double inflow_x_velocity, double inflow_y_velocity,
                                double inflow_pressure)
@@ -391,7 +385,7 @@ void InflowBoundary::apply_pressure(Fields &field) {
     }
 }
 
-void InflowBoundary::apply_temperature(Fields &field) {}
+void InflowBoundary::apply_temperature(Fields &field) const {}
 
 OutflowBoundary::OutflowBoundary(std::vector<Cell *> cells) : _cells(cells), _temperature_boundary_type(false) {}
 
@@ -421,4 +415,4 @@ void OutflowBoundary::apply_pressure(Fields &field) {
     }
 }
 
-void OutflowBoundary::apply_temperature(Fields &field) {}
+void OutflowBoundary::apply_temperature(Fields &field) const {}
