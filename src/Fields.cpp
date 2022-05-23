@@ -4,17 +4,17 @@
 #include <iostream>
 #include <math.h>
 
-Fields::Fields(Grid &grid, double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI,
+Fields::Fields(Grid &grid, double nu, double dt, double tau, double UI, double VI, double PI,
                double GX, double GY)
     : _nu(nu), _dt(dt), _tau(tau), _gx(GX), _gy(GY) {
 
-    _U = Matrix<double>(imax + 2, jmax + 2);
-    _V = Matrix<double>(imax + 2, jmax + 2);
-    _P = Matrix<double>(imax + 2, jmax + 2);
+    _U = Matrix<double>(grid.imax() + 2, grid.jmax() + 2);
+    _V = Matrix<double>(grid.imax() + 2, grid.jmax() + 2);
+    _P = Matrix<double>(grid.imax() + 2, grid.jmax() + 2);
 
-    _F = Matrix<double>(imax + 2, jmax + 2, 0.0);
-    _G = Matrix<double>(imax + 2, jmax + 2, 0.0);
-    _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);
+    _F = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
+    _G = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
+    _RS = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
 
     for (const auto &elem : grid.fluid_cells()) {
         int i = elem->i();
@@ -26,18 +26,18 @@ Fields::Fields(Grid &grid, double nu, double dt, double tau, int imax, int jmax,
     }
 }
 
-Fields::Fields(Grid &grid, double nu, double alpha, double beta, double dt, double tau, int imax, int jmax, double UI,
+Fields::Fields(Grid &grid, double nu, double alpha, double beta, double dt, double tau, double UI,
                double VI, double PI, double TI, double GX, double GY)
     : _nu(nu), _alpha(alpha), _beta(beta), _dt(dt), _tau(tau), _gx(GX), _gy(GY) {
 
-    _U = Matrix<double>(imax + 2, jmax + 2);   // Replace imax and jmax with grid.imax( )
-    _V = Matrix<double>(imax + 2, jmax + 2);
-    _P = Matrix<double>(imax + 2, jmax + 2);
-    _T = Matrix<double>(imax + 2, jmax + 2);
+    _U = Matrix<double>(grid.imax() + 2, grid.jmax() + 2);   // Replace imax and jmax with grid.imax( )
+    _V = Matrix<double>(grid.imax() + 2, grid.jmax() + 2);
+    _P = Matrix<double>(grid.imax() + 2, grid.jmax() + 2);
+    _T = Matrix<double>(grid.imax() + 2, grid.jmax() + 2);
 
-    _F = Matrix<double>(imax + 2, jmax + 2, 0.0);
-    _G = Matrix<double>(imax + 2, jmax + 2, 0.0);
-    _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);
+    _F = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
+    _G = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
+    _RS = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
 
     for (const auto &elem : grid.fluid_cells()) {
         int i = elem->i();

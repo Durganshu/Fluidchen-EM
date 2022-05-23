@@ -37,7 +37,7 @@ class FixedWallBoundary : public Boundary {
     virtual void apply(Fields &field);
     virtual void apply_pressure(Fields &field);
     void apply_temperature(Fields &field) const;
-    bool _temperature_boundary_type;   ////****************NOT REQUIRED ANYMORE
+    
   private:
     std::vector<Cell *> _cells;
     const std::map<int, double> _wall_temperature;
@@ -54,7 +54,6 @@ class InflowBoundary : public Boundary {
     virtual ~InflowBoundary() = default;
     virtual void apply(Fields &field);
     virtual void apply_pressure(Fields &field);
-    bool _temperature_boundary_type;  ////****************NOT REQUIRED ANYMORE
     virtual void apply_temperature(Fields &field) const;
 
   private:
@@ -74,7 +73,6 @@ class OutflowBoundary : public Boundary {
     virtual ~OutflowBoundary() = default;
     virtual void apply(Fields &field);
     virtual void apply_pressure(Fields &field);
-    bool _temperature_boundary_type ;  ////****************NOT REQUIRED ANYMORE
     virtual void apply_temperature(Fields &field) const;
 
   private:
@@ -94,7 +92,6 @@ class MovingWallBoundary : public Boundary {
     virtual ~MovingWallBoundary() = default;
     virtual void apply(Fields &field);
     virtual void apply_pressure(Fields &field);
-    bool _temperature_boundary_type ;   ////****************NOT REQUIRED ANYMORE
     virtual void apply_temperature(Fields &field) const;
 
   private:
