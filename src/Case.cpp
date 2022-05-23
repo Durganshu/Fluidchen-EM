@@ -321,7 +321,7 @@ void Case::simulate() {
     }
     else {
         std::cout<<"ENERGY EQN ON"<<std::endl;
-        while (t < 2*dt) {
+        while (t < _t_end) {
 
             // Apply BCs
             for (auto &i : _boundaries) {
@@ -333,7 +333,6 @@ void Case::simulate() {
             //Calculate Temperatures
             _field.calculate_temperatures(_grid);
             
-            std::cout<<_energy_eq;
             // Calculate Fluxes
             _field.calculate_fluxes(_grid, _energy_eq);
 
