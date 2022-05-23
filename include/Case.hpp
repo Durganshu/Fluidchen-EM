@@ -87,4 +87,15 @@ class Case {
     void output_vtk(int t, int my_rank = 0);
 
     void build_domain(Domain &domain, int imax_domain, int jmax_domain);
+
+    /**
+     * @brief Checks for unphysical values in velocity and pressure
+     *
+     * Prints the unphysical values if any and their respective index
+     *
+     * @param[in] Field
+     * @param[in] imax
+     * @param[in] jmax
+     */
+    bool check_err(Fields &field, int imax, int jmax);
 };

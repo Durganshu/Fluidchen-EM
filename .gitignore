@@ -1,4 +1,4 @@
-*_Output
+utput
 *.vtk
 *.exe
 *~
@@ -11,3 +11,5 @@ Makefile
 doxygen_doc
 compile_commands.json
 .clangd
+
+
