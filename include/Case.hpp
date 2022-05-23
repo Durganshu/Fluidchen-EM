@@ -65,6 +65,9 @@ class Case {
     std::unique_ptr<PressureSolver> _pressure_solver;
     std::vector<std::unique_ptr<Boundary>> _boundaries;
 
+    ///Set to true to enable energy equations
+    bool _energy_eq = false;
+    
     /// Solver convergence tolerance
     double _tolerance;
 

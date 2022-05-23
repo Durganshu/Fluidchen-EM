@@ -56,19 +56,18 @@ Case::Case(std::string file_name, int argn, char **args) {
     double UIN; /* X- Inlet Velocity*/
     double VIN; /* Y- Inlet velocity*/
 
-    double dP ;  /* Pressure Drop across the channel */
- 
-       /* WALL CLUSTERS  */
+    double dP; /* Pressure Drop across the channel */
+
+    /* WALL CLUSTERS  */
     int num_of_walls; /* Number of walls   */
     double wall_temp_3 = -1;
     double wall_temp_4 = -1;
     double wall_temp_5 = -1; /* Wall temperature -1 for Adiabatic Wall  */
 
     /* ENERGY VARIABLES*/
-    double TI;              /* Initial temperature*/
-    bool energy_eq = false; /* Set to True: Energy equation enabled*/
-    double beta;            /* Thermal Expansion Coefficient  */
-    double alpha;           /* Thermal diffusivity   */
+    double TI;    /* Initial temperature*/
+    double beta;  /* Thermal Expansion Coefficient  */
+    double alpha; /* Thermal diffusivity   */
 
     if (file.is_open()) {
 
@@ -109,7 +108,7 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "energy_eq") {
                     std::string temp;
                     file >> temp;
-                    if (temp == "on") energy_eq = true;
+                    if (temp == "on") _energy_eq = true;
                 }
                 if (var == "beta") file >> beta;
                 if (var == "alpha") file >> alpha;
@@ -136,16 +135,20 @@ Case::Case(std::string file_name, int argn, char **args) {
     build_domain(domain, imax, jmax);
 
     _grid = Grid(_geom_name, domain);
-    _field = Fields(_grid, nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI);
+    if (!_energy_eq) {
+        _field = Fields(_grid, nu, dt, tau, UI, VI, PI, GX, GY);
+    } else {
+        _field = Fields(_grid, nu, alpha, beta, dt, tau, UI, VI, PI, TI, GX, GY);
+    }
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);
     _max_iter = itermax;
     _tolerance = eps;
 
-    std::map<int,double> temp1= {{3,wall_temp_3}};
-    std::map<int,double> temp2= {{4,wall_temp_4}};
-    std::map<int,double> temp3 ={{5,wall_temp_5}};
+    std::map<int, double> temp1 = {{3, wall_temp_3}};
+    std::map<int, double> temp2 = {{4, wall_temp_4}};
+    std::map<int, double> temp3 = {{5, wall_temp_5}};
 
     // Construct boundaries
     if (not _grid.moving_wall_cells().empty()) {
@@ -162,7 +165,7 @@ Case::Case(std::string file_name, int argn, char **args) {
         _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.hot_fixed_wall_cells(), temp2));
     }
     if (not _grid.adiabatic_fixed_wall_cells().empty()) {
-        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.adiabatic_fixed_wall_cells(),temp3));
+        _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.adiabatic_fixed_wall_cells(), temp3));
     }
     if (not _grid.inflow_cells().empty()) {
         _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.inflow_cells(), UIN, VIN, dP));
@@ -241,80 +244,140 @@ void Case::set_file_names(std::string file_name) {
 void Case::simulate() {
 
     std::ofstream output_file;
-    std::string outputname =
-       _dict_name + '/' + _case_name + ".log";
+    std::string outputname = _dict_name + '/' + _case_name + ".log";
     output_file.open(outputname);
 
-    //output_file << "Welcome to Fluidchen!!!\n";
+    // output_file << "Welcome to Fluidchen!!!\n";
     writeIntro(output_file);
 
     double t = 0.0;
     double dt = _field.dt();
     int timestep = 0;
     double output_counter = 0.0;
-    uint8_t counter = 0; //Counter for printing values on the console
+    uint8_t counter = 0; // Counter for printing values on the console
 
     auto start = std::chrono::steady_clock::now();
 
     output_vtk(timestep++); // Writing intial data
 
-    while (t < _t_end) {
+    if (!_energy_eq) {
+        std::cout << "ENERGY EQUATION OFF" << std::endl;
+        while (t < _t_end) {
 
-        // Apply BCs
-        for (auto &i : _boundaries) {
-            i->apply(_field);
-        }
-
-        // Calculate Fluxes
-        _field.calculate_fluxes(_grid);
-
-        // Calculate RHS of PPE
-        _field.calculate_rs(_grid);
-
-        // Perform SOR Iterations
-        int it = 0;
-        double res = 1000.;
-        while (it <= _max_iter && res >= _tolerance) {
-            for(auto &i : _boundaries){
-                i->apply_pressure(_field);
+            // Apply BCs
+            for (auto &i : _boundaries) {
+                i->apply(_field);
             }
-            res = _pressure_solver->solve(_field, _grid, _boundaries);
-            it++;
+
+            // Calculate Fluxes
+            _field.calculate_fluxes(_grid);
+
+            // Calculate RHS of PPE
+            _field.calculate_rs(_grid);
+
+            // Perform SOR Iterations
+            int it = 0;
+            double res = 1000.;
+            while (it <= _max_iter && res >= _tolerance) {
+                for (auto &i : _boundaries) {
+                    i->apply_pressure(_field);
+                }
+                res = _pressure_solver->solve(_field, _grid, _boundaries);
+                it++;
+            }
+
+            // Calculate Velocities U and V
+            _field.calculate_velocities(_grid);
+
+            // Storing the values in the VTK file
+            output_counter += dt;
+            if (output_counter >= _output_freq) {
+                output_vtk(timestep++);
+                output_counter = 0;
+                std::cout << "\nWriting Data at t=" << t << "s\n\n";
+            }
+
+            // Writing simulation data in a log file
+            output_file << "Simulation Time=" << t << "s\tTime Step=" << dt << "s\tSOR Iterations= " << it
+                        << "\tSOR Residual= " << res << "\n";
+
+            // Printing info and checking for errors once in 5 runs of the loop
+            if (counter == 10) {
+                counter = 0;
+                std::cout << "Simulation Time=" << t << "s\tTime Step=" << dt << "s\tSOR Iterations= " << it
+                          << "\tSOR Residual= " << res << "\n";
+                if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0); // Check for unphysical behaviour
+            }
+            counter++;
+
+            // Updating current time
+            t = t + dt;
+
+            // Calculate Adaptive Time step
+            dt = _field.calculate_dt(_grid);
         }
+    }
+    else {
+        std::cout<<"ENERGY EQN ON"<<std::endl;
+        while (t < _t_end) {
 
-        if (it >= _max_iter){
-            output_file << "\nSOR Max Iteration Reached!\nSOR Residue=" << res << "\n\n";
-            std::cout << "\nSOR Max Iteration Reached!\nSOR Residue=" << res << "\n\n";
+            // Apply BCs
+            for (auto &i : _boundaries) {
+                i->apply(_field);
+                i->apply_temperature(_field);
+            }
+
+            // Calculate Temperatures
+            _field.calculate_temperatures(_grid);
+            
+            // Calculate Fluxes
+            _field.calculate_fluxes(_grid, _energy_eq);
+
+            // Calculate RHS of PPE
+            _field.calculate_rs(_grid);
+
+            // Perform SOR Iterations
+            int it = 0;
+            double res = 1000.;
+            while (it <= _max_iter && res >= _tolerance) {
+                for (auto &i : _boundaries) {
+                    i->apply_pressure(_field);
+                }
+                res = _pressure_solver->solve(_field, _grid, _boundaries);
+                it++;
+            }
+
+            // Calculate Velocities U and V
+            _field.calculate_velocities(_grid);
+
+            // Storing the values in the VTK file
+            output_counter += dt;
+            if (output_counter >= _output_freq) {
+                output_vtk(timestep++);
+                output_counter = 0;
+                std::cout << "\nWriting Data at t=" << t << "s\n\n";
+            }
+
+            // Writing simulation data in a log file
+            output_file << "Simulation Time=" << t << "s\tTime Step=" << dt << "s\tSOR Iterations= " << it
+                        << "\tSOR Residual= " << res << "\n";
+
+            // Printing info and checking for errors once in 5 runs of the loop
+            if (counter == 10) {
+                counter = 0;
+                std::cout << "Simulation Time=" << t << "s\tTime Step=" << dt << "s\tSOR Iterations= " << it
+                          << "\tSOR Residual= " << res << "\n";
+
+                if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0); // Check for unphysical behaviour
+            }
+            counter++;
+
+            // Updating current time
+            t = t + dt;
+
+            // Calculate Adaptive Time step
+            dt = _field.calculate_dt_e(_grid);
         }
-
-        // Calculate Velocities U and V
-        _field.calculate_velocities(_grid);
-
-        // Storing the values in the VTK file
-        output_counter += dt;
-        if (output_counter >= _output_freq) {
-            output_vtk(timestep++);
-            output_counter = 0;
-            std::cout << "\nWriting Data at t=" << t << "s\n\n";
-        }
-
-        // Writing simulation data in a log file
-        output_file << "Simulation Time=" << t << "s         Time Step=" << dt << "s\n";
-        
-        // Printing info and checking for errors once in 5 runs of the loop
-        if (counter == 10) {
-            counter = 0;
-            std::cout << "Simulation Time=" << t << "s         Time Step=" << dt << "s\n";
-
-            if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0); // Check for unphysical behaviour
-        }
-        counter++;
-
-        // Updating current time
-        t = t + dt;
-
-        // Calculate Adaptive Time step
-        dt = _field.calculate_dt(_grid);
     }
 
     // Storing values at the last time step
@@ -338,6 +401,9 @@ void Case::output_vtk(int timestep, int my_rank) {
 
     double x = _grid.domain().imin * dx;
     double y = _grid.domain().jmin * dy;
+
+    std::ofstream temp_file;
+    temp_file.open("temperature.log"), temp_file << "Writing temperature values\n";
 
     { y += dy; }
     { x += dx; }
@@ -367,7 +433,13 @@ void Case::output_vtk(int timestep, int my_rank) {
     Velocity->SetName("velocity");
     Velocity->SetNumberOfComponents(3);
 
+    // Temperature Array
+    vtkDoubleArray *Temperature = vtkDoubleArray::New();
+    Temperature->SetName("temperature");
+    Temperature->SetNumberOfComponents(1);
+
     // Print pressure and temperature from bottom to top
+
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {
         for (int i = 1; i < _grid.domain().size_x + 1; i++) {
             double pressure = _field.p(i, j);
@@ -388,6 +460,21 @@ void Case::output_vtk(int timestep, int my_rank) {
         }
     }
 
+    if (_energy_eq == true) {
+        // Print Temperature from bottom to top
+        for (int j = 1; j < _grid.domain().size_y + 1; j++) {
+            for (int i = 1; i < _grid.domain().size_x + 1; i++) {
+                double temperature = _field.t(i, j);
+                Temperature->InsertNextTuple(&temperature);
+                temp_file << "(" << i << ", " << j << ", " << _field.t(i, j) << ")";
+            }
+            temp_file << "\n";
+        }
+
+        // Add Temperature to Structured Grid
+        structuredGrid->GetCellData()->AddArray(Temperature);
+    }
+    temp_file.close();
     // Add Pressure to Structured Grid
     structuredGrid->GetCellData()->AddArray(Pressure);
 
@@ -399,7 +486,7 @@ void Case::output_vtk(int timestep, int my_rank) {
 
     // Create Filename
     std::string outputname =
-       _dict_name + '/' + _case_name + "_" + std::to_string(my_rank) + "." + std::to_string(timestep) + ".vtk";
+        _dict_name + '/' + _case_name + "_" + std::to_string(my_rank) + "." + std::to_string(timestep) + ".vtk";
 
     writer->SetFileName(outputname.c_str());
     writer->SetInputData(structuredGrid);
@@ -442,34 +529,34 @@ bool Case::check_err(Fields &field, int imax, int jmax) {
 
 void Case::writeIntro(std::ofstream &output_file) {
     output_file << "Welcome to FluidChen Flow Solver!\nThis project wqas developed as a part of Computational "
-                 "Fluid Dynamics Lab course.\n\n\n\n";
+                   "Fluid Dynamics Lab course.\n\n\n\n";
     output_file << "                                                     ..::::::..\n"
-              << "                                                 .^!7?7^:::.:^^:\n"
-              << "                                              .~?55YY!..:~:   .\n"
-              << "                                            :7Y5GGP5YJ?77:...:^^^.\n"
-              << "                                          :?Y5YG#BGG5J7~^::::^~~~:\n"
-              << "                                        .7Y5YYYB&#P7:.\n"
-              << "                                       :J55YYYYB#!\n"
-              << "                                      ^Y5YYYYYYP~\n"
-              << "                                     :Y5YYYYYYYJ.\n"
-              << "                                     J5YYYYYYYJ?!..::::.\n"
-              << "                                    ~YYYYYYYYYJ?7~^:::::\n"
-              << "                                    7YYYYYYYYJJ?77^\n"
-              << "                                    ?JJJYYYYJJJ???!\n"
-              << "                                    ?JJJJJJJJJJJJJJ~\n"
-              << "                                    !???JJJJJJYYYYYY^ \n"
-              << "                                    ^????JJJYYYY555P5^\n"
-              << "                                    .????JJJYY55PPPPGJ\n"
-              << "                                     ^???JJY55PPPGGGBY\n"
-              << "                                      !JJJYY5PPPGGGBP:\n"
-              << "                                       ^?Y55PPPGGBGJ:\n"
-              << "                                         :~7JJYJ?!:\n\n\n"
-              <<
+                << "                                                 .^!7?7^:::.:^^:\n"
+                << "                                              .~?55YY!..:~:   .\n"
+                << "                                            :7Y5GGP5YJ?77:...:^^^.\n"
+                << "                                          :?Y5YG#BGG5J7~^::::^~~~:\n"
+                << "                                        .7Y5YYYB&#P7:.\n"
+                << "                                       :J55YYYYB#!\n"
+                << "                                      ^Y5YYYYYYP~\n"
+                << "                                     :Y5YYYYYYYJ.\n"
+                << "                                     J5YYYYYYYJ?!..::::.\n"
+                << "                                    ~YYYYYYYYYJ?7~^:::::\n"
+                << "                                    7YYYYYYYYJJ?77^\n"
+                << "                                    ?JJJYYYYJJJ???!\n"
+                << "                                    ?JJJJJJJJJJJJJJ~\n"
+                << "                                    !???JJJJJJYYYYYY^ \n"
+                << "                                    ^????JJJYYYY555P5^\n"
+                << "                                    .????JJJYY55PPPPGJ\n"
+                << "                                     ^???JJY55PPPGGGBY\n"
+                << "                                      !JJJYY5PPPGGGBP:\n"
+                << "                                       ^?Y55PPPGGBGJ:\n"
+                << "                                         :~7JJYJ?!:\n\n\n"
+                <<
 
         "               ?G???7. 5J     JY    J5  YY .P5?Y57   :!~^^^~^  ?.   !~  ?!:^^:  Y7.   J\n"
-              << "               JG      PY     Y5    YP  55 .B7  :GY .J.        J~:::?~  ?~.::   J:7~  J.\n"
-              << "               JB777:  PY     YG.   P5  55 .B7  .PY .J.        J~:^:?~  ?!:::   J  ~7:J.\n"
-              << "               JP      5P???! :Y5??Y5:  5Y .G5?J5?.  :7~^:^~^  J.   !~  ?~::::  J   :7Y\n\n\n\n";
+                << "               JG      PY     Y5    YP  55 .B7  :GY .J.        J~:::?~  ?~.::   J:7~  J.\n"
+                << "               JB777:  PY     YG.   P5  55 .B7  .PY .J.        J~:^:?~  ?!:::   J  ~7:J.\n"
+                << "               JP      5P???! :Y5??Y5:  5Y .G5?J5?.  :7~^:^~^  J.   !~  ?~::::  J   :7Y\n\n\n\n";
 }
 
 void Case::printIntro() {
