@@ -65,9 +65,9 @@ Case::Case(std::string file_name, int argn, char **args) {
     double wall_temp_5 = -1; /* Wall temperature -1 for Adiabatic Wall  */
 
     /* ENERGY VARIABLES*/
-    double TI;              /* Initial temperature*/
-    double beta;            /* Thermal Expansion Coefficient  */
-    double alpha;           /* Thermal diffusivity   */
+    double TI;    /* Initial temperature*/
+    double beta;  /* Thermal Expansion Coefficient  */
+    double alpha; /* Thermal diffusivity   */
 
     if (file.is_open()) {
 
@@ -136,9 +136,9 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     _grid = Grid(_geom_name, domain);
     if (!_energy_eq) {
-        _field = Fields(_grid, nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI);
+        _field = Fields(_grid, nu, dt, tau, UI, VI, PI, GX, GY);
     } else {
-        _field = Fields(_grid, nu, alpha, beta, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI);
+        _field = Fields(_grid, nu, alpha, beta, dt, tau, UI, VI, PI, TI, GX, GY);
     }
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
@@ -151,12 +151,6 @@ Case::Case(std::string file_name, int argn, char **args) {
     std::map<int, double> temp3 = {{5, wall_temp_5}};
 
     // Construct boundaries
-    if (not _grid.inflow_cells().empty()) {
-        _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.inflow_cells(), UIN, VIN, dP));
-    }
-    if (not _grid.outflow_cells().empty()) {
-        _boundaries.push_back(std::make_unique<OutflowBoundary>(_grid.outflow_cells()));
-    }
     if (not _grid.moving_wall_cells().empty()) {
         _boundaries.push_back(
             std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
@@ -173,7 +167,12 @@ Case::Case(std::string file_name, int argn, char **args) {
     if (not _grid.adiabatic_fixed_wall_cells().empty()) {
         _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.adiabatic_fixed_wall_cells(), temp3));
     }
-
+    if (not _grid.inflow_cells().empty()) {
+        _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.inflow_cells(), UIN, VIN, dP));
+    }
+    if (not _grid.outflow_cells().empty()) {
+        _boundaries.push_back(std::make_unique<OutflowBoundary>(_grid.outflow_cells()));
+    }
 }
 
 void Case::set_file_names(std::string file_name) {
@@ -261,18 +260,18 @@ void Case::simulate() {
 
     output_vtk(timestep++); // Writing intial data
 
-    if (!_energy_eq){
-        std::cout<<"ENERGY EQUATION OFF"<<std::endl;
+    if (!_energy_eq) {
+        std::cout << "ENERGY EQUATION OFF" << std::endl;
         while (t < _t_end) {
-            
+
             // Apply BCs
             for (auto &i : _boundaries) {
                 i->apply(_field);
             }
-            
+
             // Calculate Fluxes
             _field.calculate_fluxes(_grid);
-        
+
             // Calculate RHS of PPE
             _field.calculate_rs(_grid);
 
@@ -299,15 +298,14 @@ void Case::simulate() {
             }
 
             // Writing simulation data in a log file
-            output_file << "Simulation Time=" << t << "s\tTime Step=" << dt << "s\tSOR Iterations= "
-                            <<it <<"\tSOR Residual= " <<res <<"\n";
-            
+            output_file << "Simulation Time=" << t << "s\tTime Step=" << dt << "s\tSOR Iterations= " << it
+                        << "\tSOR Residual= " << res << "\n";
 
             // Printing info and checking for errors once in 5 runs of the loop
             if (counter == 10) {
                 counter = 0;
-                std::cout << "Simulation Time=" << t << "s\tTime Step=" << dt << "s\tSOR Iterations= "
-                            <<it <<"\tSOR Residual= " <<res <<"\n";
+                std::cout << "Simulation Time=" << t << "s\tTime Step=" << dt << "s\tSOR Iterations= " << it
+                          << "\tSOR Residual= " << res << "\n";
                 if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0); // Check for unphysical behaviour
             }
             counter++;
@@ -329,8 +327,7 @@ void Case::simulate() {
                 i->apply_temperature(_field);
             }
 
-
-            //Calculate Temperatures
+            // Calculate Temperatures
             _field.calculate_temperatures(_grid);
             
             // Calculate Fluxes
@@ -362,14 +359,14 @@ void Case::simulate() {
             }
 
             // Writing simulation data in a log file
-            output_file << "Simulation Time=" << t << "s\tTime Step=" << dt << "s\tSOR Iterations= "
-                            <<it <<"\tSOR Residual= " <<res <<"\n";
+            output_file << "Simulation Time=" << t << "s\tTime Step=" << dt << "s\tSOR Iterations= " << it
+                        << "\tSOR Residual= " << res << "\n";
 
             // Printing info and checking for errors once in 5 runs of the loop
             if (counter == 10) {
                 counter = 0;
-                std::cout << "Simulation Time=" << t << "s\tTime Step=" << dt << "s\tSOR Iterations= "
-                           <<it <<"\tSOR Residual= " <<res <<"\n";
+                std::cout << "Simulation Time=" << t << "s\tTime Step=" << dt << "s\tSOR Iterations= " << it
+                          << "\tSOR Residual= " << res << "\n";
 
                 if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0); // Check for unphysical behaviour
             }
@@ -406,12 +403,11 @@ void Case::output_vtk(int timestep, int my_rank) {
     double y = _grid.domain().jmin * dy;
 
     std::ofstream temp_file;
-    temp_file.open ("temperature.log"),
-    temp_file << "Writing temperature values\n";
+    temp_file.open("temperature.log"), temp_file << "Writing temperature values\n";
 
     { y += dy; }
     { x += dx; }
-    
+
     double z = 0;
     for (int col = 0; col < _grid.domain().size_y + 1; col++) {
         x = _grid.domain().imin * dx;
@@ -419,11 +415,10 @@ void Case::output_vtk(int timestep, int my_rank) {
         for (int row = 0; row < _grid.domain().size_x + 1; row++) {
             points->InsertNextPoint(x, y, z);
             x += dx;
-            
         }
         y += dy;
     }
-    
+
     // Specify the dimensions of the grid
     structuredGrid->SetDimensions(_grid.domain().size_x + 1, _grid.domain().size_y + 1, 1);
     structuredGrid->SetPoints(points);
@@ -444,15 +439,14 @@ void Case::output_vtk(int timestep, int my_rank) {
     Temperature->SetNumberOfComponents(1);
 
     // Print pressure and temperature from bottom to top
-    
+
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {
         for (int i = 1; i < _grid.domain().size_x + 1; i++) {
             double pressure = _field.p(i, j);
             Pressure->InsertNextTuple(&pressure);
-            
         }
     }
-    
+
     // Temp Velocity
     float vel[3];
     vel[2] = 0; // Set z component to 0
@@ -466,30 +460,26 @@ void Case::output_vtk(int timestep, int my_rank) {
         }
     }
 
-    if (_energy_eq == true){
+    if (_energy_eq == true) {
         // Print Temperature from bottom to top
         for (int j = 1; j < _grid.domain().size_y + 1; j++) {
             for (int i = 1; i < _grid.domain().size_x + 1; i++) {
                 double temperature = _field.t(i, j);
                 Temperature->InsertNextTuple(&temperature);
-                temp_file << "(" <<i << ", "<<j << ", " <<_field.t(i, j) <<")";
+                temp_file << "(" << i << ", " << j << ", " << _field.t(i, j) << ")";
             }
             temp_file << "\n";
         }
 
-
         // Add Temperature to Structured Grid
         structuredGrid->GetCellData()->AddArray(Temperature);
     }
-    temp_file.close();    
+    temp_file.close();
     // Add Pressure to Structured Grid
     structuredGrid->GetCellData()->AddArray(Pressure);
 
     // Add Velocity to Structured Grid
     structuredGrid->GetPointData()->AddArray(Velocity);
-
-    
-
 
     // Write Grid
     vtkSmartPointer<vtkStructuredGridWriter> writer = vtkSmartPointer<vtkStructuredGridWriter>::New();

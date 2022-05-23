@@ -19,32 +19,33 @@ class Fields {
      * @param[in] kinematic viscosity
      * @param[in] initial timestep size
      * @param[in] adaptive timestep coefficient
-     * @param[in] number of cells in x direction
-     * @param[in] number of cells in y direction
      * @param[in] initial x-velocity
      * @param[in] initial y-velocity
      * @param[in] initial pressure
-     *
+     * @param[in] x-component of gravity
+     * @param[in] y-component of gravity
      */
 
-    Fields(Grid &grid, double _nu, double _dt, double _tau, int imax, int jmax, double UI, double VI, double PI);
+    Fields(Grid &grid, double _nu, double _dt, double _tau, double UI, double VI, double PI, double GX, double GY);
     /**
      * @brief Constructor for the fields for energy equations enabled
      *
      * @param[in] grid
      * @param[in] kinematic viscosity
+     * @param[in] thermal diffusivity
+     * @param[in] thermal expansion coefficient
      * @param[in] initial timestep size
      * @param[in] adaptive timestep coefficient
-     * @param[in] number of cells in x direction
-     * @param[in] number of cells in y direction
      * @param[in] initial x-velocity
      * @param[in] initial y-velocity
      * @param[in] initial pressure
      * @param[in] initial temperature
+     * @param[in] x-component of gravity
+     * @param[in] y-component of gravity
      *
      */
-    Fields(Grid &grid, double nu, double alpha, double beta, double dt, double tau, int imax, int jmax, double UI,
-           double VI, double PI, double TI);
+    Fields(Grid &grid, double nu, double alpha, double beta, double dt, double tau, double UI,
+           double VI, double PI, double TI, double GX, double GY);
 
     /**
      * @brief Calculates the temperature based on explicit discretization of energy 
