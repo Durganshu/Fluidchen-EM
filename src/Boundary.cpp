@@ -74,6 +74,7 @@ void FixedWallBoundary::apply(Fields &field) {
                 field.u(i, j) = -field.u(i, elem->neighbour(border_position::TOP)->j());
                 field.v(i, j) = 0;
                 field.p(i, j) = field.p(i, elem->neighbour(border_position::TOP)->j());
+                
             }
 
         }
@@ -214,6 +215,9 @@ void FixedWallBoundary::apply_temperature(Fields &field) {
     double wall_id = _wall_temperature.begin()->first;
     double wall_temperature = _wall_temperature.begin()->second;
     // std::cout << temp1 <<" " << temp2 << "\n";
+
+    std::cout<<wall_id<<std::endl;
+
     for (auto &elem : _cells) {
         int i = elem->i();
         int j = elem->j();
@@ -231,9 +235,9 @@ void FixedWallBoundary::apply_temperature(Fields &field) {
             // For rightmost boundary
             else {
                 if (wall_temperature == _wall_temperature[3] || wall_temperature == _wall_temperature[4]) {
-                    //  std::cout << "i, j = "<< i<< ", " <<j <<"  "<< wall_id
+                    //std::cout << "i, j = "<< i<< ", " <<j <<"  "<< wall_id
                     //     <<" " << wall_temperature << "\n" ;
-                    // field.t(i, j) = 2*_wall_temperature - field.t(i-1, j);
+                     //field.t(i, j) = 2*wall_temperature - field.t(i-1, j);
                     field.t(i, j) = 2 * wall_temperature - field.t(elem->neighbour(border_position::LEFT)->i(), j);
                 } else {
                     // std::cout << "i, j = "<< i<< ", " <<j <<"  "<< wall_id
@@ -251,8 +255,8 @@ void FixedWallBoundary::apply_temperature(Fields &field) {
             // For leftmost boundary
             else {
                 if (wall_temperature == _wall_temperature[3] || wall_temperature == _wall_temperature[4]) {
-                    /* std::cout << "i, j = "<< i<< ", " <<j <<"  "<< wall_id
-                        <<" " << wall_temperature << "\n" ; */
+                    //std::cout << "i, j = "<< i<< ", " <<j <<"  "<< wall_id
+                    //    <<" " << wall_temperature << "\n" ; 
                     // field.t(i, j) = 2*_wall_temperature - field.t(i+1, j);
                     field.t(i, j) = 2 * wall_temperature - field.t(elem->neighbour(border_position::RIGHT)->i(), j);
                 }
@@ -281,8 +285,8 @@ void FixedWallBoundary::apply_temperature(Fields &field) {
                     field.t(i, j) = 2 * wall_temperature - field.t(i, elem->neighbour(border_position::TOP)->j());
                 }
                 else {
-                    /* std::cout << "i, j = "<< i<< ", " <<j <<"  "<< wall_id
-                        <<" " << wall_temperature << "\n" ; */
+                    //std::cout << "i, j = "<< i<< ", " <<j <<"  "<< wall_id
+                    //    <<" " << wall_temperature << "\n" ; 
                     // field.t(i, j) = field.t(i, j + 1);
                     field.t(i, j) = field.t(i, elem->neighbour(border_position::TOP)->j());
                 }

@@ -4,8 +4,8 @@
 #include <iostream>
 #include <math.h>
 
-Fields::Fields(Grid &grid, double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI)
-    : _nu(nu), _dt(dt), _tau(tau) {
+Fields::Fields(Grid &grid, double nu, double dt, double tau, int imax, int jmax, double UI, double VI, double PI, double GX, double GY)
+    : _nu(nu), _dt(dt), _tau(tau), _gx(GX), _gy(GY) {
 
     _U = Matrix<double>(imax + 2, jmax + 2);
     _V = Matrix<double>(imax + 2, jmax + 2);
@@ -26,8 +26,8 @@ Fields::Fields(Grid &grid, double nu, double dt, double tau, int imax, int jmax,
 }
 
 Fields::Fields(Grid &grid, double nu, double alpha, double beta, double dt, double tau, int imax, int jmax, double UI,
-               double VI, double PI, double TI)
-    : _nu(nu), _alpha(alpha), _beta(beta), _dt(dt), _tau(tau) {
+               double VI, double PI, double TI, double GX, double GY)
+    : _nu(nu), _alpha(alpha), _beta(beta), _dt(dt), _tau(tau), _gx(GX), _gy(GY) {
 
     _U = Matrix<double>(imax + 2, jmax + 2);
     _V = Matrix<double>(imax + 2, jmax + 2);
@@ -37,6 +37,8 @@ Fields::Fields(Grid &grid, double nu, double alpha, double beta, double dt, doub
     _F = Matrix<double>(imax + 2, jmax + 2, 0.0);
     _G = Matrix<double>(imax + 2, jmax + 2, 0.0);
     _RS = Matrix<double>(imax + 2, jmax + 2, 0.0);
+
+    _T_new = Matrix<double>(imax + 2, jmax + 2, 0.0);
 
     for (const auto &elem : grid.fluid_cells()) {
         int i = elem->i();
@@ -53,9 +55,10 @@ void Fields::calculate_temperatures(Grid &grid){
     for (const auto &elem : grid.fluid_cells()){
         int i = elem->i();
         int j = elem->j();
-        _T(i, j) = _T(i, j) + _dt * (-Discretization::convection_t(_U, _V, _T, i, j) 
+        _T_new(i, j) = _T(i, j) + _dt * (-Discretization::convection_t(_U, _V, _T, i, j)   //T_new created to prevent inplace update
                         + _alpha*Discretization::laplacian(_T, i, j));
     }
+    _T = _T_new;
 }
 
 void Fields::calculate_fluxes(Grid &grid, bool energy_eq) {
@@ -72,6 +75,7 @@ void Fields::calculate_fluxes(Grid &grid, bool energy_eq) {
                        Discretization::convection_v(_U, _V, i, j) + (1 - energy_eq)*_gy);
         
         if (energy_eq){
+            
             _F(i,j) -= _gx * _dt * (_beta*0.5*(_T(i, j) + _T(i + 1, j)));
             _G(i,j) -= _gy * _dt *(_beta*0.5*(_T(i, j) + _T(i, j + 1)));
         }

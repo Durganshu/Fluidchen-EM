@@ -27,7 +27,7 @@ class Fields {
      *
      */
 
-    Fields(Grid &grid, double _nu, double _dt, double _tau, int imax, int jmax, double UI, double VI, double PI);
+    Fields(Grid &grid, double _nu, double _dt, double _tau, int imax, int jmax, double UI, double VI, double PI, double GX, double GY);
     /**
      * @brief Constructor for the fields for energy equations enabled
      *
@@ -44,7 +44,7 @@ class Fields {
      *
      */
     Fields(Grid &grid, double nu, double alpha, double beta, double dt, double tau, int imax, int jmax, double UI,
-           double VI, double PI, double TI);
+           double VI, double PI, double TI, double GX, double GY);
 
     /**
      * @brief Calculates the temperature based on explicit discretization of energy 
@@ -137,6 +137,7 @@ class Fields {
     Matrix<double> _P;
     /// temerature matrix
     Matrix<double> _T;
+      Matrix<double> _T_new;  //Temporary matrix to store temperature values for a particulat iteration
     /// x-momentum flux matrix
     Matrix<double> _F;
     /// y-momentum flux matrix

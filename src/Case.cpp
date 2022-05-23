@@ -136,9 +136,9 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     _grid = Grid(_geom_name, domain);
     if (!_energy_eq) {
-        _field = Fields(_grid, nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI);
+        _field = Fields(_grid, nu, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, GX, GY);
     } else {
-        _field = Fields(_grid, nu, alpha, beta, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI);
+        _field = Fields(_grid, nu, alpha, beta, dt, tau, _grid.domain().size_x, _grid.domain().size_y, UI, VI, PI, TI,GX,GY);
     }
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
@@ -151,12 +151,6 @@ Case::Case(std::string file_name, int argn, char **args) {
     std::map<int, double> temp3 = {{5, wall_temp_5}};
 
     // Construct boundaries
-    if (not _grid.inflow_cells().empty()) {
-        _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.inflow_cells(), UIN, VIN, dP));
-    }
-    if (not _grid.outflow_cells().empty()) {
-        _boundaries.push_back(std::make_unique<OutflowBoundary>(_grid.outflow_cells()));
-    }
     if (not _grid.moving_wall_cells().empty()) {
         _boundaries.push_back(
             std::make_unique<MovingWallBoundary>(_grid.moving_wall_cells(), LidDrivenCavity::wall_velocity));
@@ -173,6 +167,13 @@ Case::Case(std::string file_name, int argn, char **args) {
     if (not _grid.adiabatic_fixed_wall_cells().empty()) {
         _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.adiabatic_fixed_wall_cells(), temp3));
     }
+    if (not _grid.inflow_cells().empty()) {
+        _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.inflow_cells(), UIN, VIN, dP));
+    }
+    if (not _grid.outflow_cells().empty()) {
+        _boundaries.push_back(std::make_unique<OutflowBoundary>(_grid.outflow_cells()));
+    }
+ 
 
 }
 
@@ -321,7 +322,7 @@ void Case::simulate() {
     }
     else {
         std::cout<<"ENERGY EQN ON"<<std::endl;
-        while (t < 2*dt) {
+        while (t < 3*dt) {
 
             // Apply BCs
             for (auto &i : _boundaries) {
@@ -333,7 +334,7 @@ void Case::simulate() {
             //Calculate Temperatures
             _field.calculate_temperatures(_grid);
             
-            std::cout<<_energy_eq;
+            //std::cout<<_energy_eq;
             // Calculate Fluxes
             _field.calculate_fluxes(_grid, _energy_eq);
 
@@ -346,8 +347,6 @@ void Case::simulate() {
             while (it <= _max_iter && res >= _tolerance) {
                 for (auto &i : _boundaries) {
                     i->apply_pressure(_field);
-                    i->apply_temperature(_field);
-
                 }
                 res = _pressure_solver->solve(_field, _grid, _boundaries);
                 it++;
