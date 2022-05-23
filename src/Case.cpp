@@ -345,8 +345,6 @@ void Case::simulate() {
             while (it <= _max_iter && res >= _tolerance) {
                 for (auto &i : _boundaries) {
                     i->apply_pressure(_field);
-                    i->apply_temperature(_field);
-
                 }
                 res = _pressure_solver->solve(_field, _grid, _boundaries);
                 it++;
