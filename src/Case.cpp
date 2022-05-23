@@ -413,6 +413,12 @@ void Case::output_vtk(int timestep, int my_rank) {
         x = _grid.domain().imin * dx;
         { x += dx; }
         for (int row = 0; row < _grid.domain().size_x + 1; row++) {
+            // if (_grid.cell(row, col).type() == cell_type::FLUID){
+            //     points->InsertNextPoint(x, y, z);
+            // }
+            // else{
+            //     continue;
+            // }
             points->InsertNextPoint(x, y, z);
             x += dx;
         }
@@ -422,6 +428,19 @@ void Case::output_vtk(int timestep, int my_rank) {
     // Specify the dimensions of the grid
     structuredGrid->SetDimensions(_grid.domain().size_x + 1, _grid.domain().size_y + 1, 1);
     structuredGrid->SetPoints(points);
+
+    std::vector<vtkIdType> fixed_wall_cells;
+    for (int i = 0; i < _grid.imax(); i++) {
+        for (int j = 0; j < _grid.jmax(); j++) {
+            if (_grid.cell(i, j).type() != cell_type::FLUID) {
+                fixed_wall_cells.push_back(i + j * _grid.imax());
+            }
+        }
+    }
+
+    for (auto t{0}; t < fixed_wall_cells.size(); t++) {
+        structuredGrid->BlankCell(fixed_wall_cells.at(t));
+    }
 
     // Pressure Array
     vtkDoubleArray *Pressure = vtkDoubleArray::New();
@@ -560,7 +579,7 @@ void Case::writeIntro(std::ofstream &output_file) {
 }
 
 void Case::printIntro() {
-    std::cout << "\n\n\n\nWelcome to FluidChen Flow Solver!\nThis project wqas developed as a part of Computational "
+    std::cout << "\n\n\n\nWelcome to FluidChen Flow Solver!\nThis project was developed as a part of Computational "
                  "Fluid Dynamics Lab course.\n\n\n\n";
     std::cout << "                                                     ..::::::..\n"
               << "                                                 .^!7?7^:::.:^^:\n"
