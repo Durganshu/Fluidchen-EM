@@ -247,7 +247,6 @@ void Case::simulate() {
     std::string outputname = _dict_name + '/' + _case_name + ".log";
     output_file.open(outputname);
 
-    // output_file << "Welcome to Fluidchen!!!\n";
     writeIntro(output_file);
 
     double t = 0.0;
@@ -294,7 +293,9 @@ void Case::simulate() {
             if (output_counter >= _output_freq) {
                 output_vtk(timestep++);
                 output_counter = 0;
-                std::cout << "\nWriting Data at t=" << t << "s\n\n";
+                std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
+                          << " completed] Writing Data at t=" << t << "s"
+                          << "\n\n";
             }
 
             // Writing simulation data in a log file
@@ -306,7 +307,9 @@ void Case::simulate() {
                 counter = 0;
                 std::cout << "Simulation Time=" << t << "s\tTime Step=" << dt << "s\tSOR Iterations= " << it
                           << "\tSOR Residual= " << res << "\n";
-                if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0); // Check for unphysical behaviour
+
+                // Check for unphysical behaviour
+                if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0);
             }
             counter++;
 
@@ -316,9 +319,8 @@ void Case::simulate() {
             // Calculate Adaptive Time step
             dt = _field.calculate_dt(_grid);
         }
-    }
-    else {
-        std::cout<<"ENERGY EQN ON"<<std::endl;
+    } else {
+        std::cout << "ENERGY EQN ON" << std::endl;
         while (t < _t_end) {
 
             // Apply BCs
@@ -329,7 +331,7 @@ void Case::simulate() {
 
             // Calculate Temperatures
             _field.calculate_temperatures(_grid);
-            
+
             // Calculate Fluxes
             _field.calculate_fluxes(_grid, _energy_eq);
 
@@ -355,7 +357,9 @@ void Case::simulate() {
             if (output_counter >= _output_freq) {
                 output_vtk(timestep++);
                 output_counter = 0;
-                std::cout << "\nWriting Data at t=" << t << "s\n\n";
+                std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
+                          << " completed] Writing Data at t=" << t << "s"
+                          << "\n\n";
             }
 
             // Writing simulation data in a log file
@@ -386,6 +390,8 @@ void Case::simulate() {
     std::cout << "\nSimulation Complete!\n";
     auto end = std::chrono::steady_clock::now();
     cout << "Software Runtime:" << std::chrono::duration_cast<std::chrono::seconds>(end - start).count() << "s\n\n";
+    output_file << "Software Runtime:" << std::chrono::duration_cast<std::chrono::seconds>(end - start).count()
+                << "s\n\n";
     output_file.close();
 }
 
@@ -407,7 +413,6 @@ void Case::output_vtk(int timestep, int my_rank) {
 
     double z = 0;
 
-    
     for (int col = 0; col < _grid.domain().size_y + 1; col++) {
         x = _grid.domain().imin * dx;
         { x += dx; }
@@ -424,14 +429,12 @@ void Case::output_vtk(int timestep, int my_rank) {
 
     std::vector<vtkIdType> fixed_wall_cells;
     for (int i = 1; i <= _grid.imax(); i++) {
-        for (int j = 1; j <= _grid.jmax() ; j++) {
-            if (_grid.cell(i, j).wall_id() != 0 ) {
-                fixed_wall_cells.push_back(i - 1 + (j -1) * _grid.imax());
-                
+        for (int j = 1; j <= _grid.jmax(); j++) {
+            if (_grid.cell(i, j).wall_id() != 0) {
+                fixed_wall_cells.push_back(i - 1 + (j - 1) * _grid.imax());
             }
         }
     }
-
 
     for (auto t{0}; t < fixed_wall_cells.size(); t++) {
         structuredGrid->BlankCell(fixed_wall_cells.at(t));
@@ -465,7 +468,7 @@ void Case::output_vtk(int timestep, int my_rank) {
     vel[2] = 0; // Set z component to 0
 
     // Print Velocity from bottom to top
-    
+
     for (int j = 0; j < _grid.domain().size_y + 1; j++) {
         for (int i = 0; i < _grid.domain().size_x + 1; i++) {
             vel[0] = (_field.u(i, j) + _field.u(i, j + 1)) * 0.5;
@@ -486,7 +489,7 @@ void Case::output_vtk(int timestep, int my_rank) {
         // Add Temperature to Structured Grid
         structuredGrid->GetCellData()->AddArray(Temperature);
     }
-    
+
     // Add Pressure to Structured Grid
     structuredGrid->GetCellData()->AddArray(Pressure);
 
