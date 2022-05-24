@@ -402,23 +402,16 @@ void Case::output_vtk(int timestep, int my_rank) {
     double x = _grid.domain().imin * dx;
     double y = _grid.domain().jmin * dy;
 
-    std::ofstream temp_file;
-    temp_file.open("temperature.log"), temp_file << "Writing temperature values\n";
-
     { y += dy; }
     { x += dx; }
 
     double z = 0;
+
+    
     for (int col = 0; col < _grid.domain().size_y + 1; col++) {
         x = _grid.domain().imin * dx;
         { x += dx; }
         for (int row = 0; row < _grid.domain().size_x + 1; row++) {
-            // if (_grid.cell(row, col).type() == cell_type::FLUID){
-            //     points->InsertNextPoint(x, y, z);
-            // }
-            // else{
-            //     continue;
-            // }
             points->InsertNextPoint(x, y, z);
             x += dx;
         }
@@ -430,13 +423,15 @@ void Case::output_vtk(int timestep, int my_rank) {
     structuredGrid->SetPoints(points);
 
     std::vector<vtkIdType> fixed_wall_cells;
-    for (int i = 0; i < _grid.imax(); i++) {
-        for (int j = 0; j < _grid.jmax(); j++) {
-            if (_grid.cell(i, j).type() != cell_type::FLUID) {
-                fixed_wall_cells.push_back(i + j * _grid.imax());
+    for (int i = 1; i <= _grid.imax(); i++) {
+        for (int j = 1; j <= _grid.jmax() ; j++) {
+            if (_grid.cell(i, j).wall_id() != 0 ) {
+                fixed_wall_cells.push_back(i - 1 + (j -1) * _grid.imax());
+                
             }
         }
     }
+
 
     for (auto t{0}; t < fixed_wall_cells.size(); t++) {
         structuredGrid->BlankCell(fixed_wall_cells.at(t));
@@ -458,7 +453,6 @@ void Case::output_vtk(int timestep, int my_rank) {
     Temperature->SetNumberOfComponents(1);
 
     // Print pressure and temperature from bottom to top
-
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {
         for (int i = 1; i < _grid.domain().size_x + 1; i++) {
             double pressure = _field.p(i, j);
@@ -471,6 +465,7 @@ void Case::output_vtk(int timestep, int my_rank) {
     vel[2] = 0; // Set z component to 0
 
     // Print Velocity from bottom to top
+    
     for (int j = 0; j < _grid.domain().size_y + 1; j++) {
         for (int i = 0; i < _grid.domain().size_x + 1; i++) {
             vel[0] = (_field.u(i, j) + _field.u(i, j + 1)) * 0.5;
@@ -485,15 +480,13 @@ void Case::output_vtk(int timestep, int my_rank) {
             for (int i = 1; i < _grid.domain().size_x + 1; i++) {
                 double temperature = _field.t(i, j);
                 Temperature->InsertNextTuple(&temperature);
-                temp_file << "(" << i << ", " << j << ", " << _field.t(i, j) << ")";
             }
-            temp_file << "\n";
         }
 
         // Add Temperature to Structured Grid
         structuredGrid->GetCellData()->AddArray(Temperature);
     }
-    temp_file.close();
+    
     // Add Pressure to Structured Grid
     structuredGrid->GetCellData()->AddArray(Pressure);
 
