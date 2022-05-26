@@ -442,7 +442,7 @@ void Case::output_vtk(int timestep, int my_rank) {
         }
     }
 
-    for (auto t{0}; t < fixed_wall_cells.size(); t++) {
+    for (auto t=0; t < fixed_wall_cells.size(); t++) {
         structuredGrid->BlankCell(fixed_wall_cells.at(t));
     }
 
