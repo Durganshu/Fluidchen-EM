@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <iomanip>
 #include <iterator>
 #include <string>
 
@@ -300,15 +301,16 @@ void Case::simulate() {
             }
 
             // Writing simulation data in a log file
-            output_file << "Simulation Time=" << t << "s\tTime Step=" << dt << "s\tSOR Iterations= " << it
-                        << "\tSOR Residual= " << res << "\n";
+            output_file << std::left << "Simulation Time[s] = " << std::setw(7) << t
+                        << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3) << it
+                        << "\tSOR Residual = " << std::setw(7) << res << "\n";
 
             // Printing info and checking for errors once in 5 runs of the loop
             if (counter == 10) {
                 counter = 0;
-                std::cout << "Simulation Time=" << t << "s\tTime Step=" << dt << "s\tSOR Iterations= " << it
-                          << "\tSOR Residual= " << res << "\n";
-
+                std::cout << std::left << "Simulation Time[s] = " << std::setw(7) << t
+                          << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3) << it
+                          << "\tSOR Residual = " << std::setw(7) << res << "\n";
                 // Check for unphysical behaviour
                 if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0);
             }
@@ -364,14 +366,17 @@ void Case::simulate() {
             }
 
             // Writing simulation data in a log file
-            output_file << "Simulation Time=" << t << "s\tTime Step=" << dt << "s\tSOR Iterations= " << it
-                        << "\tSOR Residual= " << res << "\n";
+            output_file << std::left << "Simulation Time[s] = " << std::setw(7) << t
+                        << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3) << it
+                        << "\tSOR Residual = " << std::setw(7) << res << "\n";
+            ;
 
             // Printing info and checking for errors once in 5 runs of the loop
             if (counter == 10) {
                 counter = 0;
-                std::cout << "Simulation Time=" << t << "s\tTime Step=" << dt << "s\tSOR Iterations= " << it
-                          << "\tSOR Residual= " << res << "\n";
+                std::cout << std::left << "Simulation Time[s] = " << std::setw(7) << t
+                          << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3) << it
+                          << "\tSOR Residual = " << std::setw(7) << res << "\n";
 
                 if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0); // Check for unphysical behaviour
             }
