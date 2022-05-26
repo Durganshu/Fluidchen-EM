@@ -4,6 +4,13 @@
 geo_file     FluidTrap.pgm
 
 #--------------------------------------------
+#           group results
+# group_id: set this to an integer value >=0 
+# to group the output files by that value            
+#--------------------------------------------
+group_id         0
+
+#--------------------------------------------
 #            size of the domain             
 #--------------------------------------------
 xlength      2.0

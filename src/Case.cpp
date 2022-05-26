@@ -112,6 +112,7 @@ Case::Case(std::string file_name, int argn, char **args) {
                 }
                 if (var == "beta") file >> beta;
                 if (var == "alpha") file >> alpha;
+                if (var == "group_id") file >> _rank;
             }
         }
     }
@@ -257,7 +258,7 @@ void Case::simulate() {
 
     auto start = std::chrono::steady_clock::now();
 
-    output_vtk(timestep++); // Writing intial data
+    output_vtk(timestep++, _rank); // Writing intial data
 
     if (!_energy_eq) {
         std::cout << "ENERGY EQUATION OFF" << std::endl;
@@ -291,7 +292,7 @@ void Case::simulate() {
             // Storing the values in the VTK file
             output_counter += dt;
             if (output_counter >= _output_freq) {
-                output_vtk(timestep++);
+                output_vtk(timestep++, _rank);
                 output_counter = 0;
                 std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
                           << " completed] Writing Data at t=" << t << "s"
@@ -355,7 +356,7 @@ void Case::simulate() {
             // Storing the values in the VTK file
             output_counter += dt;
             if (output_counter >= _output_freq) {
-                output_vtk(timestep++);
+                output_vtk(timestep++, _rank);
                 output_counter = 0;
                 std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
                           << " completed] Writing Data at t=" << t << "s"
@@ -385,7 +386,7 @@ void Case::simulate() {
     }
 
     // Storing values at the last time step
-    output_vtk(timestep);
+    output_vtk(timestep, _rank);
 
     std::cout << "\nSimulation Complete!\n";
     auto end = std::chrono::steady_clock::now();
