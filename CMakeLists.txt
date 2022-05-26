@@ -22,12 +22,12 @@ IF( NOT CMAKE_BUILD_TYPE )
   SET( CMAKE_BUILD_TYPE RELEASE )
 ENDIF()
 
-
 # Creating the executable of our project and the required dependencies
 # the executable is called fluidchen
 file(GLOB files src/*.cpp)
 add_executable(fluidchen ${files})
 
+target_compile_options(fluidchen PUBLIC "-Wno-trigraphs")
 target_compile_definitions(fluidchen PUBLIC -Dsolution_liddriven)
 target_compile_definitions(fluidchen PUBLIC -Dsolution_energy)
 target_compile_definitions(fluidchen PUBLIC -Dsolution_parallelization)
