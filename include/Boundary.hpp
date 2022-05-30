@@ -49,8 +49,7 @@ class FixedWallBoundary : public Boundary {
  */
 class InflowBoundary : public Boundary {
   public:
-    InflowBoundary(std::vector<Cell *> cells, double inflow_x_velocity, double inflow_y_velocity,
-                   double inflow_pressure);
+    InflowBoundary(std::vector<Cell *> cells, double inflow_x_velocity, double inflow_y_velocity);
     virtual ~InflowBoundary() = default;
     virtual void apply(Fields &field);
     virtual void apply_pressure(Fields &field);
@@ -60,7 +59,7 @@ class InflowBoundary : public Boundary {
     std::vector<Cell *> _cells;
     double _x_velocity;
     double _y_velocity;
-    double _pressure;
+    
 };
 
 /**
@@ -69,7 +68,7 @@ class InflowBoundary : public Boundary {
  */
 class OutflowBoundary : public Boundary {
   public:
-    OutflowBoundary(std::vector<Cell *> cells);
+    OutflowBoundary(std::vector<Cell *> cells,double outlet_pressure);
     virtual ~OutflowBoundary() = default;
     virtual void apply(Fields &field);
     virtual void apply_pressure(Fields &field);
@@ -77,6 +76,7 @@ class OutflowBoundary : public Boundary {
 
   private:
     std::vector<Cell *> _cells;
+    double _pressure;
 };
 
 /**

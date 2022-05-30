@@ -355,9 +355,8 @@ void MovingWallBoundary::apply_pressure(Fields &field) {
 // Temperature BC for moving_wall is not in the scope of this worksheet so the function is kept as a dummy.
 void MovingWallBoundary::apply_temperature(Fields &field) const {}
 
-InflowBoundary::InflowBoundary(std::vector<Cell *> cells, double inflow_x_velocity, double inflow_y_velocity,
-                               double inflow_pressure)
-    : _cells(cells), _x_velocity(inflow_x_velocity), _y_velocity(inflow_y_velocity), _pressure(inflow_pressure) {}
+InflowBoundary::InflowBoundary(std::vector<Cell *> cells, double inflow_x_velocity, double inflow_y_velocity)
+    : _cells(cells), _x_velocity(inflow_x_velocity), _y_velocity(inflow_y_velocity) {}
 
 void InflowBoundary::apply(Fields &field) {
     for (auto &elem : _cells) {
@@ -380,7 +379,7 @@ void InflowBoundary::apply_pressure(Fields &field) {
 // Temperature BC for inflow is not in the scope of this worksheet so the function is kept as a dummy.
 void InflowBoundary::apply_temperature(Fields &field) const {}
 
-OutflowBoundary::OutflowBoundary(std::vector<Cell *> cells) : _cells(cells) {}
+OutflowBoundary::OutflowBoundary(std::vector<Cell *> cells, double outlet_pressure) : _cells(cells), _pressure(outlet_pressure) {}
 
 void OutflowBoundary::apply(Fields &field) {
     for (auto &elem : _cells) {
@@ -396,9 +395,9 @@ void OutflowBoundary::apply_pressure(Fields &field) {
     for (auto &elem : _cells) {
         int i = elem->i();
         int j = elem->j();
-        field.p(i, j) = 0.0;
+        field.p(i, j) = _pressure;
     }
 }
 
 // Temperature BC for outflow is not in the scope of this worksheet so the function is kept as a dummy.
-void OutflowBoundary::apply_temperature(Fields &field) const{}
+void OutflowBoundary::apply_temperature(Fields &field) const {}

@@ -57,7 +57,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     double UIN; /* X- Inlet Velocity*/
     double VIN; /* Y- Inlet velocity*/
 
-    double dP; /* Pressure Drop across the channel */
+    double P_out=0.0; /* Outlet_Pressure */
 
     /* WALL CLUSTERS  */
     int num_of_walls; /* Number of walls   */
@@ -100,7 +100,7 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "geo_file") file >> _geom_name;
                 if (var == "UIN") file >> UIN;
                 if (var == "VIN") file >> VIN;
-                if (var == "dP") file >> dP;
+                if (var == "Pout") file >> P_out;
                 if (var == "num_of_walls") file >> num_of_walls;
                 if (var == "wall_temp_3") file >> wall_temp_3;
                 if (var == "wall_temp_4") file >> wall_temp_4;
@@ -170,10 +170,10 @@ Case::Case(std::string file_name, int argn, char **args) {
         _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.adiabatic_fixed_wall_cells(), temp3));
     }
     if (not _grid.inflow_cells().empty()) {
-        _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.inflow_cells(), UIN, VIN, dP));
+        _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.inflow_cells(), UIN, VIN));
     }
     if (not _grid.outflow_cells().empty()) {
-        _boundaries.push_back(std::make_unique<OutflowBoundary>(_grid.outflow_cells()));
+        _boundaries.push_back(std::make_unique<OutflowBoundary>(_grid.outflow_cells(),P_out));
     }
 }
 
