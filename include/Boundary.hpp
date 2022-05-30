@@ -92,7 +92,7 @@ class MovingWallBoundary : public Boundary {
     virtual ~MovingWallBoundary() = default;
     virtual void apply(Fields &field);
     virtual void apply_pressure(Fields &field);
-    virtual void apply_temperature(Fields &field) const;
+    virtual void apply_temperature(Fields &field) const ;
 
   private:
     std::vector<Cell *> _cells;
