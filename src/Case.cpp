@@ -5,6 +5,7 @@
 #include <chrono>
 #include <iomanip>
 #include <iterator>
+#include <mpi.h>
 #include <string>
 
 #ifdef GCC_VERSION_9_OR_HIGHER
@@ -37,38 +38,39 @@ Case::Case(std::string file_name, int argn, char **args) {
     // Read input parameters
     const int MAX_LINE_LENGTH = 1024;
     std::ifstream file(file_name);
-    double nu;       /* viscosity   */
-    double UI = 0.0; /* velocity x-direction */
-    double VI = 0.0; /* velocity y-direction */
-    double PI;       /* pressure */
-    double GX;       /* gravitation x-direction */
-    double GY;       /* gravitation y-direction */
-    double xlength;  /* length of the domain x-dir.*/
-    double ylength;  /* length of the domain y-dir.*/
-    double dt;       /* time step */
-    int imax;        /* number of cells x-direction*/
-    int jmax;        /* number of cells y-direction*/
-    double gamma;    /* upwind differencing factor*/
-    double omg;      /* relaxation factor */
-    double tau;      /* safety factor for time step*/
-    int itermax;     /* max. number of iterations for pressure per time step */
-    double eps;      /* accuracy bound for pressure*/
-
-    double UIN; /* X- Inlet Velocity*/
-    double VIN; /* Y- Inlet velocity*/
-
-    double P_out=0.0; /* Outlet_Pressure */
+    double nu;          /* viscosity   */
+    double UI = 0.0;    /* velocity x-direction */
+    double VI = 0.0;    /* velocity y-direction */
+    double PI;          /* pressure */
+    double GX;          /* gravitation x-direction */
+    double GY;          /* gravitation y-direction */
+    double xlength;     /* length of the domain x-dir.*/
+    double ylength;     /* length of the domain y-dir.*/
+    double dt;          /* time step */
+    int imax;           /* number of cells x-direction*/
+    int jmax;           /* number of cells y-direction*/
+    double gamma;       /* upwind differencing factor*/
+    double omg;         /* relaxation factor */
+    double tau;         /* safety factor for time step*/
+    int itermax;        /* max. number of iterations for pressure per time step */
+    double eps;         /* accuracy bound for pressure*/
+    double UIN;         /* X- Inlet Velocity*/
+    double VIN;         /* Y- Inlet velocity*/
+    double P_out = 0.0; /* Outlet_Pressure */
 
     /* WALL CLUSTERS  */
-    int num_of_walls; /* Number of walls   */
-    double wall_temp_3 = -1;
-    double wall_temp_4 = -1;
+    int num_of_walls;        /* Number of walls   */
+    double wall_temp_3 = -1; /*Cold wall temperature*/
+    double wall_temp_4 = -1; /*Hot wall temperature*/
     double wall_temp_5 = -1; /* Wall temperature -1 for Adiabatic Wall  */
 
     /* ENERGY VARIABLES*/
     double TI;    /* Initial temperature*/
     double beta;  /* Thermal Expansion Coefficient  */
     double alpha; /* Thermal diffusivity   */
+
+    int iproc = 1; /*Number of processes in x direction*/
+    int jproc = 1; /*Number of processes in y direction*/
 
     if (file.is_open()) {
 
@@ -114,6 +116,20 @@ Case::Case(std::string file_name, int argn, char **args) {
                 if (var == "beta") file >> beta;
                 if (var == "alpha") file >> alpha;
                 if (var == "group_id") file >> _rank;
+                if (var == "x") {
+                    file >> iproc;
+                    if (iproc < 1) {
+                        std::cout << "Number of domain decomposition in x-direction cannot be less than 1.\n";
+                        exit(0);
+                    }
+                };
+                if (var == "y") {
+                    file >> jproc;
+                    if (jproc < 1) {
+                        std::cout << "Number of domain decomposition in y-direction cannot be less than 1.\n";
+                        exit(0);
+                    }
+                }
             }
         }
     }
@@ -173,7 +189,7 @@ Case::Case(std::string file_name, int argn, char **args) {
         _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.inflow_cells(), UIN, VIN));
     }
     if (not _grid.outflow_cells().empty()) {
-        _boundaries.push_back(std::make_unique<OutflowBoundary>(_grid.outflow_cells(),P_out));
+        _boundaries.push_back(std::make_unique<OutflowBoundary>(_grid.outflow_cells(), P_out));
     }
 }
 
@@ -442,7 +458,7 @@ void Case::output_vtk(int timestep, int my_rank) {
         }
     }
 
-    for (auto t=0; t < fixed_wall_cells.size(); t++) {
+    for (auto t = 0; t < fixed_wall_cells.size(); t++) {
         structuredGrid->BlankCell(fixed_wall_cells.at(t));
     }
 
