@@ -25,6 +25,7 @@ namespace filesystem = std::filesystem;
 namespace filesystem = std::experimental::filesystem;
 #endif
 
+
 #include <vtkCellData.h>
 #include <vtkDoubleArray.h>
 #include <vtkPointData.h>
@@ -34,8 +35,16 @@ namespace filesystem = std::experimental::filesystem;
 #include <vtkStructuredGridWriter.h>
 #include <vtkTuple.h>
 
-Case::Case(std::string file_name, int argn, char **args) {
+int g_mpi_rank = 0;
+#ifndef MPI_RANK
+#define MPI_RANK g_mpi_rank
+#endif
+
+#if MPI_RANK == 0
+Case::Case(std::string file_name, int argn, char **args, int rank) {
+    //std::cout << MPI_RANK << "\n\n\n\n\n\n\n\n\n";
     // Read input parameters
+    g_mpi_rank = rank;
     const int MAX_LINE_LENGTH = 1024;
     std::ifstream file(file_name);
     double nu;          /* viscosity   */
@@ -627,3 +636,4 @@ void Case::printIntro() {
               << "               JB777:  PY     YG.   P5  55 .B7  .PY .J.        J~:^:?~  ?!:::   J  ~7:J.\n"
               << "               JP      5P???! :Y5??Y5:  5Y .G5?J5?.  :7~^:^~^  J.   !~  ?~::::  J   :7Y\n\n\n\n";
 }
+#endif
