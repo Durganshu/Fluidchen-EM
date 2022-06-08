@@ -395,7 +395,7 @@ void OutflowBoundary::apply_pressure(Fields &field) {
     for (auto &elem : _cells) {
         int i = elem->i();
         int j = elem->j();
-        field.p(i, j) = _pressure;
+        field.p(i, j) = 2*_pressure-field.p(elem->neighbour(border_position::LEFT)->i(), j);
     }
 }
 
