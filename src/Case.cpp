@@ -35,6 +35,9 @@ namespace filesystem = std::experimental::filesystem;
 #include <vtkTuple.h>
 
 Case::Case(std::string file_name, int argn, char **args) {
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &_size);
     // Read input parameters
     const int MAX_LINE_LENGTH = 1024;
     std::ifstream file(file_name);
@@ -115,17 +118,17 @@ Case::Case(std::string file_name, int argn, char **args) {
                 }
                 if (var == "beta") file >> beta;
                 if (var == "alpha") file >> alpha;
-                if (var == "group_id") file >> _rank;
+                
                 if (var == "x") {
-                    file >> iproc;
-                    if (iproc < 1) {
+                    file >> _iproc;
+                    if (_iproc < 1) {
                         std::cout << "Number of domain decomposition in x-direction cannot be less than 1.\n";
                         exit(0);
                     }
                 };
                 if (var == "y") {
-                    file >> jproc;
-                    if (jproc < 1) {
+                    file >> _jproc;
+                    if (_jproc < 1) {
                         std::cout << "Number of domain decomposition in y-direction cannot be less than 1.\n";
                         exit(0);
                     }
@@ -311,9 +314,9 @@ void Case::simulate() {
             if (output_counter >= _output_freq) {
                 output_vtk(timestep++, _rank);
                 output_counter = 0;
-                std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
+/*                 std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
                           << " completed] Writing Data at t=" << t << "s"
-                          << "\n\n";
+                          << "\n\n"; */
             }
 
             // Writing simulation data in a log file
@@ -324,9 +327,9 @@ void Case::simulate() {
             // Printing info and checking for errors once in 5 runs of the loop
             if (counter == 10) {
                 counter = 0;
-                std::cout << std::left << "Simulation Time[s] = " << std::setw(7) << t
+/*                 std::cout << std::left << "Simulation Time[s] = " << std::setw(7) << t
                           << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3) << it
-                          << "\tSOR Residual = " << std::setw(7) << res << "\n";
+                          << "\tSOR Residual = " << std::setw(7) << res << "\n"; */
                 // Check for unphysical behaviour
                 if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0);
             }
@@ -376,9 +379,9 @@ void Case::simulate() {
             if (output_counter >= _output_freq) {
                 output_vtk(timestep++, _rank);
                 output_counter = 0;
-                std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
+/*                 std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
                           << " completed] Writing Data at t=" << t << "s"
-                          << "\n\n";
+                          << "\n\n"; */
             }
 
             // Writing simulation data in a log file
@@ -390,9 +393,9 @@ void Case::simulate() {
             // Printing info and checking for errors once in 5 runs of the loop
             if (counter == 10) {
                 counter = 0;
-                std::cout << std::left << "Simulation Time[s] = " << std::setw(7) << t
+/*                 std::cout << std::left << "Simulation Time[s] = " << std::setw(7) << t
                           << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3) << it
-                          << "\tSOR Residual = " << std::setw(7) << res << "\n";
+                          << "\tSOR Residual = " << std::setw(7) << res << "\n"; */
 
                 if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0); // Check for unphysical behaviour
             }
@@ -531,6 +534,53 @@ void Case::output_vtk(int timestep, int my_rank) {
 }
 
 void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
+
+    int I;
+    int J;
+    int imin, imax, jmin, jmax, size_x, size_y;
+
+    if (_rank == 0) {
+        for (int i = 1; i < _size; ++i) {
+            I = i%_iproc + 1;
+            J = i/_iproc + 1;
+            imin = (I - 1) * imax_domain / _iproc;
+            imax = I * imax_domain / _iproc + 2;
+            jmin = (J - 1) * jmax_domain / _jproc;
+            jmax = J * jmax_domain / _jproc + 2;
+            size_x = imax_domain / _iproc;
+            size_y = jmax_domain / _jproc;
+            MPI_Send(&imin, 1, MPI_INT, i, 999, MPI_COMM_WORLD);
+            MPI_Send(&imax, 1, MPI_INT, i, 998, MPI_COMM_WORLD);
+            MPI_Send(&jmin, 1, MPI_INT, i, 997, MPI_COMM_WORLD);
+            MPI_Send(&jmax, 1, MPI_INT, i, 996, MPI_COMM_WORLD);
+            MPI_Send(&size_x, 1, MPI_INT, i, 995, MPI_COMM_WORLD);
+            MPI_Send(&size_y, 1, MPI_INT, i, 994, MPI_COMM_WORLD);
+            
+        }
+            I = _rank%_iproc + 1;
+            J = _rank/_iproc + 1;
+            domain.imin = (I - 1) * imax_domain / _iproc;
+            domain.imax = I * imax_domain / _iproc + 2;
+            domain.jmin = (J - 1) * jmax_domain / _jproc;
+            domain.jmax = J * jmax_domain / _jproc + 2;
+            domain.size_x = imax_domain / _iproc;
+            domain.size_y = jmax_domain / _jproc;
+    } 
+    
+    else {
+        MPI_Status status;
+        MPI_Recv(&domain.imin, 1, MPI_INT, 0, 999, MPI_COMM_WORLD, &status);
+        MPI_Recv(&domain.imax, 1, MPI_INT, 0, 998, MPI_COMM_WORLD, &status);
+        MPI_Recv(&domain.jmin, 1, MPI_INT, 0, 997, MPI_COMM_WORLD, &status);
+        MPI_Recv(&domain.jmax, 1, MPI_INT, 0, 996, MPI_COMM_WORLD, &status);
+        MPI_Recv(&domain.size_x, 1, MPI_INT, 0, 995, MPI_COMM_WORLD, &status);
+        MPI_Recv(&domain.size_y, 1, MPI_INT, 0, 994, MPI_COMM_WORLD, &status);
+    }
+
+    std::cout << "Rank: " << _rank << " " << domain.imin << " " << domain.imax << " " << domain.jmin << " "
+              << domain.jmax << "\n";
+    
+    ///Comment this when going to parallelize the grid
     domain.imin = 0;
     domain.jmin = 0;
     domain.imax = imax_domain + 2;

@@ -68,8 +68,11 @@ class Case {
     /// Set to true to enable energy equations
     bool _energy_eq = false;
 
-    /// Id to group results
+    /// Parallelizing variables
     int _rank = 0;
+    int _iproc=1;
+    int _jproc=1;
+    int _size=1;
 
     /// Solver convergence tolerance
     double _tolerance;
