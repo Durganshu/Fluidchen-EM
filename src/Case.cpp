@@ -72,8 +72,8 @@ Case::Case(std::string file_name, int argn, char **args) {
     double beta;  /* Thermal Expansion Coefficient  */
     double alpha; /* Thermal diffusivity   */
 
-    int iproc = 1; /*Number of processes in x direction*/
-    int jproc = 1; /*Number of processes in y direction*/
+    //int iproc = 1; /*Number of processes in x direction*/
+    //int jproc = 1; /*Number of processes in y direction*/
 
     if (file.is_open()) {
 
@@ -556,7 +556,7 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
             MPI_Send(&size_x, 1, MPI_INT, i, 995, MPI_COMM_WORLD);
             MPI_Send(&size_y, 1, MPI_INT, i, 994, MPI_COMM_WORLD);
             
-        }
+        }   //For rank 0
             I = _rank%_iproc + 1;
             J = _rank/_iproc + 1;
             domain.imin = (I - 1) * imax_domain / _iproc;
