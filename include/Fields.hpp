@@ -159,4 +159,7 @@ class Fields {
     double _dt;
     /// adaptive timestep coefficient
     double _tau;
+
+    int _rank;
+    int _size;
 };

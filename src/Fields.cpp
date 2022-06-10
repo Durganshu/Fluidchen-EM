@@ -6,6 +6,9 @@
 
 Fields::Fields(Grid &grid, double nu, double dt, double tau, double UI, double VI, double PI, double GX, double GY)
     : _nu(nu), _dt(dt), _tau(tau), _gx(GX), _gy(GY) {
+    
+    MPI_Comm_rank(MPI_COMM_WORLD, &_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &_size);
 
     _U = Matrix<double>(grid.imax() + 2, grid.jmax() + 2);
     _V = Matrix<double>(grid.imax() + 2, grid.jmax() + 2);

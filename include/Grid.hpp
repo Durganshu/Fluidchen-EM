@@ -135,4 +135,7 @@ class Grid {
 
     double _dx;
     double _dy;
+
+    int _rank;
+    int _size;
 };

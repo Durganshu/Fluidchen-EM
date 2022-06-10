@@ -9,13 +9,16 @@
 
 Grid::Grid(std::string geom_name, Domain &domain) {
 
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &_size);
     _domain = domain;
 
     _cells = Matrix<Cell>(_domain.size_x + 2, _domain.size_y + 2);
 
     if (geom_name.compare("NONE")) {
-        std::vector<std::vector<int>> geometry_data(_domain.domain_size_x + 2,
-                                                    std::vector<int>(_domain.domain_size_y + 2, 0));
+        std::vector<std::vector<int>> geometry_data(_domain.size_x + 2,
+                                                    std::vector<int>(_domain.size_y + 2, 0));
         parse_geometry_file(geom_name, geometry_data);
         assign_cell_types(geometry_data);
     } else {
@@ -24,21 +27,32 @@ Grid::Grid(std::string geom_name, Domain &domain) {
 }
 
 void Grid::build_lid_driven_cavity() {
-    std::vector<std::vector<int>> geometry_data(_domain.domain_size_x + 2,
-                                                std::vector<int>(_domain.domain_size_y + 2, 0));
+    std::vector<std::vector<int>> geometry_data(_domain.size_x + 2,
+                                                std::vector<int>(_domain.size_y + 2, 0));
 
-    for (int i = 0; i < _domain.domain_size_x + 2; ++i) {
-        for (int j = 0; j < _domain.domain_size_y + 2; ++j) {
+    for (int i = 0; i < _domain.size_x + 2; ++i) {
+        for (int j = 0; j < _domain.size_y + 2; ++j) {
             // Bottom, left and right walls: no-slip
-            if (i == 0 || j == 0 || i == _domain.domain_size_x + 1) {
+            if ((i == 0 && _domain.imin ==0)||(i==_domain.size_x +1 && _domain.imax==_domain.domain_size_x +2 )|| (j == 0  && _domain.jmin==0) ) {
                 geometry_data.at(i).at(j) = LidDrivenCavity::fixed_wall_id;
             }
             // Top wall: moving wall
-            else if (j == _domain.domain_size_y + 1) {
+            else if (j == _domain.size_y + 1 && _domain.jmax==_domain.domain_size_y+2) {
                 geometry_data.at(i).at(j) = LidDrivenCavity::moving_wall_id;
             }
         }
     }
+    // if (_rank == 0) {   //uncomment to visualize the part of the domain for rank 0
+    //     std::cout<< std::endl;
+    //     std::cout<<_domain.size_x<<"  "<<_domain.size_y<<std::endl;
+    //     for (int j = _domain.size_y + 1; j >= 0; --j) {
+    //         for (int i = 0; i < _domain.size_x + 2; ++i) {
+    //             std::cout << geometry_data.at(i).at(j) << " ";
+    //         }
+    //         std::cout << std::endl;
+    //     }
+    // }
+    
     assign_cell_types(geometry_data);
 }
 
@@ -47,9 +61,9 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
     int i = 0;
     int j = 0;
 
-    for (int j_geom = _domain.jmin; j_geom < _domain.jmax; ++j_geom) {
+    for (int j_geom = 0; j_geom < _domain.size_y+2; ++j_geom) { //modified limits to account _cells for each process
         { i = 0; }
-        for (int i_geom = _domain.imin; i_geom < _domain.imax; ++i_geom) {
+        for (int i_geom = 0; i_geom < _domain.size_x+2; ++i_geom) {//modified limits to account _cells for each process
             if (geometry_data.at(i_geom).at(j_geom) == 0) {
                 _cells(i, j) = Cell(i, j, cell_type::FLUID);
                 _fluid_cells.push_back(&_cells(i, j));
@@ -235,6 +249,7 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
             }
         }
     }
+
 }
 
 void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>> &geometry_data) {

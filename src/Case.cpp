@@ -547,6 +547,7 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     domain.size_y = jmax_domain / _jproc;
 
     if (_rank == 0) {
+        std::cout<<domain.size_x<<" in case "<<domain.size_y<<std::endl;
         for (int i = 1; i < _size; ++i) {
             I = i % _iproc + 1;
             J = i / _iproc + 1;
@@ -604,18 +605,18 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
         MPI_Recv(&domain.neighbours, 4, MPI_INT, 0, 995, MPI_COMM_WORLD, &status);
     }
     /// Comment this when going to parallelize the grid
-    domain.imin = 0;
-    domain.jmin = 0;
-    domain.imax = imax_domain + 2;
-    domain.jmax = jmax_domain + 2;
-    domain.size_x = imax_domain;
-    domain.size_y = jmax_domain;
+    //domain.imin = 0;
+    // domain.jmin = 0;
+    // domain.imax = imax_domain + 2;
+    // domain.jmax = jmax_domain + 2;
+    // domain.size_x = imax_domain;
+    // domain.size_y = jmax_domain;
 
-    //     std::cout << "Rank: " << _rank << " " << domain.imin << " " << domain.imax << " " << domain.jmin << " "
-    //               << domain.jmax << " neighbours " << domain.neighbours[0] << domain.neighbours[1] <<
-    //               domain.neighbours[2]
-    //               << domain.neighbours[3] << "\n";
-    //
+        std::cout << "Rank: " << _rank << " " << domain.imin << " " << domain.imax << " " << domain.jmin << " "
+                  << domain.jmax << " neighbours " << domain.neighbours[0] << domain.neighbours[1] <<
+                  domain.neighbours[2]
+                  << domain.neighbours[3] << "\n";
+    
 }
 
 bool Case::check_err(Fields &field, int imax, int jmax) {
