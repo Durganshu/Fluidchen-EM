@@ -1,5 +1,6 @@
 #include "Case.hpp"
 #include "Enums.hpp"
+#include "Communication.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -278,12 +279,20 @@ void Case::simulate() {
 
     auto start = std::chrono::steady_clock::now();
 
-    output_vtk(timestep++, _rank); // Writing intial data
+    output_vtk(timestep++); // Writing intial data
 
     if (!_energy_eq) {
+        if(_rank==0)
+        {
         std::cout << "ENERGY EQUATION OFF" << std::endl;
+        }
         while (t < _t_end) {
 
+            // Calculate Adaptive Time step
+            // dt = _field.calculate_dt(_grid);
+            // std::cout<<"Rank "<<_rank<<"  "<<" dt from all "<<dt<<std::endl;
+            // dt=reduce_min(dt);
+            // std::cout<<"Rank "<<_rank<<"  "<<" reduced dt from all "<<dt<<std::endl;
             // Apply BCs
             for (auto &i : _boundaries) {
                 i->apply(_field);
@@ -291,7 +300,8 @@ void Case::simulate() {
 
             // Calculate Fluxes
             _field.calculate_fluxes(_grid);
-
+            MPI_Barrier(MPI_COMM_WORLD);
+            std::cout<<" Rank " <<_rank<< " reached "<<std::endl;
             // Calculate RHS of PPE
             _field.calculate_rs(_grid);
 
@@ -312,7 +322,7 @@ void Case::simulate() {
             // Storing the values in the VTK file
             output_counter += dt;
             if (output_counter >= _output_freq) {
-                output_vtk(timestep++, _rank);
+                output_vtk(timestep++);
                 output_counter = 0;
                 /*                 std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
                                           << " completed] Writing Data at t=" << t << "s"
@@ -339,12 +349,20 @@ void Case::simulate() {
             // Updating current time
             t = t + dt;
 
-            // Calculate Adaptive Time step
-            dt = _field.calculate_dt(_grid);
         }
     } else {
+        if(_rank==0)
+        {
         std::cout << "ENERGY EQN ON" << std::endl;
+        }
         while (t < _t_end) {
+
+
+            // Calculate Adaptive Time step
+            dt = _field.calculate_dt_e(_grid);
+            std::cout<<"Rank "<<_rank<<"  "<<" dt from all "<<dt<<std::endl;
+            dt=reduce_min(dt);
+            std::cout<<"Rank "<<_rank<<"  "<<" reduced dt from all "<<dt<<std::endl;
 
             // Apply BCs
             for (auto &i : _boundaries) {
@@ -357,6 +375,8 @@ void Case::simulate() {
 
             // Calculate Fluxes
             _field.calculate_fluxes(_grid, _energy_eq);
+
+            
 
             // Calculate RHS of PPE
             _field.calculate_rs(_grid);
@@ -378,7 +398,7 @@ void Case::simulate() {
             // Storing the values in the VTK file
             output_counter += dt;
             if (output_counter >= _output_freq) {
-                output_vtk(timestep++, _rank);
+                output_vtk(timestep++);
                 output_counter = 0;
                 /*                 std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
                                           << " completed] Writing Data at t=" << t << "s"
@@ -386,10 +406,12 @@ void Case::simulate() {
             }
 
             // Writing simulation data in a log file
+            if(_rank==0)
+            {
             output_file << std::left << "Simulation Time[s] = " << std::setw(7) << t
                         << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3) << it
                         << "\tSOR Residual = " << std::setw(7) << res << "\n";
-            ;
+            }
 
             // Printing info and checking for errors once in 5 runs of the loop
             if (counter == 10) {
@@ -406,23 +428,23 @@ void Case::simulate() {
             // Updating current time
             t = t + dt;
 
-            // Calculate Adaptive Time step
-            dt = _field.calculate_dt_e(_grid);
         }
     }
 
     // Storing values at the last time step
-    output_vtk(timestep, _rank);
-
+    output_vtk(timestep);
+    if(_rank==0)
+    {
     std::cout << "\nSimulation Complete!\n";
     auto end = std::chrono::steady_clock::now();
     cout << "Software Runtime:" << std::chrono::duration_cast<std::chrono::seconds>(end - start).count() << "s\n\n";
     output_file << "Software Runtime:" << std::chrono::duration_cast<std::chrono::seconds>(end - start).count()
                 << "s\n\n";
     output_file.close();
+    }
 }
 
-void Case::output_vtk(int timestep, int my_rank) {
+void Case::output_vtk(int timestep) {
     // Create a new structured grid
     vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();
 
@@ -528,7 +550,7 @@ void Case::output_vtk(int timestep, int my_rank) {
 
     // Create Filename
     std::string outputname =
-        _dict_name + '/' + _case_name + "_" + std::to_string(my_rank) + "." + std::to_string(timestep) + ".vtk";
+        _dict_name + '/' + _case_name + "_" + std::to_string(_rank) + "." + std::to_string(timestep) + ".vtk";
 
     writer->SetFileName(outputname.c_str());
     writer->SetInputData(structuredGrid);

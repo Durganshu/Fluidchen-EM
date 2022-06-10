@@ -8,3 +8,5 @@
  * @param[in] Field to be applied
  */
  static void communicate(Fields &field, Domain &domain);
+
+ double reduce_min(double dt);

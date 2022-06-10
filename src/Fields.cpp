@@ -60,8 +60,11 @@ void Fields::calculate_temperatures(Grid &grid) {
     for (const auto &elem : grid.fluid_cells()) {
         int i = elem->i();
         int j = elem->j();
+        if(i!=0 && j!=0 && i!=grid.imax()+1 && j!=grid.jmax()+1)  //exclude the buffer cells
+        {
         T_new(i, j) = _T(i, j) + _dt * (-Discretization::convection_t(_U, _V, _T, i, j) +
                                         _alpha * Discretization::laplacian(_T, i, j));
+        }
     }
     _T = T_new;
 }
@@ -70,7 +73,8 @@ void Fields::calculate_fluxes(Grid &grid, bool energy_eq) {
     for (const auto &elem : grid.fluid_cells()) {
         int i = elem->i();
         int j = elem->j();
-
+        if(i!=0 && j!=0 && i!=grid.imax()+1 && j!=grid.jmax()+1)  //exclude the buffer cells 
+        {
         _F(i, j) = _U(i, j) + _dt * ((_nu * Discretization::laplacian(_U, i, j)) -
                                      Discretization::convection_u(_U, _V, i, j) + (1 - energy_eq) * _gx);
 
@@ -80,6 +84,7 @@ void Fields::calculate_fluxes(Grid &grid, bool energy_eq) {
         if (energy_eq) {
             _F(i, j) -= _gx * _dt * (_beta * 0.5 * (_T(i, j) + _T(i + 1, j)));
             _G(i, j) -= _gy * _dt * (_beta * 0.5 * (_T(i, j) + _T(i, j + 1)));
+        }
         }
     }
 

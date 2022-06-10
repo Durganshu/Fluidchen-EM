@@ -99,7 +99,7 @@ class Case {
      *
      * @param[in] Timestep of the solution
      */
-    void output_vtk(int t, int my_rank = 0);
+    void output_vtk(int t);
 
     void build_domain(Domain &domain, int imax_domain, int jmax_domain);
 
