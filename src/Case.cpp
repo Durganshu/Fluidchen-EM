@@ -589,10 +589,12 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
         domain.imax = I * imax_domain / _iproc + 2;
         domain.jmin = (J - 1) * jmax_domain / _jproc;
         domain.jmax = J * jmax_domain / _jproc + 2;
-        domain.neighbours[0] = -1;     // left
-        domain.neighbours[1] = 1;      // right
-        domain.neighbours[2] = _iproc; // top
-        domain.neighbours[3] = -1;     // bottom
+        domain.neighbours[0] = -1; // left
+        domain.neighbours[1] = -1; // right
+        if (_iproc > 1) domain.neighbours[1] = 1;
+        domain.neighbours[2] = -1; // top
+        if (_jproc > 1) domain.neighbours[2] = _iproc;
+        domain.neighbours[3] = -1; // bottom
     } else {
         MPI_Status status;
         MPI_Recv(&domain.imin, 1, MPI_INT, 0, 999, MPI_COMM_WORLD, &status);
