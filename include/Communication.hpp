@@ -7,4 +7,4 @@
  * 
  * @param[in] Field to be applied
  */
- //static void communicate(Field &field, , Domain &domain);
+ static void communicate(Fields &field, Domain &domain);
