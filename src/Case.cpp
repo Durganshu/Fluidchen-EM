@@ -1,5 +1,4 @@
 #include "Case.hpp"
-#include "Communication.hpp"
 #include "Enums.hpp"
 
 #include <algorithm>
@@ -287,11 +286,13 @@ void Case::simulate() {
         }
         while (t < _t_end) {
 
-            //Calculate Adaptive Time step
+            // Calculate Adaptive Time step
             dt = _field.calculate_dt(_grid);
-            std::cout<<"Rank "<<_rank<<"  "<<" dt from all "<<dt<<std::endl;
-            dt=reduce_min(dt);
-            std::cout<<"Rank "<<_rank<<"  "<<" reduced dt from all "<<dt<<std::endl;
+            std::cout << "Rank " << _rank << "  "
+                      << " dt from all " << dt << std::endl;
+            dt = reduce_min(dt);
+            std::cout << "Rank " << _rank << "  "
+                      << " reduced dt from all " << dt << std::endl;
             // Apply BCs
             for (auto &i : _boundaries) {
                 i->apply(_field);
@@ -299,8 +300,12 @@ void Case::simulate() {
 
             // Calculate Fluxes
             _field.calculate_fluxes(_grid);
+            communicate(_field.f_matrix(), _grid.domain());
+            communicate(_field.g_matrix(), _grid.domain());
+
             MPI_Barrier(MPI_COMM_WORLD);
             std::cout << " Rank " << _rank << " reached " << std::endl;
+
             // Calculate RHS of PPE
             _field.calculate_rs(_grid);
 
@@ -312,11 +317,14 @@ void Case::simulate() {
                     i->apply_pressure(_field);
                 }
                 res = _pressure_solver->solve(_field, _grid, _boundaries);
+                communicate(_field.f_matrix(), _grid.domain());
                 it++;
             }
 
             // Calculate Velocities U and V
             _field.calculate_velocities(_grid);
+            communicate(_field.u_matrix(), _grid.domain());
+            communicate(_field.v_matrix(), _grid.domain());
 
             // Storing the values in the VTK file
             output_counter += dt;
@@ -370,9 +378,12 @@ void Case::simulate() {
 
             // Calculate Temperatures
             _field.calculate_temperatures(_grid);
+            communicate(_field.t_matrix(), _grid.domain());
 
             // Calculate Fluxes
             _field.calculate_fluxes(_grid, _energy_eq);
+            communicate(_field.f_matrix(), _grid.domain());
+            communicate(_field.g_matrix(), _grid.domain());
 
             // Calculate RHS of PPE
             _field.calculate_rs(_grid);
@@ -385,11 +396,14 @@ void Case::simulate() {
                     i->apply_pressure(_field);
                 }
                 res = _pressure_solver->solve(_field, _grid, _boundaries);
+                communicate(_field.p_matrix(), _grid.domain());
                 it++;
             }
 
             // Calculate Velocities U and V
             _field.calculate_velocities(_grid);
+            communicate(_field.u_matrix(), _grid.domain());
+            communicate(_field.v_matrix(), _grid.domain());
 
             // Storing the values in the VTK file
             output_counter += dt;

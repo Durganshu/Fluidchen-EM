@@ -44,11 +44,11 @@ class Fields {
      * @param[in] y-component of gravity
      *
      */
-    Fields(Grid &grid, double nu, double alpha, double beta, double dt, double tau, double UI,
-           double VI, double PI, double TI, double GX, double GY);
+    Fields(Grid &grid, double nu, double alpha, double beta, double dt, double tau, double UI, double VI, double PI,
+           double TI, double GX, double GY);
 
     /**
-     * @brief Calculates the temperature based on explicit discretization of energy 
+     * @brief Calculates the temperature based on explicit discretization of energy
      * equations
      *
      * @param[in] grid in which the fluxes are calculated
@@ -65,7 +65,6 @@ class Fields {
      */
 
     void calculate_fluxes(Grid &grid, bool energy_eq = 0);
-    
 
     /**
      * @brief Right hand side calculations using the fluxes for the pressure
@@ -126,8 +125,23 @@ class Fields {
     /// get timestep size
     double dt() const;
 
+    /// x-velocity matrix access and modify
+    Matrix<double> &u_matrix();
+
+    /// y-velocity matrix access and modify
+    Matrix<double> &v_matrix();
+
+    /// temperature matrix access and modify
+    Matrix<double> &t_matrix();
+
     /// pressure matrix access and modify
     Matrix<double> &p_matrix();
+
+    /// x-momentum flux matrix access and modify
+    Matrix<double> &f_matrix();
+
+    /// y-momentum matrix access and modify
+    Matrix<double> &g_matrix();
 
   private:
     /// x-velocity matrix

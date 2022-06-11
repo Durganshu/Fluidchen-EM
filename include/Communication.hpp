@@ -1,13 +1,14 @@
-#include <mpi.h>
 #include "Datastructures.hpp"
 #include "Domain.hpp"
+#include <mpi.h>
+
 
 /**
  * @brief Communicates ghost layer values with neighbours
  *
  * @param[in] Field to be applied
  */
-static void communicate(Matrix<double> &data, Domain &domain);
+void communicate(Matrix<double> &data, const Domain &domain);
 
 /**
  * @brief Returns the minimum time-step among all processes

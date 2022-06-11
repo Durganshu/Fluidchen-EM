@@ -1,7 +1,7 @@
 #include "Communication.hpp"
 #include <vector>
 
-static void communicate(Matrix<double> &data, Domain &domain) {
+void communicate(Matrix<double> &data, const Domain &domain) {
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);

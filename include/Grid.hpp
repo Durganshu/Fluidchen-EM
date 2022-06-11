@@ -43,7 +43,7 @@ class Grid {
     /// access number of cells in x direction including ghost cells
     int jmaxb() const;
 
-    /// access number of cells in x direction excluding ghost cells
+    /// access domain
     const Domain &domain() const;
 
     /// access cell size in x-direction
