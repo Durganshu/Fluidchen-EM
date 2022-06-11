@@ -325,7 +325,7 @@ void Case::simulate() {
                 }
                 std::cout << "Calculating res\n";
                 res = _pressure_solver->solve(_field, _grid, _boundaries);
-                communicate(_field.f_matrix(), _grid.domain());
+                communicate(_field.p_matrix(), _grid.domain());
                 it++;
             }
 
