@@ -42,7 +42,7 @@ void Grid::build_lid_driven_cavity() {
             }
         }
     }
-    // if (_rank == 0) {   //uncomment to visualize the part of the domain for rank 0
+    // if (_rank == 4) {   //uncomment to visualize the part of the domain for rank 0
     //     std::cout<< std::endl;
     //     std::cout<<_domain.size_x<<"  "<<_domain.size_y<<std::endl;
     //     for (int j = _domain.size_y + 1; j >= 0; --j) {

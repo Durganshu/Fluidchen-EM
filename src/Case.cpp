@@ -1,6 +1,6 @@
 #include "Case.hpp"
-#include "Enums.hpp"
 #include "Communication.hpp"
+#include "Enums.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -282,17 +282,16 @@ void Case::simulate() {
     output_vtk(timestep++); // Writing intial data
 
     if (!_energy_eq) {
-        if(_rank==0)
-        {
-        std::cout << "ENERGY EQUATION OFF" << std::endl;
+        if (_rank == 0) {
+            std::cout << "ENERGY EQUATION OFF" << std::endl;
         }
         while (t < _t_end) {
 
-            // Calculate Adaptive Time step
-            // dt = _field.calculate_dt(_grid);
-            // std::cout<<"Rank "<<_rank<<"  "<<" dt from all "<<dt<<std::endl;
-            // dt=reduce_min(dt);
-            // std::cout<<"Rank "<<_rank<<"  "<<" reduced dt from all "<<dt<<std::endl;
+            //Calculate Adaptive Time step
+            dt = _field.calculate_dt(_grid);
+            std::cout<<"Rank "<<_rank<<"  "<<" dt from all "<<dt<<std::endl;
+            dt=reduce_min(dt);
+            std::cout<<"Rank "<<_rank<<"  "<<" reduced dt from all "<<dt<<std::endl;
             // Apply BCs
             for (auto &i : _boundaries) {
                 i->apply(_field);
@@ -301,7 +300,7 @@ void Case::simulate() {
             // Calculate Fluxes
             _field.calculate_fluxes(_grid);
             MPI_Barrier(MPI_COMM_WORLD);
-            std::cout<<" Rank " <<_rank<< " reached "<<std::endl;
+            std::cout << " Rank " << _rank << " reached " << std::endl;
             // Calculate RHS of PPE
             _field.calculate_rs(_grid);
 
@@ -348,21 +347,20 @@ void Case::simulate() {
 
             // Updating current time
             t = t + dt;
-
         }
     } else {
-        if(_rank==0)
-        {
-        std::cout << "ENERGY EQN ON" << std::endl;
+        if (_rank == 0) {
+            std::cout << "ENERGY EQN ON" << std::endl;
         }
         while (t < _t_end) {
 
-
             // Calculate Adaptive Time step
             dt = _field.calculate_dt_e(_grid);
-            std::cout<<"Rank "<<_rank<<"  "<<" dt from all "<<dt<<std::endl;
-            dt=reduce_min(dt);
-            std::cout<<"Rank "<<_rank<<"  "<<" reduced dt from all "<<dt<<std::endl;
+            std::cout << "Rank " << _rank << "  "
+                      << " dt from all " << dt << std::endl;
+            dt = reduce_min(dt);
+            std::cout << "Rank " << _rank << "  "
+                      << " reduced dt from all " << dt << std::endl;
 
             // Apply BCs
             for (auto &i : _boundaries) {
@@ -375,8 +373,6 @@ void Case::simulate() {
 
             // Calculate Fluxes
             _field.calculate_fluxes(_grid, _energy_eq);
-
-            
 
             // Calculate RHS of PPE
             _field.calculate_rs(_grid);
@@ -406,11 +402,10 @@ void Case::simulate() {
             }
 
             // Writing simulation data in a log file
-            if(_rank==0)
-            {
-            output_file << std::left << "Simulation Time[s] = " << std::setw(7) << t
-                        << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3) << it
-                        << "\tSOR Residual = " << std::setw(7) << res << "\n";
+            if (_rank == 0) {
+                output_file << std::left << "Simulation Time[s] = " << std::setw(7) << t
+                            << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3) << it
+                            << "\tSOR Residual = " << std::setw(7) << res << "\n";
             }
 
             // Printing info and checking for errors once in 5 runs of the loop
@@ -427,20 +422,18 @@ void Case::simulate() {
 
             // Updating current time
             t = t + dt;
-
         }
     }
 
     // Storing values at the last time step
     output_vtk(timestep);
-    if(_rank==0)
-    {
-    std::cout << "\nSimulation Complete!\n";
-    auto end = std::chrono::steady_clock::now();
-    cout << "Software Runtime:" << std::chrono::duration_cast<std::chrono::seconds>(end - start).count() << "s\n\n";
-    output_file << "Software Runtime:" << std::chrono::duration_cast<std::chrono::seconds>(end - start).count()
-                << "s\n\n";
-    output_file.close();
+    if (_rank == 0) {
+        std::cout << "\nSimulation Complete!\n";
+        auto end = std::chrono::steady_clock::now();
+        cout << "Software Runtime:" << std::chrono::duration_cast<std::chrono::seconds>(end - start).count() << "s\n\n";
+        output_file << "Software Runtime:" << std::chrono::duration_cast<std::chrono::seconds>(end - start).count()
+                    << "s\n\n";
+        output_file.close();
     }
 }
 
@@ -569,7 +562,7 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     domain.size_y = jmax_domain / _jproc;
 
     if (_rank == 0) {
-        std::cout<<domain.size_x<<" in case "<<domain.size_y<<std::endl;
+        // std::cout<<domain.size_x<<" in case "<<domain.size_y<<std::endl;
         for (int i = 1; i < _size; ++i) {
             I = i % _iproc + 1;
             J = i / _iproc + 1;
@@ -627,18 +620,17 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
         MPI_Recv(&domain.neighbours, 4, MPI_INT, 0, 995, MPI_COMM_WORLD, &status);
     }
     /// Comment this when going to parallelize the grid
-    //domain.imin = 0;
-    // domain.jmin = 0;
-    // domain.imax = imax_domain + 2;
-    // domain.jmax = jmax_domain + 2;
-    // domain.size_x = imax_domain;
-    // domain.size_y = jmax_domain;
+    // domain.imin = 0;
+    //  domain.jmin = 0;
+    //  domain.imax = imax_domain + 2;
+    //  domain.jmax = jmax_domain + 2;
+    //  domain.size_x = imax_domain;
+    //  domain.size_y = jmax_domain;
 
-        std::cout << "Rank: " << _rank << " " << domain.imin << " " << domain.imax << " " << domain.jmin << " "
-                  << domain.jmax << " neighbours " << domain.neighbours[0] << domain.neighbours[1] <<
-                  domain.neighbours[2]
-                  << domain.neighbours[3] << "\n";
-    
+    // std::cout << "Rank: " << _rank << " " << domain.imin << " " << domain.imax << " " << domain.jmin << " "
+    //           << domain.jmax << " neighbours " << domain.neighbours[0] << domain.neighbours[1] <<
+    //           domain.neighbours[2]
+    //           << domain.neighbours[3] << "\n";
 }
 
 bool Case::check_err(Fields &field, int imax, int jmax) {
