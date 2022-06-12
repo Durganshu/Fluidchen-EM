@@ -1,4 +1,5 @@
 #include "PressureSolver.hpp"
+#include "Communication.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -30,8 +31,12 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
         double val = Discretization::laplacian(field.p_matrix(), i, j) - field.rs(i, j);
         rloc += (val * val);
     }
-    {
-        res = rloc / (grid.fluid_cells().size());
+    {   
+        double rglo;
+        int size;
+        rglo=reduce_total(rloc);
+        size=reduce_total(static_cast<int>(grid.fluid_cells().size()));
+        res = rglo/size;
         res = std::sqrt(res);
     }
 
