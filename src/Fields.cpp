@@ -6,7 +6,7 @@
 
 Fields::Fields(Grid &grid, double nu, double dt, double tau, double UI, double VI, double PI, double GX, double GY)
     : _nu(nu), _dt(dt), _tau(tau), _gx(GX), _gy(GY) {
-    
+
     MPI_Comm_rank(MPI_COMM_WORLD, &_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &_size);
 
@@ -60,10 +60,10 @@ void Fields::calculate_temperatures(Grid &grid) {
     for (const auto &elem : grid.fluid_cells()) {
         int i = elem->i();
         int j = elem->j();
-        if(i!=0 && j!=0 && i!=grid.imax()+1 && j!=grid.jmax()+1)  //exclude the buffer cells
+        if (i != 0 && j != 0 && i != grid.imax() + 1 && j != grid.jmax() + 1) // exclude the buffer cells
         {
-        T_new(i, j) = _T(i, j) + _dt * (-Discretization::convection_t(_U, _V, _T, i, j) +
-                                        _alpha * Discretization::laplacian(_T, i, j));
+            T_new(i, j) = _T(i, j) + _dt * (-Discretization::convection_t(_U, _V, _T, i, j) +
+                                            _alpha * Discretization::laplacian(_T, i, j));
         }
     }
     _T = T_new;
@@ -73,18 +73,18 @@ void Fields::calculate_fluxes(Grid &grid, bool energy_eq) {
     for (const auto &elem : grid.fluid_cells()) {
         int i = elem->i();
         int j = elem->j();
-        if(i!=0 && j!=0 && i!=grid.imax()+1 && j!=grid.jmax()+1)  //exclude the buffer cells 
+        if (i != 0 && j != 0 && i != grid.imax() + 1 && j != grid.jmax() + 1) // exclude the buffer cells
         {
-        _F(i, j) = _U(i, j) + _dt * ((_nu * Discretization::laplacian(_U, i, j)) -
-                                     Discretization::convection_u(_U, _V, i, j) + (1 - energy_eq) * _gx);
+            _F(i, j) = _U(i, j) + _dt * ((_nu * Discretization::laplacian(_U, i, j)) -
+                                         Discretization::convection_u(_U, _V, i, j) + (1 - energy_eq) * _gx);
 
-        _G(i, j) = _V(i, j) + _dt * ((_nu * Discretization::laplacian(_V, i, j)) -
-                                     Discretization::convection_v(_U, _V, i, j) + (1 - energy_eq) * _gy);
+            _G(i, j) = _V(i, j) + _dt * ((_nu * Discretization::laplacian(_V, i, j)) -
+                                         Discretization::convection_v(_U, _V, i, j) + (1 - energy_eq) * _gy);
 
-        if (energy_eq) {
-            _F(i, j) -= _gx * _dt * (_beta * 0.5 * (_T(i, j) + _T(i + 1, j)));
-            _G(i, j) -= _gy * _dt * (_beta * 0.5 * (_T(i, j) + _T(i, j + 1)));
-        }
+            if (energy_eq) {
+                _F(i, j) -= _gx * _dt * (_beta * 0.5 * (_T(i, j) + _T(i + 1, j)));
+                _G(i, j) -= _gy * _dt * (_beta * 0.5 * (_T(i, j) + _T(i, j + 1)));
+            }
         }
     }
 
@@ -367,8 +367,10 @@ void Fields::calculate_rs(Grid &grid) {
     for (const auto &elem : grid.fluid_cells()) {
         int i = elem->i();
         int j = elem->j();
-        rs(i, j) = idt * (((_F(i, j) - _F(elem->neighbour(border_position::LEFT)->i(), j)) / grid.dx()) +
-                          ((_G(i, j) - _G(i, elem->neighbour(border_position::BOTTOM)->j())) / grid.dy()));
+        if (i != 0 && j != 0 && i != grid.imax() + 1 && j != grid.jmax() + 1) { // exclude the buffer cells
+            rs(i, j) = idt * (((_F(i, j) - _F(elem->neighbour(border_position::LEFT)->i(), j)) / grid.dx()) +
+                              ((_G(i, j) - _G(i, elem->neighbour(border_position::BOTTOM)->j())) / grid.dy()));
+        }
     }
 }
 
@@ -377,10 +379,11 @@ void Fields::calculate_velocities(Grid &grid) {
     for (const auto &elem : grid.fluid_cells()) {
         int i = elem->i();
         int j = elem->j();
-
+        if (i != 0 && j != 0 && i != grid.imax() + 1 && j != grid.jmax() + 1){ // exclude the buffer cells
         _U(i, j) = _F(i, j) - (_dt / grid.dx()) * (_P(elem->neighbour(border_position::RIGHT)->i(), j) - _P(i, j));
 
         _V(i, j) = _G(i, j) - (_dt / grid.dy()) * (_P(i, elem->neighbour(border_position::TOP)->j()) - _P(i, j));
+        }
     }
 }
 
@@ -439,6 +442,11 @@ double &Fields::f(int i, int j) { return _F(i, j); }
 double &Fields::g(int i, int j) { return _G(i, j); }
 double &Fields::rs(int i, int j) { return _RS(i, j); }
 
+Matrix<double> &Fields::u_matrix() { return _U; }
+Matrix<double> &Fields::v_matrix() { return _V; }
+Matrix<double> &Fields::t_matrix() { return _T; }
 Matrix<double> &Fields::p_matrix() { return _P; }
+Matrix<double> &Fields::f_matrix() { return _F; }
+Matrix<double> &Fields::g_matrix() { return _G; }
 
 double Fields::dt() const { return _dt; }

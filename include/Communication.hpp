@@ -7,6 +7,6 @@
  * 
  * @param[in] Field to be applied
  */
- static void communicate(Fields &field, Domain &domain);
+ void communicate(Matrix<double> &data, const Domain &domain);
 
  double reduce_min(double dt);

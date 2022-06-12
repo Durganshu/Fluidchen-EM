@@ -58,7 +58,7 @@ class Case {
     double _t_end;
     /// Solution file outputting frequency
     double _output_freq;
-
+    Domain domain;
     Fields _field;
     Grid _grid;
     Discretization _discretization;
