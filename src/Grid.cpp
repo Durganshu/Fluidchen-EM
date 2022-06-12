@@ -17,8 +17,8 @@ Grid::Grid(std::string geom_name, Domain &domain) {
     _cells = Matrix<Cell>(_domain.size_x + 2, _domain.size_y + 2);
 
     if (geom_name.compare("NONE")) {
-        std::vector<std::vector<int>> geometry_data(_domain.size_x + 2,
-                                                    std::vector<int>(_domain.size_y + 2, 0));
+        std::vector<std::vector<int>> geometry_data(_domain.domain_size_x + 2,
+                                                    std::vector<int>(_domain.domain_size_y + 2, 0));
         parse_geometry_file(geom_name, geometry_data);
         assign_cell_types(geometry_data);
     } else {
@@ -27,9 +27,10 @@ Grid::Grid(std::string geom_name, Domain &domain) {
 }
 
 void Grid::build_lid_driven_cavity() {
-    std::vector<std::vector<int>> geometry_data(_domain.size_x + 2,
-                                                std::vector<int>(_domain.size_y + 2, 0));
+    std::vector<std::vector<int>> geometry_data(_domain.domain_size_x + 2,
+                                                std::vector<int>(_domain.domain_size_y + 2, 0));
 
+    
     for (int i = 0; i < _domain.size_x + 2; ++i) {
         for (int j = 0; j < _domain.size_y + 2; ++j) {
             // Bottom, left and right walls: no-slip
@@ -61,9 +62,10 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
     int i = 0;
     int j = 0;
 
-    for (int j_geom = 0; j_geom < _domain.size_y+2; ++j_geom) { //modified limits to account _cells for each process
+    
+    for (int j_geom = _domain.jmin; j_geom < _domain.jmax; ++j_geom) { //modified limits to account _cells for each process
         { i = 0; }
-        for (int i_geom = 0; i_geom < _domain.size_x+2; ++i_geom) {//modified limits to account _cells for each process
+        for (int i_geom = _domain.imin; i_geom < _domain.imax; ++i_geom) {//modified limits to account _cells for each process
             if (geometry_data.at(i_geom).at(j_geom) == 0) {
                 _cells(i, j) = Cell(i, j, cell_type::FLUID);
                 _fluid_cells.push_back(&_cells(i, j));
@@ -95,6 +97,39 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
         ++j;
     }
 
+    
+    /**************************************************/
+    // BUFFER CELL id is (-1)
+    //Assigning buffer cells at the left boundary
+
+    if (_domain.imin != 0 ){
+        for ( auto j = 0; j < _domain.size_y + 1; j++){
+            _cells(0, j) = Cell(0, j, cell_type::BUFFER, -1);
+        }
+    }
+
+    // Assigning buffer cells at the right boundary
+    if (_domain.imax != _domain.domain_size_x + 2 ){
+        for ( auto j = 0; j < _domain.size_y + 1; j++){
+            _cells(_domain.size_x + 1, j) = Cell(_domain.size_x + 1, j, cell_type::BUFFER, -1);
+        }
+    }
+
+    // Assigning buffer cells at the top boundary
+    if (_domain.jmax != _domain.domain_size_y + 2 ){
+        for ( auto i = 0; i < _domain.size_x + 1; j++){
+            _cells(i, _domain.size_y + 1) = Cell(i, _domain.size_y + 1, cell_type::BUFFER, -1);
+        }
+    }
+
+    // Assigning buffer cells at the bottom boundary
+    if (_domain.jmin != 0 ){
+        for ( auto i = 0; i < _domain.size_x + 1; j++){
+            _cells(i, 0) = Cell(i, 0, cell_type::BUFFER, -1);
+        }
+    }
+
+    std::cout << "Inside build_lid_driven_cavity()\n";
     // Corner cell neighbour assigment
     // Bottom-Left Corner
     i = 0;

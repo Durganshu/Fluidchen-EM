@@ -33,5 +33,6 @@ enum class cell_type {
     ADIABATIC_FIXED_WALL,
     FIXED_WALL,
     MOVING_WALL,
+    BUFFER,
     DEFAULT
 };

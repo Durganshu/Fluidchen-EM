@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iostream>
 #include <math.h>
+#include <mpi.h>
 
 Fields::Fields(Grid &grid, double nu, double dt, double tau, double UI, double VI, double PI, double GX, double GY)
     : _nu(nu), _dt(dt), _tau(tau), _gx(GX), _gy(GY) {
@@ -364,9 +365,18 @@ void Fields::calculate_fluxes(Grid &grid, bool energy_eq) {
 
 void Fields::calculate_rs(Grid &grid) {
     auto idt = 1. / _dt;
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (rank == 1){
+        std::cout << "_F(0,24): " << _F(0,24)<<"\n";
+    std::cout << "_G(0,24): " << _G(0,24)<<"\n";
+    std::cout << "size of rs in calculate_rs(): " << _RS.size() << ", rank = "<< rank <<"\n";
+    }
+    
     for (const auto &elem : grid.fluid_cells()) {
         int i = elem->i();
         int j = elem->j();
+        if (rank == 6) std::cout << " i, j = " << i <<", "<< j << "\n";
         rs(i, j) = idt * (((_F(i, j) - _F(elem->neighbour(border_position::LEFT)->i(), j)) / grid.dx()) +
                           ((_G(i, j) - _G(i, elem->neighbour(border_position::BOTTOM)->j())) / grid.dy()));
     }
@@ -374,10 +384,13 @@ void Fields::calculate_rs(Grid &grid) {
 
 void Fields::calculate_velocities(Grid &grid) {
 
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (rank == 1) std::cout << "size of grid.fluid_cells(): " << grid.fluid_cells().size() << "\n";
     for (const auto &elem : grid.fluid_cells()) {
         int i = elem->i();
         int j = elem->j();
-
+        //if (rank == 0) std::cout << " i, j = " << i <<", "<< j << "\n";
         _U(i, j) = _F(i, j) - (_dt / grid.dx()) * (_P(elem->neighbour(border_position::RIGHT)->i(), j) - _P(i, j));
 
         _V(i, j) = _G(i, j) - (_dt / grid.dy()) * (_P(i, elem->neighbour(border_position::TOP)->j()) - _P(i, j));

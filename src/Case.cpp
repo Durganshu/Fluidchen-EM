@@ -294,8 +294,8 @@ void Case::simulate() {
             // std::cout << "Rank " << _rank << "  "
             //           << " reduced dt from all " << dt << std::endl;
             // Apply BCs
+            std::cout << "Applying Boundaries, rank = " << _rank << "\n";
             for (auto &i : _boundaries) {
-                std::cout << "Applying Boundaries\n";
                 i->apply(_field);
             }
 
@@ -308,22 +308,23 @@ void Case::simulate() {
 
             std::cout<<"Communicating fluxes\n";
 
-            MPI_Barrier(MPI_COMM_WORLD);
             // std::cout << " Rank " << _rank << " reached " << std::endl;
 
             // Calculate RHS of PPE
-            std::cout << "Caculating RS\n";
+            std::cout << "Caculating RS, rank = " << _rank << "\n";
             _field.calculate_rs(_grid);
+            std::cout << "Caculated RS, rank = " << _rank << "\n";
 
+            MPI_Barrier(MPI_COMM_WORLD);
             // Perform SOR Iterations
             int it = 0;
             double res = 1000.;
             while (it <= _max_iter && res >= _tolerance) {
-                std::cout << "Applying Pressure\n";
+                 std::cout << "Applying pressure, rank = " << _rank << "\n";
                 for (auto &i : _boundaries) {
                     i->apply_pressure(_field);
                 }
-                std::cout << "Calculating res\n";
+                 std::cout << "Caculating res, rank = " << _rank << "\n";
                 res = _pressure_solver->solve(_field, _grid, _boundaries);
                 communicate(_field.p_matrix(), _grid.domain());
                 it++;
@@ -589,6 +590,8 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
         for (int i = 1; i < _size; ++i) {
             I = i % _iproc + 1;
             J = i / _iproc + 1;
+
+            // imax_domain: size of undivided domain excluding ghost cells (e.g. 50)
             imin = (I - 1) * imax_domain / _iproc;
             imax = I * imax_domain / _iproc + 2;
             jmin = (J - 1) * jmax_domain / _jproc;
