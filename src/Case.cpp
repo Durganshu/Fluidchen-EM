@@ -345,7 +345,7 @@ void Case::simulate() {
                         << "\tSOR Residual = " << std::setw(7) << res << "\n";
 
             // Printing info and checking for errors once in 10 runs of the loop
-            if (counter == 10) {
+            if (counter == 1) {
                 counter = 0;
                 if (_rank == 0)
                     std::cout << std::left << "Simulation Time[s] = " << std::setw(7) << t

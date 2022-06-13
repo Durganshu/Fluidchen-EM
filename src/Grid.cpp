@@ -29,16 +29,22 @@ void Grid::build_lid_driven_cavity() {
     std::vector<std::vector<int>> geometry_data(_domain.domain_size_x + 2,
                                                 std::vector<int>(_domain.domain_size_y + 2, 0));
 
-    for (int i = 0; i < _domain.size_x + 2; ++i) {
-        for (int j = 0; j < _domain.size_y + 2; ++j) {
+    for (int i = 0; i < _domain.domain_size_x + 2; ++i) {
+        for (int j = 0; j < _domain.domain_size_y + 2; ++j) {
+    // for (int i = _domain.imin; i < _domain.imax; ++i) {
+    //     for (int j = _domain.jmin; j < _domain.jmax + 2; ++j) {
+
             // Bottom, left and right walls: no-slip
-            if ((i == 0 && _domain.imin == 0) ||
-                (i == _domain.size_x + 1 && _domain.imax == _domain.domain_size_x + 2) ||
-                (j == 0 && _domain.jmin == 0)) {
+            if (i == 0 ||
+                i == (_domain.domain_size_x + 1) ||
+                j == 0 ) {
+            // if ((i == 0 && _domain.imin == 0) ||
+            //     (i == (_domain.size_x + 1) && _domain.imax == (_domain.domain_size_x + 2)) ||
+            //     (j == 0 && _domain.jmin == 0)) {
                 geometry_data.at(i).at(j) = LidDrivenCavity::fixed_wall_id;
             }
             // Top wall: moving wall
-            else if (j == _domain.size_y + 1 && _domain.jmax == _domain.domain_size_y + 2) {
+            else if (j == _domain.domain_size_y + 1) {
                 geometry_data.at(i).at(j) = LidDrivenCavity::moving_wall_id;
             }
         }
