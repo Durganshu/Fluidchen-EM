@@ -316,9 +316,10 @@ void Case::simulate() {
                 for (auto &i : _boundaries) {
                     i->apply_pressure(_field);
                 }
-                communicate(_field.p_matrix(), _grid.domain());
+                
                 // std::cout << "Caculating res, rank = " << _rank << "\n";
                 res = _pressure_solver->solve(_field, _grid, _boundaries);
+                communicate(_field.p_matrix(), _grid.domain());
                 it++;
             }
 

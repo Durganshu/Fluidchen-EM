@@ -7,7 +7,6 @@ void communicate(Matrix<double> &data, const Domain &domain) {
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-    MPI_Status status;
 
     // std::ofstream rank_0, rank_1;
     
@@ -20,6 +19,7 @@ void communicate(Matrix<double> &data, const Domain &domain) {
         std::vector<double> send = data.get_col(1);
         std::vector<double> recv(domain.size_y + 2);
 
+        MPI_Status status;
         
         MPI_Sendrecv(send.data(), domain.size_y + 2, MPI_DOUBLE, domain.neighbours[0], 1, &recv[0], domain.size_y + 2,
                      MPI_DOUBLE, domain.neighbours[0], 2, MPI_COMM_WORLD, &status);
@@ -51,6 +51,7 @@ void communicate(Matrix<double> &data, const Domain &domain) {
         //     else rank_1 << "(" <<elem << ", " << rank << ")\n";
         //     //std::cout << elem << "\n";
         // }
+        MPI_Status status;
         MPI_Sendrecv(send.data(), domain.size_y + 2, MPI_DOUBLE, domain.neighbours[1], 2, &recv[0], domain.size_y + 2,
                      MPI_DOUBLE, domain.neighbours[1], 1, MPI_COMM_WORLD, &status);
         data.set_col(recv, domain.size_x + 1);
@@ -63,6 +64,7 @@ void communicate(Matrix<double> &data, const Domain &domain) {
         // std::cout << "In top " << rank << " \n";
         std::vector<double> send = data.get_row(domain.size_y);
         std::vector<double> recv(domain.size_x + 2);
+        MPI_Status status;
         MPI_Sendrecv(send.data(), domain.size_x + 2, MPI_DOUBLE, domain.neighbours[2], 3, &recv[0], domain.size_x + 2,
                      MPI_DOUBLE, domain.neighbours[2], 4, MPI_COMM_WORLD, &status);
         data.set_row(recv, domain.size_y + 1);
@@ -73,11 +75,12 @@ void communicate(Matrix<double> &data, const Domain &domain) {
         // std::cout << "In bottom " << rank << " \n";
         std::vector<double> send = data.get_row(1);
         std::vector<double> recv(domain.size_x + 2);
+        MPI_Status status;
         MPI_Sendrecv(send.data(), domain.size_x + 2, MPI_DOUBLE, domain.neighbours[3], 4, &recv[0], domain.size_x + 2,
                      MPI_DOUBLE, domain.neighbours[3], 3, MPI_COMM_WORLD, &status);
         data.set_row(recv, 0);
     }
-    count++;
+    //count++;
 }
 
 double reduce_min(double x) {
