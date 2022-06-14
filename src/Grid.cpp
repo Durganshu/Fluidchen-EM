@@ -49,17 +49,20 @@ void Grid::build_lid_driven_cavity() {
             }
         }
     }
-    // if (_rank == 4) {   //uncomment to visualize the part of the domain for rank 0
-    //     std::cout<< std::endl;
-    //     std::cout<<_domain.size_x<<"  "<<_domain.size_y<<std::endl;
-    //     for (int j = _domain.size_y + 1; j >= 0; --j) {
-    //         for (int i = 0; i < _domain.size_x + 2; ++i) {
-    //             std::cout << geometry_data.at(i).at(j) << " ";
-    //         }
-    //         std::cout << std::endl;
-    //     }
-    // }
-
+/*     for(int i=0;i<_size;i++)
+    {   
+    if(_rank==i)
+    {
+        std::cout<< std::endl;
+        std::cout<<"Rank =: "<<_rank<<"  "<<_domain.size_x<<"  "<<_domain.size_y<<std::endl;
+        for (int j = _domain.size_y + 1; j >= 0; --j) {
+            for (int i = 0; i < _domain.size_x + 2; ++i) {
+                std::cout << geometry_data.at(i+_rank*(_domain.size_x)).at(j) << " ";
+            }
+            std::cout << std::endl;
+        }
+    }
+    } */
     assign_cell_types(geometry_data);
 }
 
@@ -67,7 +70,21 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
 
     int i = 0;
     int j = 0;
-
+    //Printing the rank and domain paramters of each rank
+    for(int i=0;i<_size;i++)  
+    {
+        if(_rank==i)
+        {
+            std::cout<<"Rank: "<<_rank<<std::endl;
+            std::cout<<"imin: "<<_domain.imin<<std::endl;
+            std::cout<<"imax: "<<_domain.imax<<std::endl;
+            std::cout<<"jmin: "<<_domain.jmin<<std::endl;
+            std::cout<<"jmax: "<<_domain.jmax<<std::endl;
+            std::cout<<"size_x: "<<_domain.size_x<<std::endl;
+            std::cout<<"size_y: "<<_domain.size_y<<std::endl;
+        }
+    std::cout<<std::endl;
+    }
     for (int j_geom = _domain.jmin; j_geom < _domain.jmax;
          ++j_geom) { // modified limits to account _cells for each process
         { i = 0; }

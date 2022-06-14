@@ -58,7 +58,6 @@ void communicate(Matrix<double> &data, const Domain &domain) {
 
         
     }
-
     // Communicate to Top
     if (domain.neighbours[2] != -1) {
         // std::cout << "In top " << rank << " \n";
