@@ -6,7 +6,7 @@
 // 0: fluid, 3: fixed wall, 4: moving wall
 namespace LidDrivenCavity {
 const int moving_wall_id = 8;
-const int fixed_wall_id = 4;
+const int fixed_wall_id = 6;
 const double wall_velocity = 1.0;
 } // namespace LidDrivenCavity
 
@@ -25,8 +25,12 @@ const int RIGHT = 3;
 } // namespace border
 
 enum class cell_type {
-
     FLUID,
+    INFLOW,
+    OUTFLOW,
+    COLD_FIXED_WALL,
+    HOT_FIXED_WALL,
+    ADIABATIC_FIXED_WALL,
     FIXED_WALL,
     MOVING_WALL,
     DEFAULT

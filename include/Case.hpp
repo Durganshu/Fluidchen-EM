@@ -38,6 +38,12 @@ class Case {
      */
     void simulate();
 
+    /**
+     * @brief Prints introductory message
+     */
+    void printIntro();
+    void writeIntro(std::ofstream &);
+
   private:
     /// Plain case name without paths
     std::string _case_name;
@@ -58,6 +64,12 @@ class Case {
     Discretization _discretization;
     std::unique_ptr<PressureSolver> _pressure_solver;
     std::vector<std::unique_ptr<Boundary>> _boundaries;
+
+    /// Set to true to enable energy equations
+    bool _energy_eq = false;
+
+    /// Id to group results
+    int _rank = 0;
 
     /// Solver convergence tolerance
     double _tolerance;

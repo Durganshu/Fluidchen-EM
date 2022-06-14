@@ -52,11 +52,26 @@ class Grid {
     double dy() const;
 
     /**
-     * @brief Access inflow cells
+     * @brief Access fluid cells
      *
      * @param[out] vector of fluid cells
      */
     const std::vector<Cell *> &fluid_cells() const;
+
+    /**
+     * @brief Access inflow cells
+     *
+     * @param[out] vector of fluid cells
+     */
+    const std::vector<Cell *> &inflow_cells() const;
+
+    /**
+     * @brief Access outflow cells
+     *
+     * @param[out] vector of fluid cells
+     */
+    const std::vector<Cell *> &outflow_cells() const;
+
 
     /**
      * @brief Access moving wall cells
@@ -71,6 +86,27 @@ class Grid {
      * @param[out] vector of fixed wall cells
      */
     const std::vector<Cell *> &fixed_wall_cells() const;
+
+    /**
+     * @brief Access cold fixed wall cells
+     *
+     * @param[out] vector of cold fixed wall cells
+     */
+    const std::vector<Cell *> &cold_fixed_wall_cells() const;
+
+    /**
+     * @brief Access hot fixed wall cells
+     *
+     * @param[out] vector of hot fixed wall cells
+     */
+    const std::vector<Cell *> &hot_fixed_wall_cells() const;
+
+    /**
+     * @brief Access adiabatic fixed wall cells
+     *
+     * @param[out] vector of adiabatic fixed wall cells
+     */
+    const std::vector<Cell *> &adiabatic_fixed_wall_cells() const;
 
   private:
     /**@brief Default lid driven cavity case generator
@@ -87,7 +123,12 @@ class Grid {
 
     Matrix<Cell> _cells;
     std::vector<Cell *> _fluid_cells;
+    std::vector<Cell *> _inflow_cells;
+    std::vector<Cell *> _outflow_cells;
     std::vector<Cell *> _fixed_wall_cells;
+    std::vector<Cell *> _cold_fixed_wall_cells;
+    std::vector<Cell *> _hot_fixed_wall_cells;
+    std::vector<Cell *> _adiabatic_fixed_wall_cells;
     std::vector<Cell *> _moving_wall_cells;
 
     Domain _domain;
