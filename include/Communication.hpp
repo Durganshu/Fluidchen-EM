@@ -10,3 +10,5 @@
  void communicate(Matrix<double> &data, const Domain &domain);
 
  double reduce_min(double dt);
+
+ double reduce_sum(double res);
