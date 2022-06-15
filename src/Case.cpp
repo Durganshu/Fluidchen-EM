@@ -155,7 +155,7 @@ Case::Case(std::string file_name, int argn, char **args) {
 
     build_domain(domain, imax, jmax);
 
-    _grid = Grid(_geom_name, domain);
+    _grid = Grid(_geom_name, domain,_iproc,_jproc);
     if (!_energy_eq) {
         _field = Fields(_grid, nu, dt, tau, UI, VI, PI, GX, GY);
     } else {
@@ -319,22 +319,25 @@ void Case::simulate() {
                 for (auto &i : _boundaries) {
                     i->apply_pressure(_field);
                 }
-            res = _pressure_solver->solve(_field, _grid, _boundaries);
+            res = _pressure_solver->solve(_field, _grid, _boundaries); //Local sum
             it++;
-            // weighted addition of residuals
-            res = res*_grid.fluid_cells().size();
-            res = reduce_sum(res);
-            fluid_cells = _grid.fluid_cells().size();
-            fluid_cells = reduce_sum(fluid_cells);
-            res = res/fluid_cells;
-            // communicate pressures
+            //Sum reduction over all domains
+            res = reduce_sum(res);  
+
+            fluid_cells = _grid.fluid_cells().size();  
+            fluid_cells = reduce_sum(fluid_cells); //Sum of fluid cells over all domains
+            
+            res = res/fluid_cells; 
+            //Final residual (Each process will have the same residual after this)
+            res=std::sqrt(res);  
+
             communicate(_field.p_matrix(), domain);
             
             }
 
             // Calculate Velocities U and V
             _field.calculate_velocities(_grid);
-                    // exchange velocities
+            // exchange velocities
             communicate(_field.u_matrix(), domain);
             communicate(_field.v_matrix(), domain);
 
@@ -378,11 +381,7 @@ void Case::simulate() {
 
             // Calculate Adaptive Time step
             dt = _field.calculate_dt_e(_grid);
-            std::cout << "Rank " << _rank << "  "
-                      << " dt from all " << dt << std::endl;
             dt = reduce_min(dt);
-            std::cout << "Rank " << _rank << "  "
-                      << " reduced dt from all " << dt << std::endl;
 
             // Apply BCs
             for (auto &i : _boundaries) {
@@ -392,9 +391,12 @@ void Case::simulate() {
 
             // Calculate Temperatures
             _field.calculate_temperatures(_grid);
+            communicate(_field.t_matrix(), domain);
 
             // Calculate Fluxes
             _field.calculate_fluxes(_grid, _energy_eq);
+            communicate(_field.f_matrix(), domain);
+            communicate(_field.g_matrix(), domain);
 
             // Calculate RHS of PPE
             _field.calculate_rs(_grid);
@@ -408,10 +410,23 @@ void Case::simulate() {
                 }
                 res = _pressure_solver->solve(_field, _grid, _boundaries);
                 it++;
+            
+            res = reduce_sum(res);  //Sum reduction over all domains
+
+            fluid_cells = _grid.fluid_cells().size();  
+            fluid_cells = reduce_sum(fluid_cells); //Sum of fluid cells over all domains
+            
+            res = res/fluid_cells; 
+            res=std::sqrt(res);  //Final residual (Each process will have the same residual after this)
+            // communicate pressures
+            communicate(_field.p_matrix(), domain);
+
             }
 
             // Calculate Velocities U and V
             _field.calculate_velocities(_grid);
+            communicate(_field.u_matrix(), domain);
+            communicate(_field.v_matrix(), domain);
 
             // Storing the values in the VTK file
             output_counter += dt;
@@ -623,10 +638,10 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
         // For rank 0
         I = _rank % _iproc + 1;
         J = _rank / _iproc + 1;
-        domain.imin = (I - 1) * imax_domain / _iproc;
-        domain.imax = I * imax_domain / _iproc + 2;
-        domain.jmin = (J - 1) * jmax_domain / _jproc;
-        domain.jmax = J * jmax_domain / _jproc + 2;
+        domain.imin = (I - 1) * (imax_domain / _iproc);
+        domain.imax = I * (imax_domain / _iproc) + 2;
+        domain.jmin = (J - 1) * (jmax_domain / _jproc);
+        domain.jmax = J * (jmax_domain / _jproc) + 2;
         domain.neighbours[0] = -1; // left
         domain.neighbours[1] = -1; // right
         if (_iproc > 1) domain.neighbours[1] = 1;

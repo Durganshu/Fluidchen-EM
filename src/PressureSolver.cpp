@@ -33,10 +33,6 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
                 rloc += (val * val);
         }
     }
-    {
-        res = rloc / (grid.fluid_cells().size());
-        res = std::sqrt(res);
-    }
-
-    return res;
+    //Every domain just returns the rloc
+    return rloc;
 }

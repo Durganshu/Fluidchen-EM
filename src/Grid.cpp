@@ -7,12 +7,14 @@
 #include <sstream>
 #include <vector>
 
-Grid::Grid(std::string geom_name, Domain &domain) {
+Grid::Grid(std::string geom_name, Domain &domain, int iproc, int jproc) {
 
 
     MPI_Comm_rank(MPI_COMM_WORLD, &_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &_size);
     _domain = domain;
+    _jproc= iproc;
+    _iproc= jproc;
 
     _cells = Matrix<Cell>(_domain.size_x + 2, _domain.size_y + 2);
 
@@ -253,9 +255,11 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
 }
 
 void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>> &geometry_data) {
+     if (_rank == 0) {
 
     int numcols, numrows, depth;
-
+    //Vector to store whole geometry which is read by only rank 0
+    std::vector<std::vector<int>> entire_geometry_data(_domain.domain_size_x + 2, std::vector<int>(_domain.domain_size_y + 2, 0));
     std::ifstream infile(filedoc);
     std::stringstream ss;
     std::string inputLine = "";
@@ -279,12 +283,75 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
     // Following lines : data
     for (int col = numcols - 1; col > -1; --col) {
         for (int row = 0; row < numrows; ++row) {
-            ss >> geometry_data[row][col];
+            ss >> entire_geometry_data[row][col];
         }
     }
 
     infile.close();
-}
+    
+
+    int I, J;
+    int imin, jmin, imax, jmax;
+
+    // Sending Data to other processors
+    for (int i = 1; i < _size; ++i) {
+        I = i % _iproc + 1;
+        J = i / _iproc + 1;
+        imin = (I - 1) * ((numrows - 2) / _iproc);
+        imax = I * ((numrows - 2) / _iproc) + 2;
+        jmin = (J - 1) * ((numcols - 2) / _jproc);
+        jmax = J * ((numcols - 2) / _jproc) + 2;
+
+        // Adding the extra cells when number of cells is not divisible by iproc and jproc
+        if (I == _iproc) {
+            if ((numrows - 2) % _iproc != 0) {
+                imax = imax + ((numrows - 2) % _iproc);
+            }
+        }
+
+        if (J == _jproc) {
+            if ((numcols - 2) % _jproc != 0) {
+                jmax = jmax + ((numcols - 2) % _jproc);
+            }
+        }
+
+        std::vector<int> rank_geometry_data;
+        for (int row = imin; row < imax; ++row) {
+            for (int col = jmin; col < jmax; ++col) {
+                rank_geometry_data.push_back(entire_geometry_data[row][col]);
+            }
+        }
+        //Send to each rank
+        MPI_Send(rank_geometry_data.data(), rank_geometry_data.size(), MPI_INT, i, 999999, MPI_COMM_WORLD);
+    }
+
+        // Assigning Geometry data for rank 0
+    for (int col = 0; col < (_domain.jmax - _domain.jmin); ++col) {
+        for (int row = 0; row < (_domain.imax - _domain.imin); ++row) {
+            geometry_data[row][col] = entire_geometry_data[row][col];
+        }
+    }
+
+
+} //End of if where rank 0 is working
+//************************************************************************************************************
+/// Replace _domain.imax - _domain.imin by size_x+2 for uniformity everywhere
+else {
+        // Receive data from rank 0
+        std::vector<int> rank_geometry_data((_domain.imax - _domain.imin) * (_domain.jmax - _domain.jmin));
+        MPI_Status status;
+        MPI_Recv(rank_geometry_data.data(), rank_geometry_data.size(), MPI_INT, 0, 999999, MPI_COMM_WORLD, &status);
+
+        for (int col = 0; col < _domain.jmax - _domain.jmin; ++col) {
+            for (int row = 0; row < _domain.imax - _domain.imin; ++row) {
+                geometry_data.at(row).at(col) = rank_geometry_data[row * (_domain.jmax - _domain.jmin) + col];
+            }
+        }
+    }
+
+
+
+}// End of Parse Geometry
 
 int Grid::imax() const { return _domain.size_x; }
 int Grid::jmax() const { return _domain.size_y; }
