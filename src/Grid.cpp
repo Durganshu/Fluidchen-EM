@@ -338,7 +338,7 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
 /// Replace _domain.imax - _domain.imin by size_x+2 for uniformity everywhere
 else {
         // Receive data from rank 0
-        std::vector<int> rank_geometry_data((_domain.imax - _domain.imin) * (_domain.jmax - _domain.jmin));
+        std::vector<int> rank_geometry_data((_domain.imax - _domain.imin) * (_domain.jmax - _domain.jmin),0);
         MPI_Status status;
         MPI_Recv(rank_geometry_data.data(), rank_geometry_data.size(), MPI_INT, 0, 999999, MPI_COMM_WORLD, &status);
 

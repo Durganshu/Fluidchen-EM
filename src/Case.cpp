@@ -36,7 +36,7 @@ namespace filesystem = std::experimental::filesystem;
 #include <vtkTuple.h>
 
 Case::Case(std::string file_name, int argn, char **args) {
-
+    
     MPI_Comm_rank(MPI_COMM_WORLD, &_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &_size);
     // Read input parameters
@@ -152,16 +152,18 @@ Case::Case(std::string file_name, int argn, char **args) {
     domain.dy = ylength / static_cast<double>(jmax);
     domain.domain_size_x = imax;
     domain.domain_size_y = jmax;
-
+    
     build_domain(domain, imax, jmax);
-
+    
     _grid = Grid(_geom_name, domain,_iproc,_jproc);
+    
     if (!_energy_eq) {
         _field = Fields(_grid, nu, dt, tau, UI, VI, PI, GX, GY);
     } else {
         _field = Fields(_grid, nu, alpha, beta, dt, tau, UI, VI, PI, TI, GX, GY);
+        
     }
-
+    
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);
     _max_iter = itermax;
@@ -265,7 +267,7 @@ void Case::set_file_names(std::string file_name) {
  * For information about the classes and functions, you can check the header files.
  */
 void Case::simulate() {
-
+    
 
     std::ofstream output_file;
     std::string outputname = _dict_name + '/' + _case_name + ".log";
@@ -603,10 +605,26 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
         for (int i = 1; i < _size; ++i) {
             I = i % _iproc + 1;
             J = i / _iproc + 1;
-            imin = (I - 1) * imax_domain / _iproc;
-            imax = I * imax_domain / _iproc + 2;
-            jmin = (J - 1) * jmax_domain / _jproc;
-            jmax = J * jmax_domain / _jproc + 2;
+            imin = (I - 1) * (imax_domain / _iproc);
+            imax = I * (imax_domain / _iproc) + 2;
+            jmin = (J - 1) * (jmax_domain / _jproc);
+            jmax = J * (jmax_domain / _jproc) + 2;
+
+
+        // Adding the extra cells when number of cells is not divisible by iproc and jproc
+        if (I == _iproc) {
+            if ((imax_domain) % _iproc != 0) {
+                imax = imax + (imax_domain  % _iproc);
+                domain.size_x =domain.size_x +(imax_domain %_iproc);
+            }
+        }
+
+        if (J == _jproc) {
+            if ((jmax_domain) % _jproc != 0) {
+                jmax = jmax + (jmax_domain  % _jproc);
+                domain.size_y =domain.size_y +(jmax_domain %_jproc);
+            }
+        }
 
             std::array<int, 4> neighbours = {-1, -1, -1, -1};
             if (I > 1) {
