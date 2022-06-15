@@ -13,8 +13,8 @@ Grid::Grid(std::string geom_name, Domain &domain, int iproc, int jproc) {
     MPI_Comm_rank(MPI_COMM_WORLD, &_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &_size);
     _domain = domain;
-    _jproc= iproc;
-    _iproc= jproc;
+    _iproc= iproc;
+    _jproc= jproc;
 
     _cells = Matrix<Cell>(_domain.size_x + 2, _domain.size_y + 2);
 
@@ -315,13 +315,16 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
             }
         }
 
+
         std::vector<int> rank_geometry_data;
         for (int row = imin; row < imax; ++row) {
             for (int col = jmin; col < jmax; ++col) {
                 rank_geometry_data.push_back(entire_geometry_data[row][col]);
             }
         }
+        std::cout<<"\n product "<<((imax-imin)*(jmax-jmin))<<std::endl;
         //Send to each rank
+        std::cout<<"Sent Size "<<rank_geometry_data.size()<<std::endl;
         MPI_Send(rank_geometry_data.data(), rank_geometry_data.size(), MPI_INT, i, 999999, MPI_COMM_WORLD);
     }
 
@@ -339,7 +342,9 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
 else {
         // Receive data from rank 0
         std::vector<int> rank_geometry_data((_domain.imax - _domain.imin) * (_domain.jmax - _domain.jmin),0);
+        std::cout<<"Receive Size"<<rank_geometry_data.size()<<std::endl;
         MPI_Status status;
+
         MPI_Recv(rank_geometry_data.data(), rank_geometry_data.size(), MPI_INT, 0, 999999, MPI_COMM_WORLD, &status);
 
         for (int col = 0; col < _domain.jmax - _domain.jmin; ++col) {

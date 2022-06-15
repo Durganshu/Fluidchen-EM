@@ -382,8 +382,7 @@ void Case::simulate() {
         while (t < _t_end) {
 
             // Calculate Adaptive Time step
-            dt = _field.calculate_dt_e(_grid);
-            dt = reduce_min(dt);
+          
 
             // Apply BCs
             for (auto &i : _boundaries) {
@@ -435,9 +434,9 @@ void Case::simulate() {
             if (output_counter >= _output_freq) {
                 output_vtk(timestep++);
                 output_counter = 0;
-                /*                 std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
+                std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
                                           << " completed] Writing Data at t=" << t << "s"
-                                          << "\n\n"; */
+                                          << "\n\n"; 
             }
 
             // Writing simulation data in a log file
@@ -448,19 +447,22 @@ void Case::simulate() {
             }
 
             // Printing info and checking for errors once in 5 runs of the loop
-            if (counter == 10) {
+            
+            if (counter == 10 && _rank==0) {
                 counter = 0;
-                /*                 std::cout << std::left << "Simulation Time[s] = " << std::setw(7) << t
+                                std::cout << std::left << "Simulation Time[s] = " << std::setw(7) << t
                                           << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " <<
                    std::setw(3) << it
-                                          << "\tSOR Residual = " << std::setw(7) << res << "\n"; */
+                                          << "\tSOR Residual = " << std::setw(7) << res << "\n"; 
 
-                if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0); // Check for unphysical behaviour
+                //if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0); // Check for unphysical behaviour
             }
             counter++;
 
             // Updating current time
             t = t + dt;
+            dt = _field.calculate_dt_e(_grid);
+            dt = reduce_min(dt);
         }
     }
 
@@ -682,10 +684,10 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     //  domain.size_x = imax_domain;
     //  domain.size_y = jmax_domain;
 
-    // std::cout << "Rank: " << _rank << " " << domain.imin << " " << domain.imax << " " << domain.jmin << " "
-    //           << domain.jmax << " neighbours " << domain.neighbours[0] << domain.neighbours[1] <<
-    //           domain.neighbours[2]
-    //           << domain.neighbours[3] << "\n";
+    std::cout << "Rank: " << _rank << " " << domain.imin << " " << domain.imax << " " << domain.jmin << " "
+              << domain.jmax << " neighbours " << domain.neighbours[0] << domain.neighbours[1] <<
+              domain.neighbours[2]
+              << domain.neighbours[3] << "\n";
 }
 
 bool Case::check_err(Fields &field, int imax, int jmax) {
