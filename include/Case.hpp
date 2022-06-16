@@ -10,6 +10,7 @@
 #include "Fields.hpp"
 #include "Grid.hpp"
 #include "PressureSolver.hpp"
+#include "Communication.hpp"
 
 /**
  * @brief Class to hold and orchestrate the simulation flow.

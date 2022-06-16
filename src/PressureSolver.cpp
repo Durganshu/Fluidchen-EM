@@ -1,4 +1,5 @@
 #include "PressureSolver.hpp"
+#include "Communication.hpp"
 
 #include <cmath>
 #include <iostream>
