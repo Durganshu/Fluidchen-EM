@@ -12,9 +12,9 @@ Fields::Fields(Grid &grid, double nu, double dt, double tau, double UI, double V
     MPI_Comm_rank(MPI_COMM_WORLD, &_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &_size);
 
-    _U = Matrix<double>(grid.imax() + 2, grid.jmax() + 2);
-    _V = Matrix<double>(grid.imax() + 2, grid.jmax() + 2);
-    _P = Matrix<double>(grid.imax() + 2, grid.jmax() + 2);
+    _U = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
+    _V = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
+    _P = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
 
     _F = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
     _G = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
@@ -34,10 +34,10 @@ Fields::Fields(Grid &grid, double nu, double alpha, double beta, double dt, doub
                double TI, double GX, double GY)
     : _nu(nu), _alpha(alpha), _beta(beta), _dt(dt), _tau(tau), _gx(GX), _gy(GY) {
 
-    _U = Matrix<double>(grid.imax() + 2, grid.jmax() + 2);
-    _V = Matrix<double>(grid.imax() + 2, grid.jmax() + 2);
-    _P = Matrix<double>(grid.imax() + 2, grid.jmax() + 2);
-    _T = Matrix<double>(grid.imax() + 2, grid.jmax() + 2);
+    _U = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
+    _V = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
+    _P = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
+    _T = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
 
     _F = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
     _G = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
@@ -377,8 +377,10 @@ void Fields::calculate_rs(Grid &grid) {
     for (const auto &elem : grid.fluid_cells()) {
         int i = elem->i();
         int j = elem->j();
-        rs(i, j) = idt * (((_F(i, j) - _F(elem->neighbour(border_position::LEFT)->i(), j)) / grid.dx()) +
-                          ((_G(i, j) - _G(i, elem->neighbour(border_position::BOTTOM)->j())) / grid.dy()));
+        if (i != 0 && j != 0 && i != grid.imax() + 1 && j != grid.jmax() + 1) { // exclude the buffer cells
+            rs(i, j) = idt * (((_F(i, j) - _F(elem->neighbour(border_position::LEFT)->i(), j)) / grid.dx()) +
+                              ((_G(i, j) - _G(i, elem->neighbour(border_position::BOTTOM)->j())) / grid.dy()));
+        }
     }
 }
 
@@ -390,10 +392,11 @@ void Fields::calculate_velocities(Grid &grid) {
     for (const auto &elem : grid.fluid_cells()) {
         int i = elem->i();
         int j = elem->j();
-        // if (rank == 0) std::cout << " i, j = " << i <<", "<< j << "\n";
+        if (i != 0 && j != 0 && i != grid.imax() + 1 && j != grid.jmax() + 1){ // exclude the buffer cells
         _U(i, j) = _F(i, j) - (_dt / grid.dx()) * (_P(elem->neighbour(border_position::RIGHT)->i(), j) - _P(i, j));
 
         _V(i, j) = _G(i, j) - (_dt / grid.dy()) * (_P(i, elem->neighbour(border_position::TOP)->j()) - _P(i, j));
+        }
     }
 }
 

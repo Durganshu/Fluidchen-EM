@@ -1,6 +1,5 @@
 #include "Communication.hpp"
-#include <vector>
-#include <fstream>
+#include <mpi.h>
 
 void communicate(Matrix<double> &data, const Domain &domain) {
     static int count = 0;
@@ -82,26 +81,32 @@ void communicate(Matrix<double> &data, const Domain &domain) {
     //count++;
 }
 
-double reduce_min(double x) {
+
+double reduce_min(double x)
+{
+    int rank;int size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    // double final_dt;
+
+    // MPI_Reduce(&dt,&final_dt,1,MPI_DOUBLE,MPI_MIN,0,MPI_COMM_WORLD);
+    // MPI_Bcast(&final_dt,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+    
+    // return final_dt;
+
     double final_x;
     MPI_Allreduce(&x, &final_x, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
     return final_x;
+
+
 }
 
-double reduce_max(double x) {
-    double final_x;
-    MPI_Allreduce(&x, &final_x, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    return final_x;
-}
+double reduce_sum(double res) {
+    double reduced_res;
 
-double reduce_total(double x) {
-    double xtot;
-    MPI_Allreduce(&x, &xtot, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    return xtot;
-}
+    MPI_Reduce(&res, &reduced_res, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&reduced_res, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-int reduce_total(int x) {
-    int xtot;
-    MPI_Allreduce(&x, &xtot, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-    return xtot;
+    return reduced_res;
 }
