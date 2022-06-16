@@ -597,10 +597,8 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     int I, J;
 
     /// Temporary variables used to exchange information between processes
-    int imin, imax, jmin, jmax;
-
-    domain.size_x = imax_domain / _iproc;
-    domain.size_y = jmax_domain / _jproc;
+    int imin, imax, jmin, jmax, size_x, size_y;
+    
 
     if (_rank == 0) {
         //std::cout << domain.size_x << " in case " << domain.size_y << std::endl;
@@ -611,21 +609,19 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
             imax = I * (imax_domain / _iproc) + 2;
             jmin = (J - 1) * (jmax_domain / _jproc);
             jmax = J * (jmax_domain / _jproc) + 2;
+            size_x = imax_domain / _iproc;
+            size_y = jmax_domain / _jproc;
 
 
         // Adding the extra cells when number of cells is not divisible by iproc and jproc
         if (I == _iproc) {
-            if ((imax_domain) % _iproc != 0) {
-                imax = imax + (imax_domain  % _iproc);
-                domain.size_x =domain.size_x +(imax_domain %_iproc);
-            }
+            imax = imax_domain + 2;
+            size_x = imax - imin -2;
         }
 
         if (J == _jproc) {
-            if ((jmax_domain) % _jproc != 0) {
-                jmax = jmax + (jmax_domain  % _jproc);
-                domain.size_y =domain.size_y +(jmax_domain %_jproc);
-            }
+            jmax = jmax_domain + 2;
+            size_y = jmax - jmin -2;
         }
 
             std::array<int, 4> neighbours = {-1, -1, -1, -1};
@@ -653,7 +649,9 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
             MPI_Send(&imax, 1, MPI_INT, i, 998, MPI_COMM_WORLD);
             MPI_Send(&jmin, 1, MPI_INT, i, 997, MPI_COMM_WORLD);
             MPI_Send(&jmax, 1, MPI_INT, i, 996, MPI_COMM_WORLD);
-            MPI_Send(neighbours.data(), 4, MPI_INT, i, 995, MPI_COMM_WORLD);
+            MPI_Send(&size_x, 1, MPI_INT, i, 995, MPI_COMM_WORLD);
+            MPI_Send(&size_y, 1, MPI_INT, i, 994, MPI_COMM_WORLD);
+            MPI_Send(neighbours.data(), 4, MPI_INT, i, 993, MPI_COMM_WORLD);
         }
         // For rank 0
         I = _rank % _iproc + 1;
@@ -662,6 +660,8 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
         domain.imax = I * (imax_domain / _iproc) + 2;
         domain.jmin = (J - 1) * (jmax_domain / _jproc);
         domain.jmax = J * (jmax_domain / _jproc) + 2;
+        domain.size_x = imax_domain / _iproc;
+        domain.size_y = jmax_domain / _jproc;
         domain.neighbours[0] = -1; // left
         domain.neighbours[1] = -1; // right
         if (_iproc > 1) domain.neighbours[1] = 1;
@@ -674,7 +674,9 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
         MPI_Recv(&domain.imax, 1, MPI_INT, 0, 998, MPI_COMM_WORLD, &status);
         MPI_Recv(&domain.jmin, 1, MPI_INT, 0, 997, MPI_COMM_WORLD, &status);
         MPI_Recv(&domain.jmax, 1, MPI_INT, 0, 996, MPI_COMM_WORLD, &status);
-        MPI_Recv(&domain.neighbours, 4, MPI_INT, 0, 995, MPI_COMM_WORLD, &status);
+        MPI_Recv(&domain.size_x, 1, MPI_INT, 0, 995, MPI_COMM_WORLD, &status);
+        MPI_Recv(&domain.size_y, 1, MPI_INT, 0, 994, MPI_COMM_WORLD, &status);
+        MPI_Recv(&domain.neighbours, 4, MPI_INT, 0, 993, MPI_COMM_WORLD, &status);
     }
     /// Comment this when going to parallelize the grid
     // domain.imin = 0;
