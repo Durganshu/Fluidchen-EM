@@ -1,10 +1,8 @@
 #include "Fields.hpp"
-#include "Communication.hpp"
 
 #include <algorithm>
 #include <iostream>
 #include <math.h>
-#include <mpi.h>
 
 Fields::Fields(Grid &grid, double nu, double dt, double tau, double UI, double VI, double PI, double GX, double GY)
     : _nu(nu), _dt(dt), _tau(tau), _gx(GX), _gy(GY) {
@@ -366,14 +364,6 @@ void Fields::calculate_fluxes(Grid &grid, bool energy_eq) {
 
 void Fields::calculate_rs(Grid &grid) {
     auto idt = 1. / _dt;
-    // int rank;
-    // MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    // if (rank == 1) {
-    //     std::cout << "_F(0,24): " << _F(0, 24) << "\n";
-    //     std::cout << "_G(0,24): " << _G(0, 24) << "\n";
-    //     std::cout << "size of rs in calculate_rs(): " << _RS.size() << ", rank = " << rank << "\n";
-    // }
-
     for (const auto &elem : grid.fluid_cells()) {
         int i = elem->i();
         int j = elem->j();
@@ -386,9 +376,6 @@ void Fields::calculate_rs(Grid &grid) {
 
 void Fields::calculate_velocities(Grid &grid) {
 
-    // int rank;
-    // MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    // if (rank == 1) std::cout << "size of grid.fluid_cells(): " << grid.fluid_cells().size() << "\n";
     for (const auto &elem : grid.fluid_cells()) {
         int i = elem->i();
         int j = elem->j();
@@ -415,9 +402,6 @@ double Fields::calculate_dt(Grid &grid) {
         if (std::fabs(_V(i, j)) > max_v) max_v = std::fabs(_V(i, j));
     }
 
-    max_u = reduce_max(max_u);
-    max_v = reduce_max(max_v);
-
     auto factor1 = 1 / (1 / (grid.dx() * grid.dx()) + 1 / (grid.dy() * grid.dy()));
     factor1 = factor1 / (2 * _nu);
     auto factor2 = grid.dx() / max_u;
@@ -440,9 +424,6 @@ double Fields::calculate_dt_e(Grid &grid) {
 
         if (std::fabs(_V(i, j)) > max_v) max_v = std::fabs(_V(i, j));
     }
-
-    max_u = reduce_max(max_u);
-    max_v = reduce_max(max_v);
 
     auto factor = 1 / (1 / (grid.dx() * grid.dx()) + 1 / (grid.dy() * grid.dy()));
     auto factor1 = factor / (2 * _nu);

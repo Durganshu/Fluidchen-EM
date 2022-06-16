@@ -291,35 +291,33 @@ void Case::simulate() {
             std::cout << "ENERGY EQUATION OFF" << std::endl;
         }
         while (t < _t_end) {
-
+            
+            // Calculate Adaptive Time step
+            dt = _field.calculate_dt(_grid);
+            // std::cout<<"Rank "<<_rank<<"  "<<" dt from all "<<dt<<std::endl;
+            dt = reduce_min(dt);
+            
+            // std::cout<<"Rank "<<_rank<<"  "<<" reduced dt from all "<<dt<<std::endl;
             // Apply BCs
-            // std::cout << "Applying Boundaries, rank = " << _rank << "\n";
             for (auto &i : _boundaries) {
                 i->apply(_field);
             }
             //if(_rank==0){std::cout<<"i am here"<<std::endl;}
             
             // Calculate Fluxes
-            // std::cout << "Caculating Fluxes\n";
             _field.calculate_fluxes(_grid);
-
-            communicate(_field.f_matrix(), _grid.domain());
-            communicate(_field.g_matrix(), _grid.domain());
-
-            // std::cout << "Communicating fluxes\n";
-
-            // std::cout << " Rank " << _rank << " reached " << std::endl;
-
-            // Calculate RHS of PPE
-            // std::cout << "Caculating RS, rank = " << _rank << "\n";
+            communicate(_field.f_matrix(), domain);
+            communicate(_field.g_matrix(), domain);
+            //std::cout<<"After fluxes"<<std::endl;
+            
+            //if(_rank==0){std::cout<<"i am here after communicate f and g"<<std::endl;}
+            // std::cout<<" Rank " <<_rank<< " reached "<<std::endl;
+            //  Calculate RHS of PPE
             _field.calculate_rs(_grid);
-            // std::cout << "Caculated RS, rank = " << _rank << "\n";
-
             // Perform SOR Iterations
             int it = 0;
             double res = 1000.;
-            while (it < _max_iter && res >= _tolerance) {
-                // std::cout << "Applying pressure, rank = " << _rank << "\n";
+            while (it <= _max_iter && res >= _tolerance) {
                 for (auto &i : _boundaries) {
                     i->apply_pressure(_field);
                 }
@@ -340,7 +338,6 @@ void Case::simulate() {
             }
 
             // Calculate Velocities U and V
-            // std::cout << "Calculating velocities\n";
             _field.calculate_velocities(_grid);
             // exchange velocities
             communicate(_field.u_matrix(), domain);
@@ -362,8 +359,8 @@ void Case::simulate() {
             //             << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3) << it
             //             << "\tSOR Residual = " << std::setw(7) << res << "\n";
 
-            // Printing info and checking for errors once in 10 runs of the loop
-            if (counter == 1) {
+            // Printing info and checking for errors once in 5 runs of the loop
+            if (counter == 10) {
                 counter = 0;
                 std::cout << std::left << "Simulation Time[s] = " << std::setw(7) << t
                                           << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " <<
@@ -376,20 +373,16 @@ void Case::simulate() {
 
             // Updating current time
             t = t + dt;
-
-            // Calculate Adaptive Time step
-            dt = _field.calculate_dt(_grid);
-            // std::cout << "Rank " << _rank << "  "
-            //           << " dt from all " << dt << std::endl;
-            dt = reduce_min(dt);
-            // std::cout << "Rank " << _rank << "  "
-            //           << " reduced dt from all " << dt << std::endl;
+            //std::cout<<"Time "<<t<<std::endl;
         }
     } else {
         if (_rank == 0) {
             std::cout << "ENERGY EQN ON" << std::endl;
         }
         while (t < _t_end) {
+
+            // Calculate Adaptive Time step
+          
 
             // Apply BCs
             for (auto &i : _boundaries) {
@@ -412,12 +405,11 @@ void Case::simulate() {
             // Perform SOR Iterations
             int it = 0;
             double res = 1000.;
-            while (it < _max_iter && res >= _tolerance) {
+            while (it <= _max_iter && res >= _tolerance) {
                 for (auto &i : _boundaries) {
                     i->apply_pressure(_field);
                 }
                 res = _pressure_solver->solve(_field, _grid, _boundaries);
-                communicate(_field.p_matrix(), _grid.domain());
                 it++;
             
             res = reduce_sum(res);  //Sum reduction over all domains
@@ -469,14 +461,8 @@ void Case::simulate() {
 
             // Updating current time
             t = t + dt;
-
-            // Calculate Adaptive Time step
             dt = _field.calculate_dt_e(_grid);
-            // std::cout << "Rank " << _rank << "  "
-            //           << " dt from all " << dt << std::endl;
             dt = reduce_min(dt);
-            // std::cout << "Rank " << _rank << "  "
-            //           << " reduced dt from all " << dt << std::endl;
         }
     }
 
@@ -700,10 +686,10 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     //  domain.size_x = imax_domain;
     //  domain.size_y = jmax_domain;
 
-    // std::cout << "Rank: " << _rank << " " << domain.imin << " " << domain.imax << " " << domain.jmin << " "
-    //           << domain.jmax << " neighbours " << domain.neighbours[0] << domain.neighbours[1] <<
-    //           domain.neighbours[2]
-    //           << domain.neighbours[3] << "\n";
+    std::cout << "Rank: " << _rank << " " << domain.imin << " " << domain.imax << " " << domain.jmin << " "
+              << domain.jmax << " neighbours " << domain.neighbours[0] << domain.neighbours[1] <<
+              domain.neighbours[2]
+              << domain.neighbours[3] << "\n";
 }
 
 bool Case::check_err(Fields &field, int imax, int jmax) {

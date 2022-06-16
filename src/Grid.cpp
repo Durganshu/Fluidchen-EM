@@ -15,7 +15,6 @@ Grid::Grid(std::string geom_name, Domain &domain, int iproc, int jproc) {
     _iproc = iproc;
     _jproc = jproc;
 
-    _domain = domain;
     _cells = Matrix<Cell>(_domain.size_x + 2, _domain.size_y + 2);
 
     if (geom_name.compare("NONE")) {
@@ -30,6 +29,8 @@ Grid::Grid(std::string geom_name, Domain &domain, int iproc, int jproc) {
 void Grid::build_lid_driven_cavity() {
     std::vector<std::vector<int>> geometry_data(_domain.size_x + 2, std::vector<int>(_domain.size_y + 2, 0));
 
+    for (int i = 0; i < _domain.size_x + 2; ++i) {
+        for (int j = 0; j < _domain.size_y + 2; ++j) {
             // Bottom, left and right walls: no-slip
             if ((i == 0 && _domain.imin == 0) ||
                 (i == _domain.size_x + 1 && _domain.imax == _domain.domain_size_x + 2) ||
