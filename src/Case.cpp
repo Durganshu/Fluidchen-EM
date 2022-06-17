@@ -3,7 +3,6 @@
 #include "Enums.hpp"
 
 #include <algorithm>
-#include <chrono>
 #include <iomanip>
 #include <iterator>
 #include <mpi.h>
@@ -36,9 +35,9 @@ namespace filesystem = std::experimental::filesystem;
 #include <vtkTuple.h>
 
 Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
-    
-    _rank=rank;
-    _size=size;
+
+    _rank = rank;
+    _size = size;
     // Read input parameters
     const int MAX_LINE_LENGTH = 1024;
     std::ifstream file(file_name);
@@ -72,9 +71,6 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
     double TI;    /* Initial temperature*/
     double beta;  /* Thermal Expansion Coefficient  */
     double alpha; /* Thermal diffusivity   */
-
-    // int iproc = 1; /*Number of processes in x direction*/
-    // int jproc = 1; /*Number of processes in y direction*/
 
     if (file.is_open()) {
 
@@ -148,22 +144,22 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
     set_file_names(file_name);
 
     // Build up the domain
+    Domain domain;
     domain.dx = xlength / static_cast<double>(imax);
     domain.dy = ylength / static_cast<double>(jmax);
     domain.domain_size_x = imax;
     domain.domain_size_y = jmax;
-    
+
     build_domain(domain, imax, jmax);
-    
-    _grid = Grid(_geom_name, domain,_iproc,_jproc, _rank,_size);
-    
+
+    _grid = Grid(_geom_name, domain, _iproc, _jproc, _rank, _size);
+
     if (!_energy_eq) {
         _field = Fields(_grid, nu, dt, tau, UI, VI, PI, GX, GY);
     } else {
         _field = Fields(_grid, nu, alpha, beta, dt, tau, UI, VI, PI, TI, GX, GY);
-        
     }
-    
+
     _discretization = Discretization(domain.dx, domain.dy, gamma);
     _pressure_solver = std::make_unique<SOR>(omg);
     _max_iter = itermax;
@@ -196,8 +192,6 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
     if (not _grid.outflow_cells().empty()) {
         _boundaries.push_back(std::make_unique<OutflowBoundary>(_grid.outflow_cells(), P_out));
     }
-
-
 }
 
 void Case::set_file_names(std::string file_name) {
@@ -267,48 +261,44 @@ void Case::set_file_names(std::string file_name) {
  * For information about the classes and functions, you can check the header files.
  */
 void Case::simulate() {
-    
 
+    // Log File
     std::ofstream output_file;
     std::string outputname = _dict_name + '/' + _case_name + ".log";
-    output_file.open(outputname);
 
-    writeIntro(output_file);
+    if (_rank == 0) {
+        output_file.open(outputname);
+        writeIntro(output_file);
+    }
 
     double t = 0.0;
     double dt = _field.dt();
     int timestep = 0;
     double output_counter = 0.0;
-    uint8_t counter = 0; // Counter for printing values on the console
-    
-    int number_fluid_cells=0;
-    auto start = std::chrono::steady_clock::now();
+    uint8_t counter = 0;    // Counter for printing values on the console
+    int number_fluid_cells; // Number of Fluid Cells in Domain
 
     output_vtk(timestep++); // Writing intial data
 
     if (!_energy_eq) {
-        if (_rank == 0) {
-            std::cout << "ENERGY EQUATION OFF" << std::endl;
-        }
+
+        if (_rank == 0) std::cout << "ENERGY EQUATION OFF" << std::endl;
+
         while (t < _t_end) {
-                   
-            // std::cout<<"Rank "<<_rank<<"  "<<" reduced dt from all "<<dt<<std::endl;
+
             // Apply BCs
             for (auto &i : _boundaries) {
                 i->apply(_field);
             }
-            //if(_rank==0){std::cout<<"i am here"<<std::endl;}
-            
+
             // Calculate Fluxes
             _field.calculate_fluxes(_grid);
-            Communication::communicate(_field.f_matrix(), domain, _rank);
-            Communication::communicate(_field.g_matrix(), domain, _rank);
-            //std::cout<<"After fluxes"<<std::endl;
-            
-            //if(_rank==0){std::cout<<"i am here after communicate f and g"<<std::endl;}
-            // std::cout<<" Rank " <<_rank<< " reached "<<std::endl;
+            Communication::communicate(_field.f_matrix(), _grid.domain(), _rank);
+            Communication::communicate(_field.g_matrix(), _grid.domain(), _rank);
+
             //  Calculate RHS of PPE
             _field.calculate_rs(_grid);
+
             // Perform SOR Iterations
             int it = 0;
             double res = 1000.;
@@ -316,53 +306,46 @@ void Case::simulate() {
                 for (auto &i : _boundaries) {
                     i->apply_pressure(_field);
                 }
-            res = _pressure_solver->solve(_field, _grid, _boundaries); //Local sum
-            it++;
-            //Sum reduction over all domains
-            res = Communication::reduce_sum(res);  
 
-            number_fluid_cells = _grid.fluid_cells().size();  
-
-            //Sum of fluid cells over all domains
-            number_fluid_cells = Communication::reduce_sum(number_fluid_cells); 
-            
-            res = res/number_fluid_cells; 
-            //Final residual (Each process will have the same residual after this)
-            res=std::sqrt(res);  
-
-            Communication::communicate(_field.p_matrix(), domain,_rank);
-            
+                res = _pressure_solver->solve(_field, _grid, _boundaries); // Local sum
+                res = Communication::reduce_sum(res);                      // Sum reduction over all domains
+                number_fluid_cells = _grid.fluid_cells().size();
+                number_fluid_cells =
+                    Communication::reduce_sum(number_fluid_cells); // Sum of fluid cells over all domains
+                res = std::sqrt(res / number_fluid_cells);         // Final residual
+                Communication::communicate(_field.p_matrix(), _grid.domain(), _rank);
+                it++;
             }
 
             // Calculate Velocities U and V
             _field.calculate_velocities(_grid);
-            // exchange velocities
-            Communication::communicate(_field.u_matrix(), domain,_rank);
-            Communication::communicate(_field.v_matrix(), domain,_rank);
+            // Exchange velocities
+            Communication::communicate(_field.u_matrix(), _grid.domain(), _rank);
+            Communication::communicate(_field.v_matrix(), _grid.domain(), _rank);
 
-            // Storing the values in the VTK file
+            // Generating VTK files
             output_counter += dt;
             if (output_counter >= _output_freq) {
                 output_vtk(timestep++);
                 output_counter = 0;
-                /*                 std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
-                                          << " completed] Writing Data at t=" << t << "s"
-                                 if(incoming_rank==0){std::cout<<"  "<<domain.neighbours[0]<< domain.neighbours[1] <<domain.neighbours[2]<< domain.neighbours[3] << "\n";}
-         << "\n\n"; */
+                if (_rank == 0)
+                    std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
+                              << " completed] Writing Data at t=" << t << "s";
             }
 
             // Writing simulation data in a log file
-            // output_file << std::left << "Simulation Time[s] = " << std::setw(7) << t
-            //             << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3) << it
-            //             << "\tSOR Residual = " << std::setw(7) << res << "\n";
+            if (_rank == 0)
+                output_file << std::left << "Simulation Time[s] = " << std::setw(7) << t
+                            << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3) << it
+                            << "\tSOR Residual = " << std::setw(7) << res << "\n";
 
             // Printing info and checking for errors once in 5 runs of the loop
             if (counter == 10) {
                 counter = 0;
-                std::cout << std::left << "Simulation Time[s] = " << std::setw(7) << t
-                                          << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " <<
-                   std::setw(3) << it
-                                          << "\tSOR Residual = " << std::setw(7) << res << "\n"; 
+                if (_rank == 0)
+                    std::cout << std::left << "Simulation Time[s] = " << std::setw(7) << t
+                              << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3)
+                              << it << "\tSOR Residual = " << std::setw(7) << res << "\n";
                 // Check for unphysical behaviour
                 if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0);
             }
@@ -370,10 +353,9 @@ void Case::simulate() {
 
             // Updating current time
             t = t + dt;
-            //std::cout<<"Time "<<t<<std::endl;
-            // Calculate Adaptive Time step
+
+            //  Calculate Adaptive Time step
             dt = _field.calculate_dt(_grid);
-            // std::cout<<"Rank "<<_rank<<"  "<<" dt from all "<<dt<<std::endl;
             dt = Communication::reduce_min(dt);
         }
     } else {
@@ -381,9 +363,6 @@ void Case::simulate() {
             std::cout << "ENERGY EQN ON" << std::endl;
         }
         while (t < _t_end) {
-
-            // Calculate Adaptive Time step
-          
 
             // Apply BCs
             for (auto &i : _boundaries) {
@@ -393,12 +372,12 @@ void Case::simulate() {
 
             // Calculate Temperatures
             _field.calculate_temperatures(_grid);
-            Communication::communicate(_field.t_matrix(), domain,_rank);
+            Communication::communicate(_field.t_matrix(), _grid.domain(), _rank);
 
             // Calculate Fluxes
             _field.calculate_fluxes(_grid, _energy_eq);
-            Communication::communicate(_field.f_matrix(), domain,_rank);
-            Communication::communicate(_field.g_matrix(), domain,_rank);
+            Communication::communicate(_field.f_matrix(), _grid.domain(), _rank);
+            Communication::communicate(_field.g_matrix(), _grid.domain(), _rank);
 
             // Calculate RHS of PPE
             _field.calculate_rs(_grid);
@@ -412,37 +391,37 @@ void Case::simulate() {
                 }
                 res = _pressure_solver->solve(_field, _grid, _boundaries);
                 it++;
-            
-            //Sum reduction over all domains
-            res = Communication::reduce_sum(res);  
 
-            number_fluid_cells = _grid.fluid_cells().size();  
+                // Sum reduction over all domains
+                res = Communication::reduce_sum(res);
 
-            //Sum of fluid cells over all domains
-            number_fluid_cells = Communication::reduce_sum(number_fluid_cells); 
-            
-            res = res/number_fluid_cells; 
+                number_fluid_cells = _grid.fluid_cells().size();
 
-            //Final residual (Each process will have the same residual after this)
-            res=std::sqrt(res);  
-            // communicate pressures
-            Communication::communicate(_field.p_matrix(), domain,_rank);
+                // Sum of fluid cells over all domains
+                number_fluid_cells = Communication::reduce_sum(number_fluid_cells);
 
+                res = res / number_fluid_cells;
+
+                // Final residual (Each process will have the same residual after this)
+                res = std::sqrt(res);
+                // communicate pressures
+                Communication::communicate(_field.p_matrix(), _grid.domain(), _rank);
             }
 
             // Calculate Velocities U and V
             _field.calculate_velocities(_grid);
-            Communication::communicate(_field.u_matrix(), domain,_rank);
-            Communication::communicate(_field.v_matrix(), domain,_rank);
+            Communication::communicate(_field.u_matrix(), _grid.domain(), _rank);
+            Communication::communicate(_field.v_matrix(), _grid.domain(), _rank);
 
             // Storing the values in the VTK file
             output_counter += dt;
             if (output_counter >= _output_freq) {
                 output_vtk(timestep++);
                 output_counter = 0;
-                std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
-                                          << " completed] Writing Data at t=" << t << "s"
-                                          << "\n\n"; 
+                if (_rank == 0)
+                    std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
+                              << " completed] Writing Data at t=" << t << "s"
+                              << "\n\n";
             }
 
             // Writing simulation data in a log file
@@ -452,21 +431,22 @@ void Case::simulate() {
                             << "\tSOR Residual = " << std::setw(7) << res << "\n";
             }
 
-            // Printing info and checking for errors once in 5 runs of the loop
-            
-            if (counter == 10 && _rank==0) {
+            // Printing info and checking for errors once in 10 runs of the loop
+            if (counter == 10) {
                 counter = 0;
-                                std::cout << std::left << "Simulation Time[s] = " << std::setw(7) << t
-                                          << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " <<
-                   std::setw(3) << it
-                                          << "\tSOR Residual = " << std::setw(7) << res << "\n"; 
-
-                //if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0); // Check for unphysical behaviour
+                if (_rank == 0)
+                    std::cout << std::left << "Simulation Time[s] = " << std::setw(7) << t
+                              << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3)
+                              << it << "\tSOR Residual = " << std::setw(7) << res << "\n";
+                // Check for unphysical behaviour
+                if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0);
             }
             counter++;
 
             // Updating current time
             t = t + dt;
+
+            // Calculate Adaptive Time step
             dt = _field.calculate_dt_e(_grid);
             dt = Communication::reduce_min(dt);
         }
@@ -474,14 +454,7 @@ void Case::simulate() {
 
     // Storing values at the last time step
     output_vtk(timestep);
-    if (_rank == 0) {
-        std::cout << "\nSimulation Complete!\n";
-        auto end = std::chrono::steady_clock::now();
-        cout << "Software Runtime:" << std::chrono::duration_cast<std::chrono::seconds>(end - start).count() << "s\n\n";
-        output_file << "Software Runtime:" << std::chrono::duration_cast<std::chrono::seconds>(end - start).count()
-                    << "s\n\n";
-        output_file.close();
-    }
+    if (_rank == 0) output_file.close();
 }
 
 void Case::output_vtk(int timestep) {
@@ -604,10 +577,9 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
 
     /// Temporary variables used to exchange information between processes
     int imin, imax, jmin, jmax, size_x, size_y;
-    
 
     if (_rank == 0) {
-        //std::cout << domain.size_x << " in case " << domain.size_y << std::endl;
+        // std::cout << domain.size_x << " in case " << domain.size_y << std::endl;
         for (int i = 1; i < _size; ++i) {
             I = i % _iproc + 1;
             J = i / _iproc + 1;
@@ -618,17 +590,16 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
             size_x = imax_domain / _iproc;
             size_y = jmax_domain / _jproc;
 
+            // Adding the extra cells when number of cells is not divisible by iproc and jproc
+            if (I == _iproc) {
+                imax = imax_domain + 2;
+                size_x = imax - imin - 2;
+            }
 
-        // Adding the extra cells when number of cells is not divisible by iproc and jproc
-        if (I == _iproc) {
-            imax = imax_domain + 2;
-            size_x = imax - imin -2;
-        }
-
-        if (J == _jproc) {
-            jmax = jmax_domain + 2;
-            size_y = jmax - jmin -2;
-        }
+            if (J == _jproc) {
+                jmax = jmax_domain + 2;
+                size_y = jmax - jmin - 2;
+            }
 
             std::array<int, 4> neighbours = {-1, -1, -1, -1};
             if (I > 1) {
@@ -693,8 +664,7 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     //  domain.size_y = jmax_domain;
 
     std::cout << "Rank: " << _rank << " " << domain.imin << " " << domain.imax << " " << domain.jmin << " "
-              << domain.jmax << " neighbours " << domain.neighbours[0] << domain.neighbours[1] <<
-              domain.neighbours[2]
+              << domain.jmax << " neighbours " << domain.neighbours[0] << domain.neighbours[1] << domain.neighbours[2]
               << domain.neighbours[3] << "\n";
 }
 
