@@ -7,13 +7,15 @@
 #include <sstream>
 #include <vector>
 
-Grid::Grid(std::string geom_name, Domain &domain, int iproc, int jproc) {
+Grid::Grid(std::string geom_name, Domain &domain, int iproc, int jproc, int rank, int size) {
 
     MPI_Comm_rank(MPI_COMM_WORLD, &_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &_size);
     _domain = domain;
     _iproc = iproc;
     _jproc = jproc;
+    _rank= rank;
+    _size=size;
 
     _cells = Matrix<Cell>(_domain.size_x + 2, _domain.size_y + 2);
 

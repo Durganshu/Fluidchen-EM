@@ -2,20 +2,20 @@
 #include <string>
 
 #include "Case.hpp"
+#include "Communication.hpp"
 
 void printIntro();
 
 int main(int argn, char **args) {
 
-    int rank;int size;
-
-    MPI_Init(&argn,&args);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    int rank;
+    int size;
     
+    Communication::init_parallel(&argn,args,rank,size);   
+
     if (argn > 1) {
         std::string file_name{args[1]};
-        Case problem(file_name, argn, args);
+        Case problem(file_name, argn, args, rank, size);
         //problem.printIntro();
         problem.simulate();
 
@@ -24,6 +24,6 @@ int main(int argn, char **args) {
         std::cout << "Example usage: /path/to/fluidchen /path/to/input_data.dat" << std::endl;
     }
 
-    MPI_Finalize();
+    Communication::finalize();    
     return 0;
 }

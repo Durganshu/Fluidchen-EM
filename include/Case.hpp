@@ -25,7 +25,7 @@ class Case {
      *
      * @param[in] Input file name
      */
-    Case(std::string file_name, int argn, char **args);
+    Case(std::string file_name, int argn, char **args,int rank,int size);
 
     /**
      * @brief Main function to simulate the flow until the end time.

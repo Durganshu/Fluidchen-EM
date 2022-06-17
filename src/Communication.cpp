@@ -1,11 +1,20 @@
 #include "Communication.hpp"
 #include <mpi.h>
 
-void communicate(Matrix<double> &data, const Domain &domain) {
-    static int count = 0;
-    int rank, size;
+void Communication::finalize()
+{
+    MPI_Finalize();
+}
+
+void Communication::init_parallel(int *argn, char **args, int &rank, int &size)
+{
+    MPI_Init(argn,&args);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
+}
+
+void Communication::communicate(Matrix<double> &data, const Domain &domain, int rank) {
+    //static int count = 0;  RANK =0
 
     // std::ofstream rank_0, rank_1;
     
@@ -82,11 +91,9 @@ void communicate(Matrix<double> &data, const Domain &domain) {
 }
 
 
-double reduce_min(double x)
+double Communication::reduce_min(double x)
 {
-    int rank;int size;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
 
     // double final_dt;
 
@@ -102,11 +109,11 @@ double reduce_min(double x)
 
 }
 
-double reduce_sum(double res) {
+double Communication::reduce_sum(double res) {
     double reduced_res;
-
-    MPI_Reduce(&res, &reduced_res, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&reduced_res, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    ///REPLACE WITH ALL_REDUCE LIKEABOVE
+    MPI_Allreduce(&res, &reduced_res, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    //MPI_Bcast(&reduced_res, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     return reduced_res;
 }
