@@ -66,7 +66,9 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
         { i = 0; }
         for (int i_geom = 0; i_geom < _domain.size_x + 2;
              ++i_geom) { // modified limits to account _cells for each process
-            bool isBuffer = false;
+            
+            bool isBuffer = false;  //Set to true if the cell is a buffer cell
+
             if (i_geom == 0 && _domain.neighbours[0] != -1) {
                 isBuffer = true;
             } else if (i_geom == (_domain.size_x + 1) && _domain.neighbours[1] != -1) {
