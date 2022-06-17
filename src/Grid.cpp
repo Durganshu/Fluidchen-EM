@@ -62,58 +62,46 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
     int i = 0;
     int j = 0;
 
-    
     for (int j_geom = 0; j_geom < _domain.size_y + 2; ++j_geom) { // modified limits to account _cells for each process
         { i = 0; }
         for (int i_geom = 0; i_geom < _domain.size_x + 2;
              ++i_geom) { // modified limits to account _cells for each process
             bool isBuffer = false;
-            if (i_geom == 0 && _domain.neighbours[0] != -1){
-                _cells(i, j) = Cell(i, j, cell_type::DEFAULT);
+            if (i_geom == 0 && _domain.neighbours[0] != -1) {
                 isBuffer = true;
-            }
-            else if (i_geom == (_domain.size_x + 1) && _domain.neighbours[1] != -1){
-                _cells(i, j) = Cell(i, j, cell_type::DEFAULT);
+            } else if (i_geom == (_domain.size_x + 1) && _domain.neighbours[1] != -1) {
                 isBuffer = true;
-            }   
-            else if (j_geom == (_domain.size_y + 1) && _domain.neighbours[2] != -1){
-                _cells(i, j) = Cell(i, j, cell_type::DEFAULT);
+            } else if (j_geom == (_domain.size_y + 1) && _domain.neighbours[2] != -1) {
                 isBuffer = true;
-            }
-            else if (j_geom == 0 && _domain.neighbours[3] != -1){
-                _cells(i, j) = Cell(i, j, cell_type::DEFAULT);
+            } else if (j_geom == 0 && _domain.neighbours[3] != -1) {
                 isBuffer = true;
-            } 
-            
-            if (!isBuffer){
-                if (geometry_data.at(i_geom).at(j_geom) == 0 ) {
-                _cells(i, j) = Cell(i, j, cell_type::FLUID);
-                _fluid_cells.push_back(&_cells(i, j));
-            } else if (geometry_data.at(i_geom).at(j_geom) == 1) {
-                _cells(i, j) = Cell(i, j, cell_type::INFLOW, geometry_data.at(i_geom).at(j_geom));
-                _inflow_cells.push_back(&_cells(i, j));
-            } else if (geometry_data.at(i_geom).at(j_geom) == 2) {
-                _cells(i, j) = Cell(i, j, cell_type::OUTFLOW, geometry_data.at(i_geom).at(j_geom));
-                _outflow_cells.push_back(&_cells(i, j));
-            } else if (geometry_data.at(i_geom).at(j_geom) == 3) {
-                _cells(i, j) = Cell(i, j, cell_type::COLD_FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
-                _cold_fixed_wall_cells.push_back(&_cells(i, j));
-            } else if (geometry_data.at(i_geom).at(j_geom) == 4) {
-                _cells(i, j) = Cell(i, j, cell_type::HOT_FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
-                _hot_fixed_wall_cells.push_back(&_cells(i, j));
-            } else if (geometry_data.at(i_geom).at(j_geom) == 5) {
-                _cells(i, j) = Cell(i, j, cell_type::ADIABATIC_FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
-                _adiabatic_fixed_wall_cells.push_back(&_cells(i, j));
-            } else if (geometry_data.at(i_geom).at(j_geom) == 6) {
-                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
-                _fixed_wall_cells.push_back(&_cells(i, j));
-            } else if (geometry_data.at(i_geom).at(j_geom) == LidDrivenCavity::moving_wall_id) {
-                _cells(i, j) = Cell(i, j, cell_type::MOVING_WALL, geometry_data.at(i_geom).at(j_geom));
-                _moving_wall_cells.push_back(&_cells(i, j));
             }
 
+            if (geometry_data.at(i_geom).at(j_geom) == 0) {
+                _cells(i, j) = Cell(i, j, cell_type::FLUID);
+                if(!isBuffer) _fluid_cells.push_back(&_cells(i, j));
+            } else if (geometry_data.at(i_geom).at(j_geom) == 1) {
+                _cells(i, j) = Cell(i, j, cell_type::INFLOW, geometry_data.at(i_geom).at(j_geom));
+                if(!isBuffer) _inflow_cells.push_back(&_cells(i, j));
+            } else if (geometry_data.at(i_geom).at(j_geom) == 2) {
+                _cells(i, j) = Cell(i, j, cell_type::OUTFLOW, geometry_data.at(i_geom).at(j_geom));
+                if(!isBuffer) _outflow_cells.push_back(&_cells(i, j));
+            } else if (geometry_data.at(i_geom).at(j_geom) == 3) {
+                _cells(i, j) = Cell(i, j, cell_type::COLD_FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
+                if(!isBuffer) _cold_fixed_wall_cells.push_back(&_cells(i, j));
+            } else if (geometry_data.at(i_geom).at(j_geom) == 4) {
+                _cells(i, j) = Cell(i, j, cell_type::HOT_FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
+               if(!isBuffer)  _hot_fixed_wall_cells.push_back(&_cells(i, j));
+            } else if (geometry_data.at(i_geom).at(j_geom) == 5) {
+                _cells(i, j) = Cell(i, j, cell_type::ADIABATIC_FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
+                if(!isBuffer) _adiabatic_fixed_wall_cells.push_back(&_cells(i, j));
+            } else if (geometry_data.at(i_geom).at(j_geom) == 6) {
+                _cells(i, j) = Cell(i, j, cell_type::FIXED_WALL, geometry_data.at(i_geom).at(j_geom));
+                if(!isBuffer) _fixed_wall_cells.push_back(&_cells(i, j));
+            } else if (geometry_data.at(i_geom).at(j_geom) == LidDrivenCavity::moving_wall_id) {
+                _cells(i, j) = Cell(i, j, cell_type::MOVING_WALL, geometry_data.at(i_geom).at(j_geom));
+                if(!isBuffer) _moving_wall_cells.push_back(&_cells(i, j));
             }
-            
 
             ++i;
         }
