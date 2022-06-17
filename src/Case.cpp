@@ -35,10 +35,10 @@ namespace filesystem = std::experimental::filesystem;
 #include <vtkStructuredGridWriter.h>
 #include <vtkTuple.h>
 
-Case::Case(std::string file_name, int argn, char **args) {
+Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
     
-    MPI_Comm_rank(MPI_COMM_WORLD, &_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &_size);
+    _rank=rank;
+    _size=size;
     // Read input parameters
     const int MAX_LINE_LENGTH = 1024;
     std::ifstream file(file_name);
@@ -155,7 +155,7 @@ Case::Case(std::string file_name, int argn, char **args) {
     
     build_domain(domain, imax, jmax);
     
-    _grid = Grid(_geom_name, domain,_iproc,_jproc);
+    _grid = Grid(_geom_name, domain,_iproc,_jproc, _rank,_size);
     
     if (!_energy_eq) {
         _field = Fields(_grid, nu, dt, tau, UI, VI, PI, GX, GY);
@@ -281,7 +281,7 @@ void Case::simulate() {
     double output_counter = 0.0;
     uint8_t counter = 0; // Counter for printing values on the console
     
-    int fluid_cells;
+    int number_fluid_cells=0;
     auto start = std::chrono::steady_clock::now();
 
     output_vtk(timestep++); // Writing intial data
@@ -291,12 +291,7 @@ void Case::simulate() {
             std::cout << "ENERGY EQUATION OFF" << std::endl;
         }
         while (t < _t_end) {
-            
-            // Calculate Adaptive Time step
-            dt = _field.calculate_dt(_grid);
-            // std::cout<<"Rank "<<_rank<<"  "<<" dt from all "<<dt<<std::endl;
-            dt = reduce_min(dt);
-            
+                   
             // std::cout<<"Rank "<<_rank<<"  "<<" reduced dt from all "<<dt<<std::endl;
             // Apply BCs
             for (auto &i : _boundaries) {
@@ -306,8 +301,8 @@ void Case::simulate() {
             
             // Calculate Fluxes
             _field.calculate_fluxes(_grid);
-            communicate(_field.f_matrix(), domain);
-            communicate(_field.g_matrix(), domain);
+            Communication::communicate(_field.f_matrix(), domain, _rank);
+            Communication::communicate(_field.g_matrix(), domain, _rank);
             //std::cout<<"After fluxes"<<std::endl;
             
             //if(_rank==0){std::cout<<"i am here after communicate f and g"<<std::endl;}
@@ -324,24 +319,24 @@ void Case::simulate() {
             res = _pressure_solver->solve(_field, _grid, _boundaries); //Local sum
             it++;
             //Sum reduction over all domains
-            res = reduce_sum(res);  
+            res = Communication::reduce_sum(res);  
 
-            fluid_cells = _grid.fluid_cells().size();  
-            fluid_cells = reduce_sum(fluid_cells); //Sum of fluid cells over all domains
+            number_fluid_cells = _grid.fluid_cells().size();  
+            number_fluid_cells = Communication::reduce_sum(number_fluid_cells); //Sum of fluid cells over all domains
             
-            res = res/fluid_cells; 
+            res = res/number_fluid_cells; 
             //Final residual (Each process will have the same residual after this)
             res=std::sqrt(res);  
 
-            communicate(_field.p_matrix(), domain);
+            Communication::communicate(_field.p_matrix(), domain,_rank);
             
             }
 
             // Calculate Velocities U and V
             _field.calculate_velocities(_grid);
             // exchange velocities
-            communicate(_field.u_matrix(), domain);
-            communicate(_field.v_matrix(), domain);
+            Communication::communicate(_field.u_matrix(), domain,_rank);
+            Communication::communicate(_field.v_matrix(), domain,_rank);
 
             // Storing the values in the VTK file
             output_counter += dt;
@@ -374,6 +369,10 @@ void Case::simulate() {
             // Updating current time
             t = t + dt;
             //std::cout<<"Time "<<t<<std::endl;
+            // Calculate Adaptive Time step
+            dt = _field.calculate_dt(_grid);
+            // std::cout<<"Rank "<<_rank<<"  "<<" dt from all "<<dt<<std::endl;
+            dt = Communication::reduce_min(dt);
         }
     } else {
         if (_rank == 0) {
@@ -392,12 +391,12 @@ void Case::simulate() {
 
             // Calculate Temperatures
             _field.calculate_temperatures(_grid);
-            communicate(_field.t_matrix(), domain);
+            Communication::communicate(_field.t_matrix(), domain,_rank);
 
             // Calculate Fluxes
             _field.calculate_fluxes(_grid, _energy_eq);
-            communicate(_field.f_matrix(), domain);
-            communicate(_field.g_matrix(), domain);
+            Communication::communicate(_field.f_matrix(), domain,_rank);
+            Communication::communicate(_field.g_matrix(), domain,_rank);
 
             // Calculate RHS of PPE
             _field.calculate_rs(_grid);
@@ -412,22 +411,22 @@ void Case::simulate() {
                 res = _pressure_solver->solve(_field, _grid, _boundaries);
                 it++;
             
-            res = reduce_sum(res);  //Sum reduction over all domains
+            res = Communication::reduce_sum(res);  //Sum reduction over all domains
 
-            fluid_cells = _grid.fluid_cells().size();  
-            fluid_cells = reduce_sum(fluid_cells); //Sum of fluid cells over all domains
+            number_fluid_cells = _grid.fluid_cells().size();  
+            number_fluid_cells = Communication::reduce_sum(number_fluid_cells); //Sum of fluid cells over all domains
             
-            res = res/fluid_cells; 
+            res = res/number_fluid_cells; 
             res=std::sqrt(res);  //Final residual (Each process will have the same residual after this)
             // communicate pressures
-            communicate(_field.p_matrix(), domain);
+            Communication::communicate(_field.p_matrix(), domain,_rank);
 
             }
 
             // Calculate Velocities U and V
             _field.calculate_velocities(_grid);
-            communicate(_field.u_matrix(), domain);
-            communicate(_field.v_matrix(), domain);
+            Communication::communicate(_field.u_matrix(), domain,_rank);
+            Communication::communicate(_field.v_matrix(), domain,_rank);
 
             // Storing the values in the VTK file
             output_counter += dt;
@@ -462,7 +461,7 @@ void Case::simulate() {
             // Updating current time
             t = t + dt;
             dt = _field.calculate_dt_e(_grid);
-            dt = reduce_min(dt);
+            dt = Communication::reduce_min(dt);
         }
     }
 
@@ -686,10 +685,10 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     //  domain.size_x = imax_domain;
     //  domain.size_y = jmax_domain;
 
-    std::cout << "Rank: " << _rank << " " << domain.imin << " " << domain.imax << " " << domain.jmin << " "
-              << domain.jmax << " neighbours " << domain.neighbours[0] << domain.neighbours[1] <<
-              domain.neighbours[2]
-              << domain.neighbours[3] << "\n";
+    // std::cout << "Rank: " << _rank << " " << domain.imin << " " << domain.imax << " " << domain.jmin << " "
+    //           << domain.jmax << " neighbours " << domain.neighbours[0] << domain.neighbours[1] <<
+    //           domain.neighbours[2]
+    //           << domain.neighbours[3] << "\n";
 }
 
 bool Case::check_err(Fields &field, int imax, int jmax) {
