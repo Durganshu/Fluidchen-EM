@@ -112,8 +112,8 @@ double Communication::reduce_min(double x)
 double Communication::reduce_sum(double res) {
     double reduced_res;
     ///REPLACE WITH ALL_REDUCE LIKEABOVE
-    MPI_Reduce(&res, &reduced_res, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&reduced_res, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Allreduce(&res, &reduced_res, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    //MPI_Bcast(&reduced_res, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     return reduced_res;
 }

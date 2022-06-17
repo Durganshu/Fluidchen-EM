@@ -322,7 +322,9 @@ void Case::simulate() {
             res = Communication::reduce_sum(res);  
 
             number_fluid_cells = _grid.fluid_cells().size();  
-            number_fluid_cells = Communication::reduce_sum(number_fluid_cells); //Sum of fluid cells over all domains
+
+            //Sum of fluid cells over all domains
+            number_fluid_cells = Communication::reduce_sum(number_fluid_cells); 
             
             res = res/number_fluid_cells; 
             //Final residual (Each process will have the same residual after this)
@@ -411,13 +413,18 @@ void Case::simulate() {
                 res = _pressure_solver->solve(_field, _grid, _boundaries);
                 it++;
             
-            res = Communication::reduce_sum(res);  //Sum reduction over all domains
+            //Sum reduction over all domains
+            res = Communication::reduce_sum(res);  
 
             number_fluid_cells = _grid.fluid_cells().size();  
-            number_fluid_cells = Communication::reduce_sum(number_fluid_cells); //Sum of fluid cells over all domains
+
+            //Sum of fluid cells over all domains
+            number_fluid_cells = Communication::reduce_sum(number_fluid_cells); 
             
             res = res/number_fluid_cells; 
-            res=std::sqrt(res);  //Final residual (Each process will have the same residual after this)
+
+            //Final residual (Each process will have the same residual after this)
+            res=std::sqrt(res);  
             // communicate pressures
             Communication::communicate(_field.p_matrix(), domain,_rank);
 
