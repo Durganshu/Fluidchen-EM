@@ -692,10 +692,10 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
     //  domain.size_x = imax_domain;
     //  domain.size_y = jmax_domain;
 
-    // std::cout << "Rank: " << _rank << " " << domain.imin << " " << domain.imax << " " << domain.jmin << " "
-    //           << domain.jmax << " neighbours " << domain.neighbours[0] << domain.neighbours[1] <<
-    //           domain.neighbours[2]
-    //           << domain.neighbours[3] << "\n";
+    std::cout << "Rank: " << _rank << " " << domain.imin << " " << domain.imax << " " << domain.jmin << " "
+              << domain.jmax << " neighbours " << domain.neighbours[0] << domain.neighbours[1] <<
+              domain.neighbours[2]
+              << domain.neighbours[3] << "\n";
 }
 
 bool Case::check_err(Fields &field, int imax, int jmax) {
