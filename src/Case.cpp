@@ -259,15 +259,6 @@ void Case::set_file_names(std::string file_name) {
  */
 void Case::simulate() {
 
-    // Log File
-    std::ofstream output_file;
-    std::string outputname = _dict_name + '/' + _case_name + ".log";
-
-    if (_rank == 0) {
-        output_file.open(outputname);
-        printIntro(output_file);
-    }
-
     double t = 0.0;
     double dt = _field.dt();
     int timestep = 0;
@@ -325,28 +316,7 @@ void Case::simulate() {
             if (output_counter >= _output_freq) {
                 output_vtk(timestep++);
                 output_counter = 0;
-                if (_rank == 0)
-                    std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
-                              << " completed] Writing Data at t=" << t << "s\n";
             }
-
-            // Writing simulation data in a log file
-            if (_rank == 0)
-                output_file << std::left << "Simulation Time[s] = " << std::setw(7) << t
-                            << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3) << it
-                            << "\tSOR Residual = " << std::setw(7) << res << "\n";
-
-            // Printing info and checking for errors once in 5 runs of the loop
-            if (counter == 10) {
-                counter = 0;
-                if (_rank == 0)
-                    std::cout << std::left << "Simulation Time[s] = " << std::setw(7) << t
-                              << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3)
-                              << it << "\tSOR Residual = " << std::setw(7) << res << "\n";
-                // Check for unphysical behaviour
-                if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0);
-            }
-            counter++;
 
             // Updating current time
             t = t + dt;
@@ -356,9 +326,7 @@ void Case::simulate() {
             dt = Communication::reduce_min(dt);
         }
     } else {
-        if (_rank == 0) {
-            std::cout << "ENERGY EQN ON" << std::endl;
-        }
+        if (_rank == 0) std::cout << "ENERGY EQN ON" << std::endl;
         while (t < _t_end) {
 
             // Apply BCs
@@ -415,30 +383,7 @@ void Case::simulate() {
             if (output_counter >= _output_freq) {
                 output_vtk(timestep++);
                 output_counter = 0;
-                if (_rank == 0)
-                    std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
-                              << " completed] Writing Data at t=" << t << "s\n"
-                              << "\n\n";
             }
-
-            // Writing simulation data in a log file
-            if (_rank == 0) {
-                output_file << std::left << "Simulation Time[s] = " << std::setw(7) << t
-                            << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3) << it
-                            << "\tSOR Residual = " << std::setw(7) << res << "\n";
-            }
-
-            // Printing info and checking for errors once in 10 runs of the loop
-            if (counter == 10) {
-                counter = 0;
-                if (_rank == 0)
-                    std::cout << std::left << "Simulation Time[s] = " << std::setw(7) << t
-                              << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3)
-                              << it << "\tSOR Residual = " << std::setw(7) << res << "\n";
-                // Check for unphysical behaviour
-                if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0);
-            }
-            counter++;
 
             // Updating current time
             t = t + dt;
@@ -451,7 +396,6 @@ void Case::simulate() {
 
     // Storing values at the last time step
     output_vtk(timestep);
-    if (_rank == 0) output_file.close();
 }
 
 void Case::output_vtk(int timestep) {
