@@ -331,13 +331,11 @@ void Grid::parse_geometry_file(std::string filedoc, std::vector<std::vector<int>
     else {
         // Receive data from rank 0
         std::vector<int> rank_geometry_data((_domain.size_x + 2) * (_domain.size_y + 2), 0);
-        std::cout << "Receive Size" << rank_geometry_data.size() << std::endl;
+        
         MPI_Status status;
 
         MPI_Recv(rank_geometry_data.data(), rank_geometry_data.size(), MPI_INT, 0, 999999, MPI_COMM_WORLD, &status);
 
-        std::cout << " Size of geometry_data: " << geometry_data.size() << ", rank = " << _rank << "\n";
-        std::cout << " Size of rank_geometry_data: " << rank_geometry_data.size() << ", rank = " << _rank << " \n";
         for (int col = 0; col < _domain.size_y + 2; ++col) {
             for (int row = 0; row < _domain.size_x + 2; ++row) {
                 geometry_data.at(row).at(col) = rank_geometry_data[row * (_domain.size_y + 2) + col];

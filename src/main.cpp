@@ -24,10 +24,12 @@ int main(int argn, char **args) {
         std::cout << "Error: No input file is provided to fluidchen." << std::endl;
         std::cout << "Example usage: /path/to/fluidchen /path/to/input_data.dat" << std::endl;
     }
-
-    Communication::finalize();
+    if(rank==0){
     std::cout << "\nSimulation Complete!\n";
     auto end = std::chrono::steady_clock::now();
     std::cout << "Software Runtime:" << std::chrono::duration_cast<std::chrono::seconds>(end - start).count() << "s\n\n";
+    }
+    Communication::finalize();
+
     return 0;
 }
