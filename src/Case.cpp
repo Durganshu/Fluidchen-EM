@@ -325,24 +325,30 @@ void Case::simulate() {
             if (output_counter >= _output_freq) {
                 output_vtk(timestep++);
                 output_counter = 0;
-                if (_rank == 0)
+                if (_rank == 0) {
                     std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
                               << " completed] Writing Data at t=" << t << "s\n";
+                }
+                    
             }
 
             // Writing simulation data in a log file
-            if (_rank == 0)
+            if (_rank == 0){
                 output_file << std::left << "Simulation Time[s] = " << std::setw(7) << t
                             << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3) << it
                             << "\tSOR Residual = " << std::setw(7) << res << "\n";
+            }
+                
 
             // Printing info and checking for errors once in 5 runs of the loop
             if (counter == 10) {
                 counter = 0;
-                if (_rank == 0)
+                if (_rank == 0) {
                     std::cout << std::left << "Simulation Time[s] = " << std::setw(7) << t
                               << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3)
                               << it << "\tSOR Residual = " << std::setw(7) << res << "\n";
+                }
+                    
                 // Check for unphysical behaviour
                 if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0);
             }
@@ -415,10 +421,12 @@ void Case::simulate() {
             if (output_counter >= _output_freq) {
                 output_vtk(timestep++);
                 output_counter = 0;
-                if (_rank == 0)
+                if (_rank == 0) {
                     std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
                               << " completed] Writing Data at t=" << t << "s\n"
                               << "\n\n";
+                }
+                    
             }
 
             // Writing simulation data in a log file
@@ -431,10 +439,12 @@ void Case::simulate() {
             // Printing info and checking for errors once in 10 runs of the loop
             if (counter == 10) {
                 counter = 0;
-                if (_rank == 0)
+                if (_rank == 0){
                     std::cout << std::left << "Simulation Time[s] = " << std::setw(7) << t
                               << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3)
                               << it << "\tSOR Residual = " << std::setw(7) << res << "\n";
+                }
+                    
                 // Check for unphysical behaviour
                 if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0);
             }
