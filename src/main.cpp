@@ -15,7 +15,7 @@ int main(int argn, char **args) {
     Communication::init_parallel(&argn, args, rank, size);
 
     if (argn > 1) {
-        Case::printIntro();
+        if (rank == 0) Case::printIntro();
         std::string file_name{args[1]};
         Case problem(file_name, argn, args, rank, size);
         problem.simulate();

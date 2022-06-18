@@ -132,6 +132,18 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
     }
     file.close();
 
+    if ((_iproc*_jproc) != _size) {
+        if (_rank == 0){
+            std::cout << "_iproc*_jproc != _size\nThe total number of processes must be the product of number of processes in x and y directions. "
+                << "Please input correct value. Exiting!!!\n";
+            Communication::finalize();
+            exit(0);
+        }
+        else{
+            Communication::finalize();
+            exit(0);
+        } 
+    }
     std::map<int, double> wall_vel;
     if (_geom_name.compare("NONE") == 0) {
         wall_vel.insert(std::pair<int, double>(LidDrivenCavity::moving_wall_id, LidDrivenCavity::wall_velocity));
