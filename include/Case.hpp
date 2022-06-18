@@ -41,8 +41,13 @@ class Case {
     /**
      * @brief Prints introductory message
      */
-    void printIntro();
-    void writeIntro(std::ofstream &);
+    static void printIntro();
+
+    /**
+     * @brief Writes introductory message to log file
+     * @param [in] Output file variable
+     */
+    void printIntro(std::ofstream &);
 
   private:
     /// Plain case name without paths

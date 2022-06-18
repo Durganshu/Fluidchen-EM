@@ -63,8 +63,8 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
 
     /* WALL CLUSTERS  */
     int num_of_walls;        /* Number of walls   */
-    double wall_temp_3 = -1; /*Cold wall temperature*/
-    double wall_temp_4 = -1; /*Hot wall temperature*/
+    double wall_temp_3;      /*Cold wall temperature*/
+    double wall_temp_4;      /*Hot wall temperature*/
     double wall_temp_5 = -1; /* Wall temperature -1 for Adiabatic Wall  */
 
     /* ENERGY VARIABLES*/
@@ -98,7 +98,6 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
                 if (var == "itermax") file >> itermax;
                 if (var == "imax") file >> imax;
                 if (var == "jmax") file >> jmax;
-
                 if (var == "geo_file") file >> _geom_name;
                 if (var == "UIN") file >> UIN;
                 if (var == "VIN") file >> VIN;
@@ -106,7 +105,6 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
                 if (var == "num_of_walls") file >> num_of_walls;
                 if (var == "wall_temp_3") file >> wall_temp_3;
                 if (var == "wall_temp_4") file >> wall_temp_4;
-                if (var == "wall_temp_5") file >> wall_temp_5;
                 if (var == "TI") file >> TI;
                 if (var == "energy_eq") {
                     std::string temp;
@@ -115,14 +113,13 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
                 }
                 if (var == "beta") file >> beta;
                 if (var == "alpha") file >> alpha;
-
                 if (var == "x") {
                     file >> _iproc;
                     if (_iproc < 1) {
                         std::cout << "Number of domain decomposition in x-direction cannot be less than 1.\n";
                         exit(0);
                     }
-                };
+                }
                 if (var == "y") {
                     file >> _jproc;
                     if (_jproc < 1) {
@@ -268,7 +265,7 @@ void Case::simulate() {
 
     if (_rank == 0) {
         output_file.open(outputname);
-        writeIntro(output_file);
+        printIntro(output_file);
     }
 
     double t = 0.0;
@@ -330,7 +327,7 @@ void Case::simulate() {
                 output_counter = 0;
                 if (_rank == 0)
                     std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
-                              << " completed] Writing Data at t=" << t << "s";
+                              << " completed] Writing Data at t=" << t << "s\n";
             }
 
             // Writing simulation data in a log file
@@ -420,7 +417,7 @@ void Case::simulate() {
                 output_counter = 0;
                 if (_rank == 0)
                     std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
-                              << " completed] Writing Data at t=" << t << "s"
+                              << " completed] Writing Data at t=" << t << "s\n"
                               << "\n\n";
             }
 
@@ -655,17 +652,6 @@ void Case::build_domain(Domain &domain, int imax_domain, int jmax_domain) {
         MPI_Recv(&domain.size_y, 1, MPI_INT, 0, 994, MPI_COMM_WORLD, &status);
         MPI_Recv(&domain.neighbours, 4, MPI_INT, 0, 993, MPI_COMM_WORLD, &status);
     }
-    /// Comment this when going to parallelize the grid
-    // domain.imin = 0;
-    //  domain.jmin = 0;
-    //  domain.imax = imax_domain + 2;
-    //  domain.jmax = jmax_domain + 2;
-    //  domain.size_x = imax_domain;
-    //  domain.size_y = jmax_domain;
-
-    std::cout << "Rank: " << _rank << " " << domain.imin << " " << domain.imax << " " << domain.jmin << " "
-              << domain.jmax << " neighbours " << domain.neighbours[0] << domain.neighbours[1] << domain.neighbours[2]
-              << domain.neighbours[3] << "\n";
 }
 
 bool Case::check_err(Fields &field, int imax, int jmax) {
@@ -693,7 +679,7 @@ bool Case::check_err(Fields &field, int imax, int jmax) {
     return false;
 }
 
-void Case::writeIntro(std::ofstream &output_file) {
+void Case::printIntro(std::ofstream &output_file) {
     output_file << "Welcome to FluidChen Flow Solver!\nThis project wqas developed as a part of Computational "
                    "Fluid Dynamics Lab course.\n\n\n\n";
     output_file << "                                                     ..::::::..\n"
