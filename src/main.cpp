@@ -25,8 +25,11 @@ int main(int argn, char **args) {
     }
 
     Communication::finalize();
+    
+    if(rank==0){
     std::cout << "\nSimulation Complete!\n";
     auto end = std::chrono::steady_clock::now();
     std::cout << "Software Runtime:" << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms\n\n";
+    }
     return 0;
 }
