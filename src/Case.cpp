@@ -68,9 +68,16 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
     double wall_temp_5 = -1; /* Wall temperature -1 for Adiabatic Wall  */
 
     /* ENERGY VARIABLES*/
-    double TI;    /* Initial temperature*/
-    double beta;  /* Thermal Expansion Coefficient  */
-    double alpha; /* Thermal diffusivity   */
+    double TI;    /* Initial temperature */
+    double beta;  /* Thermal Expansion Coefficient */
+    double alpha; /* Thermal diffusivity */
+
+    /*ELECTRO-MAGNETIC VARIABLES*/
+    double k;   /* Electric Conductivity */
+    double rho; /* Density*/
+    double v1;  /* Potential at Electrode 1*/
+    double v2;  /* Potential at Electrode 2*/
+    double Bz;  /* Magnetic Field Perpendicular to Simulation Plane*/
 
     if (file.is_open()) {
 
@@ -103,8 +110,6 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
                 if (var == "VIN") file >> VIN;
                 if (var == "Pout") file >> P_out;
                 if (var == "num_of_walls") file >> num_of_walls;
-                if (var == "wall_temp_3") file >> wall_temp_3;
-                if (var == "wall_temp_4") file >> wall_temp_4;
                 if (var == "TI") file >> TI;
                 if (var == "energy_eq") {
                     std::string temp;
@@ -113,6 +118,18 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
                 }
                 if (var == "beta") file >> beta;
                 if (var == "alpha") file >> alpha;
+                if (var == "wall_temp_3") file >> wall_temp_3;
+                if (var == "wall_temp_4") file >> wall_temp_4;
+                if (var == "em_eq") {
+                    std::string temp;
+                    file >> temp;
+                }
+                if (temp == "on") _em_eq = true;
+                if (var == "v1") file >> v1;
+                if (var == "v2") file >> v2;
+                if (var == "k") file >> k;
+                if (var == "rho") file >> rho;
+                if (var == "Bz") file >> Bz;
                 if (var == "x") {
                     file >> _iproc;
                     if (_iproc < 1) {
@@ -132,17 +149,17 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
     }
     file.close();
 
-    if ((_iproc*_jproc) != _size) {
-        if (_rank == 0){
-            std::cout << "_iproc*_jproc != _size\nThe total number of processes must be the product of number of processes in x and y directions. "
-                << "Please input correct value. Exiting!!!\n";
+    if ((_iproc * _jproc) != _size) {
+        if (_rank == 0) {
+            std::cout << "_iproc*_jproc != _size\nThe total number of processes must be the product of number of "
+                         "processes in x and y directions. "
+                      << "Please input correct value. Exiting!!!\n";
+            Communication::finalize();
+            exit(0);
+        } else {
             Communication::finalize();
             exit(0);
         }
-        else{
-            Communication::finalize();
-            exit(0);
-        } 
     }
     std::map<int, double> wall_vel;
     if (_geom_name.compare("NONE") == 0) {
@@ -341,16 +358,14 @@ void Case::simulate() {
                     std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
                               << " completed] Writing Data at t=" << t << "s\n";
                 }
-                    
             }
 
             // Writing simulation data in a log file
-            if (_rank == 0){
+            if (_rank == 0) {
                 output_file << std::left << "Simulation Time[s] = " << std::setw(7) << t
                             << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3) << it
                             << "\tSOR Residual = " << std::setw(7) << res << "\n";
             }
-                
 
             // Printing info and checking for errors once in 5 runs of the loop
             if (counter == 10) {
@@ -360,7 +375,7 @@ void Case::simulate() {
                               << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3)
                               << it << "\tSOR Residual = " << std::setw(7) << res << "\n";
                 }
-                    
+
                 // Check for unphysical behaviour
                 if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0);
             }
@@ -438,7 +453,6 @@ void Case::simulate() {
                               << " completed] Writing Data at t=" << t << "s\n"
                               << "\n\n";
                 }
-                    
             }
 
             // Writing simulation data in a log file
@@ -451,12 +465,12 @@ void Case::simulate() {
             // Printing info and checking for errors once in 10 runs of the loop
             if (counter == 10) {
                 counter = 0;
-                if (_rank == 0){
+                if (_rank == 0) {
                     std::cout << std::left << "Simulation Time[s] = " << std::setw(7) << t
                               << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3)
                               << it << "\tSOR Residual = " << std::setw(7) << res << "\n";
                 }
-                    
+
                 // Check for unphysical behaviour
                 if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0);
             }

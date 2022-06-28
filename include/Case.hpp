@@ -72,6 +72,9 @@ class Case {
     /// Set to true to enable energy equations
     bool _energy_eq = false;
 
+    /// Set to true to enable electro-magnetic equations
+    bool _em_eq = false;
+
     /// Parallelizing variables
     int _rank = 0;
     int _iproc=1;
