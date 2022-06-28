@@ -4,13 +4,6 @@
 geo_file     PlaneShearFlow.pgm
 
 #--------------------------------------------
-#           group results
-# group_id: set this to an integer value >=0 
-# to group the output files by that value            
-#--------------------------------------------
-group_id         0
-
-#--------------------------------------------
 #            size of the domain             
 #--------------------------------------------
 xlength      10
@@ -57,9 +50,30 @@ omg          1.7
 gamma        0.5
 
 #--------------------------------------------
-#     kinematic viscosity
+#      fluid properties
+# k: electric conductivity
+# rho: density
+# nu: kinematic viscosity
 #--------------------------------------------
-nu           0.1
+k            3.5e6
+rho          828
+nu           27.42
+
+#--------------------------------------------
+#        boundary conditions
+# em_eq: set to on for electromagnetic equations
+# v1: potential on electrode 1
+# v2: potential on electrode 2
+# Bz: magentic field perpendicular to simulation plane
+# UIN: Inlet velocity in x-direction
+# VIN: Inlet velocity in y-direction
+#--------------------------------------------
+em_eq        on
+v1           10.0
+v2           -10.0
+Bz           1e-3
+UIN          1.0
+VIN          0.0
 
 #--------------------------------------------
 #        gravity / external forces
@@ -68,19 +82,11 @@ GX           0.0
 GY           0.0
 
 #--------------------------------------------
-#         initial pressure and Pressure Difference
+#         initial conditions
+# PI: initial pressure
+# UI: initial x-velocity
+# VI: initial y-velocity
 #--------------------------------------------
 PI           0.0
-dP           4.0
-
-#--------------------------------------------
-#         initial velocity
-#--------------------------------------------
-UI           1.0
+UI           0.0
 VI           0.0
-
-#--------------------------------------------
-#         inlet velocity
-#--------------------------------------------
-UIN           1.0
-VIN           0.0
