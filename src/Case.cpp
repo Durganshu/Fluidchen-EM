@@ -77,7 +77,7 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
     double rho; /* Density*/
     double v1;  /* Potential at Electrode 1*/
     double v2;  /* Potential at Electrode 2*/
-    double Bz;  /* Magnetic Field Perpendicular to Simulation Plane*/
+    double Bz;  /* Magnetic Flux Density Perpendicular to Simulation Plane*/
 
     if (file.is_open()) {
 
@@ -123,8 +123,8 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
                 if (var == "em_eq") {
                     std::string temp;
                     file >> temp;
+                    if (temp == "on") _em_eq = true;
                 }
-                if (temp == "on") _em_eq = true;
                 if (var == "v1") file >> v1;
                 if (var == "v2") file >> v2;
                 if (var == "k") file >> k;
@@ -180,10 +180,12 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
 
     _grid = Grid(_geom_name, domain, _iproc, _jproc, _rank, _size);
 
-    if (!_energy_eq) {
+    if (!_energy_eq && !_em_eq) {
         _field = Fields(_grid, nu, dt, tau, UI, VI, PI, GX, GY);
+    } else if (_energy_eq) {
+        _field = Fields(_grid, nu, dt, tau, alpha, beta, UI, VI, PI, TI, GX, GY);
     } else {
-        _field = Fields(_grid, nu, alpha, beta, dt, tau, UI, VI, PI, TI, GX, GY);
+        _field = Fields(nu, dt, k, rho, Bz, tau, UI, VI, PI, GX, GY, _grid);
     }
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);

@@ -13,7 +13,7 @@ class Fields {
     Fields() = default;
 
     /**
-     * @brief Constructor for the fields for energy equations disabled
+     * @brief Constructor for the fields for energy and electromagnetic equations disabled
      *
      * @param[in] grid
      * @param[in] kinematic viscosity
@@ -28,14 +28,14 @@ class Fields {
 
     Fields(Grid &grid, double _nu, double _dt, double _tau, double UI, double VI, double PI, double GX, double GY);
     /**
-     * @brief Constructor for the fields for energy equations enabled
+     * @brief Constructor for the fields for energy equations enabled and electromagnetic equations disabled
      *
      * @param[in] grid
      * @param[in] kinematic viscosity
-     * @param[in] thermal diffusivity
-     * @param[in] thermal expansion coefficient
      * @param[in] initial timestep size
      * @param[in] adaptive timestep coefficient
+     * @param[in] thermal diffusivity
+     * @param[in] thermal expansion coefficient
      * @param[in] initial x-velocity
      * @param[in] initial y-velocity
      * @param[in] initial pressure
@@ -44,11 +44,31 @@ class Fields {
      * @param[in] y-component of gravity
      *
      */
-    Fields(Grid &grid, double nu, double alpha, double beta, double dt, double tau, double UI,
-           double VI, double PI, double TI, double GX, double GY);
+    Fields(Grid &grid, double _nu, double _dt, double _tau, double alpha, double beta, double UI, double VI, double PI,
+           double TI, double GX, double GY);
 
     /**
-     * @brief Calculates the temperature based on explicit discretization of energy 
+     * @brief Constructor for the fields for electromagnetic equations enabled and energy equations disabled
+     *
+     * @param[in] kinematic viscosity
+     * @param[in] initial timestep size
+     * @param[in] adaptive timestep coefficient
+     * @param[in] electric conductivity
+     * @param[in] density
+     * @param[in] magnetic flux density perpendicular to simulation plane
+     * @param[in] initial x-velocity
+     * @param[in] initial y-velocity
+     * @param[in] initial pressure
+     * @param[in] x-component of gravity
+     * @param[in] y-component of gravity
+     * @param[in] grid
+     */
+
+    Fields(double _nu, double _dt, double _tau, double _k, double _rho, double _Bz, double UI, double VI, double PI,
+           double GX, double GY, Grid &grid);
+
+    /**
+     * @brief Calculates the temperature based on explicit discretization of energy
      * equations
      *
      * @param[in] grid in which the fluxes are calculated
@@ -65,7 +85,6 @@ class Fields {
      */
 
     void calculate_fluxes(Grid &grid, bool energy_eq = 0);
-    
 
     /**
      * @brief Right hand side calculations using the fluxes for the pressure
@@ -150,7 +169,13 @@ class Fields {
     Matrix<double> _G;
     /// right hand side matrix
     Matrix<double> _RS;
-
+    /// electric potential
+    Matrix<double> _PHI;
+    /// electric field in x-direction
+    Matrix<double> _Ex;
+    /// electric field in x-direction
+    Matrix<double> _Ey;
+    
     /// kinematic viscosity
     double _nu;
     /// thermal diffusivity
@@ -165,6 +190,12 @@ class Fields {
     double _dt;
     /// adaptive timestep coefficient
     double _tau;
+    /// electric conductivity
+    double _k;
+    /// density
+    double _rho;
+    /// magnetic flux density
+    double _Bz;
 
     int _rank;
     int _size;
