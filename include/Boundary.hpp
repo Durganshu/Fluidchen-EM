@@ -33,6 +33,13 @@ class Boundary {
      * @param[in] Field to be applied
      */
     virtual void apply_temperature(Fields &field) const = 0;   
+    /**
+     * @brief Main method to patch the boundary conditons to given field and
+     * grid
+     *
+     * @param[in] Field to be applied
+     */
+    virtual void apply_potential(Fields &field) const = 0;   
     virtual ~Boundary() = default;
 };
 
@@ -53,6 +60,20 @@ class FixedWallBoundary : public Boundary {
   private:
     std::vector<Cell *> _cells;
     const std::map<int, double> _wall_temperature;
+};
+/**
+ * @brief Potential boundary condition for the outer boundaries of the domain.
+ * Dirichlet for potential 
+ */
+class PotentialBoundary: public Boundary {
+    public: 
+    PotentialBoundary(std::vector<Cell *> cells, std::map<int, double> phi);
+    virtual ~PotentialBoundary() = default;
+    void apply_potential(Fields &field) const;
+
+    private:
+    std::vector<Cell *> _cells;
+    const std::map<int, double> _phi;
 };
 
 /**

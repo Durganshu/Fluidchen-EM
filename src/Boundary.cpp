@@ -326,6 +326,13 @@ int FixedWallBoundary::check_neighbours(Cell *cell) {
     return number_of_fluid_neighbours;
 }
 
+PotentialBoundary::PotentialBoundary(std::vector<Cell *> cells, std::map<int, double> phi) //Call constructor of PotentialBoundary  class
+    : _cells(cells), _phi(phi) {}
+PotentialBoundary::apply_potential(Fields &field) const {
+
+    //TO BE FILLED 
+}
+
 MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, double wall_velocity) : _cells(cells) {
     _wall_velocity.insert(std::pair(LidDrivenCavity::moving_wall_id, wall_velocity));
 }

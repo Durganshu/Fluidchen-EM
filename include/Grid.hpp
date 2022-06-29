@@ -108,6 +108,20 @@ class Grid {
      */
     const std::vector<Cell *> &adiabatic_fixed_wall_cells() const;
 
+    /**
+     * @brief Access Positive potential fixed wall cells
+     *
+     * @param[out] vector of Positive potential fixed wall cells
+     */
+    const std::vector<Cell *> &positive_potential_fixed_wall_cells() const;
+
+    /**
+     * @brief Access Negative potential fixed wall cells
+     *
+     * @param[out] vector of Negative potential fixed wall cells
+     */
+    const std::vector<Cell *> &negative_potential_fixed_wall_cells() const;
+
   private:
     /**@brief Default lid driven cavity case generator
      *
