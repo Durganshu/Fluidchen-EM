@@ -328,7 +328,7 @@ int FixedWallBoundary::check_neighbours(Cell *cell) {
 
 PotentialBoundary::PotentialBoundary(std::vector<Cell *> cells, std::map<int, double> phi) //Call constructor of PotentialBoundary  class
     : _cells(cells), _phi(phi) {}
-PotentialBoundary::apply_potential(Fields &field) const {
+void PotentialBoundary::apply_potential(Fields &field) const {
 
     //TO BE FILLED 
 }
