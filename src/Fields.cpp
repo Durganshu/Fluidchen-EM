@@ -7,9 +7,6 @@
 Fields::Fields(Grid &grid, double nu, double dt, double tau, double UI, double VI, double PI, double GX, double GY)
     : _nu(nu), _dt(dt), _tau(tau), _gx(GX), _gy(GY) {
 
-    // MPI_Comm_rank(MPI_COMM_WORLD, &_rank);
-    // MPI_Comm_size(MPI_COMM_WORLD, &_size);
-
     _U = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
     _V = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
     _P = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
@@ -52,6 +49,7 @@ Fields::Fields(Grid &grid, double nu, double alpha, double beta, double dt, doub
 
 Fields::Fields(double _nu, double _dt, double _tau, double _k, double _rho, double _Bz, double UI, double VI, double PI,
                double GX, double GY, Grid &grid) {
+
     _U = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
     _V = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
     _P = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
@@ -61,7 +59,7 @@ Fields::Fields(double _nu, double _dt, double _tau, double _k, double _rho, doub
     _PHI = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
     _Ex = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
     _Ey = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
-    
+
     for (const auto &elem : grid.fluid_cells()) {
         int i = elem->i();
         int j = elem->j();
