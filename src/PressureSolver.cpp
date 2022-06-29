@@ -22,7 +22,6 @@ double SOR::solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<B
         }
     }
 
-    double res = 0.0;
     double rloc = 0.0;
 
     for (auto currentCell : grid.fluid_cells()) {

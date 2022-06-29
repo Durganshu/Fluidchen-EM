@@ -308,7 +308,7 @@ void Case::simulate() {
 
     output_vtk(timestep++); // Writing intial data
 
-    if (!_energy_eq) {
+    if (!_energy_eq && !_em_eq) {
 
         if (_rank == 0) std::cout << "ENERGY EQUATION OFF" << std::endl;
 
@@ -390,7 +390,7 @@ void Case::simulate() {
             dt = _field.calculate_dt(_grid);
             dt = Communication::reduce_min(dt);
         }
-    } else {
+    } else if (!_em_eq && _energy_eq) {
         if (_rank == 0) {
             std::cout << "ENERGY EQN ON" << std::endl;
         }
@@ -483,6 +483,98 @@ void Case::simulate() {
 
             // Calculate Adaptive Time step
             dt = _field.calculate_dt_e(_grid);
+            dt = Communication::reduce_min(dt);
+        }
+    } else {
+        if (_rank == 0) std::cout << "ELECTROMAGNETIC EQUATION ON" << std::endl;
+
+        ////**************************** Apply Potential Boundary ********************************////
+
+        // Solve for Potential
+        _field.solve_potential(_grid);
+
+        // Calculate Electric Fields
+        _field.calculate_electric_fields(_grid);
+
+        // Calculate Forces
+        _field.calculate_em_forces(_grid);
+
+        while (t < _t_end) {
+
+            // Apply BCs
+            for (auto &i : _boundaries) {
+                i->apply(_field);
+            }
+
+            // Calculate Fluxes
+            _field.calculate_fluxes(_grid, 2);
+            Communication::communicate(_field.f_matrix(), _grid.domain(), _rank);
+            Communication::communicate(_field.g_matrix(), _grid.domain(), _rank);
+
+            //  Calculate RHS of PPE
+            _field.calculate_rs(_grid);
+
+            // Perform SOR Iterations
+            int it = 0;
+            double res = 1000.;
+            while (it <= _max_iter && res >= _tolerance) {
+                for (auto &i : _boundaries) {
+                    i->apply_pressure(_field);
+                }
+
+                res = _pressure_solver->solve(_field, _grid, _boundaries); // Local sum
+                res = Communication::reduce_sum(res);                      // Sum reduction over all domains
+                number_fluid_cells = _grid.fluid_cells().size();
+                number_fluid_cells =
+                    Communication::reduce_sum(number_fluid_cells); // Sum of fluid cells over all domains
+                res = std::sqrt(res / number_fluid_cells);         // Final residual
+                Communication::communicate(_field.p_matrix(), _grid.domain(), _rank);
+                it++;
+            }
+
+            // Calculate Velocities U and V
+            _field.calculate_velocities(_grid);
+            // Exchange velocities
+            Communication::communicate(_field.u_matrix(), _grid.domain(), _rank);
+            Communication::communicate(_field.v_matrix(), _grid.domain(), _rank);
+
+            // Generating VTK files
+            output_counter += dt;
+            if (output_counter >= _output_freq) {
+                output_vtk(timestep++);
+                output_counter = 0;
+                if (_rank == 0) {
+                    std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
+                              << " completed] Writing Data at t=" << t << "s\n";
+                }
+            }
+
+            // Writing simulation data in a log file
+            if (_rank == 0) {
+                output_file << std::left << "Simulation Time[s] = " << std::setw(7) << t
+                            << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3) << it
+                            << "\tSOR Residual = " << std::setw(7) << res << "\n";
+            }
+
+            // Printing info and checking for errors once in 5 runs of the loop
+            if (counter == 10) {
+                counter = 0;
+                if (_rank == 0) {
+                    std::cout << std::left << "Simulation Time[s] = " << std::setw(7) << t
+                              << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3)
+                              << it << "\tSOR Residual = " << std::setw(7) << res << "\n";
+                }
+
+                // Check for unphysical behaviour
+                if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0);
+            }
+            counter++;
+
+            // Updating current time
+            t = t + dt;
+
+            //  Calculate Adaptive Time step
+            dt = _field.calculate_dt(_grid);
             dt = Communication::reduce_min(dt);
         }
     }

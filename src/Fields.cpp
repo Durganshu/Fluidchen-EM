@@ -59,6 +59,8 @@ Fields::Fields(double _nu, double _dt, double _tau, double _k, double _rho, doub
     _PHI = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
     _Ex = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
     _Ey = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
+    _Fx = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
+    _Fy = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
 
     for (const auto &elem : grid.fluid_cells()) {
         int i = elem->i();
@@ -87,21 +89,26 @@ void Fields::calculate_temperatures(Grid &grid) {
     _T = T_new;
 }
 
-void Fields::calculate_fluxes(Grid &grid, bool energy_eq) {
+void Fields::calculate_fluxes(Grid &grid, int eq_type) {
     for (const auto &elem : grid.fluid_cells()) {
         int i = elem->i();
         int j = elem->j();
         if (i != 0 && j != 0 && i != grid.imax() + 1 && j != grid.jmax() + 1) // exclude the buffer cells
         {
             _F(i, j) = _U(i, j) + _dt * ((_nu * Discretization::laplacian(_U, i, j)) -
-                                         Discretization::convection_u(_U, _V, i, j) + (1 - energy_eq) * _gx);
+                                         Discretization::convection_u(_U, _V, i, j) + _gx);
 
             _G(i, j) = _V(i, j) + _dt * ((_nu * Discretization::laplacian(_V, i, j)) -
-                                         Discretization::convection_v(_U, _V, i, j) + (1 - energy_eq) * _gy);
+                                         Discretization::convection_v(_U, _V, i, j) + _gy);
 
-            if (energy_eq) {
-                _F(i, j) -= _gx * _dt * (_beta * 0.5 * (_T(i, j) + _T(i + 1, j)));
-                _G(i, j) -= _gy * _dt * (_beta * 0.5 * (_T(i, j) + _T(i, j + 1)));
+            if (eq_type == 1) {
+                _F(i, j) -= _gx * _dt * (_beta * 0.5 * (_T(i, j) + _T(i + 1, j))) - _gx;
+                _G(i, j) -= _gy * _dt * (_beta * 0.5 * (_T(i, j) + _T(i, j + 1))) - _gy;
+            }
+
+            if (eq_type == 2) {
+                _F(i, j) += fx(i, j);
+                _G(i, j) += fy(i, j);
             }
         }
     }
@@ -167,7 +174,7 @@ void Fields::calculate_fluxes(Grid &grid, bool energy_eq) {
         }
     }
 
-    if (energy_eq) {
+    if (eq_type == 1) {
         /***************************************/
         // For cold fixed_wall_cells
         /***************************************/
@@ -405,6 +412,63 @@ void Fields::calculate_velocities(Grid &grid) {
     }
 }
 
+void Fields::solve_potential(Grid &grid) {
+
+    double tol = 1e-6;
+    double rloc = 1000.;
+    double omega = 1.7;
+
+    while (rloc > tol) {
+        double dx = grid.dx();
+        double dy = grid.dy();
+
+        double coeff = omega / (2.0 * (1.0 / (dx * dx) + 1.0 / (dy * dy)));
+
+        // Run an SOR Iteration
+        for (auto currentCell : grid.fluid_cells()) {
+            int i = currentCell->i();
+            int j = currentCell->j();
+            if (i != 0 && j != 0 && i != grid.imax() + 1 && j != grid.jmax() + 1) { // exclude the buffer cells
+                phi(i, j) = (1.0 - omega) * phi(i, j) + coeff * (Discretization::sor_helper(phi_matrix(), i, j));
+            }
+        }
+
+        // Calcualte Residual
+        double res = 0.0;
+        double rloc = 0.0;
+        for (auto currentCell : grid.fluid_cells()) {
+            int i = currentCell->i();
+            int j = currentCell->j();
+            if (i != 0 && j != 0 && i != grid.imax() + 1 && j != grid.jmax() + 1) { // exclude the buffer cells
+                double val = Discretization::laplacian(phi_matrix(), i, j);
+                rloc += (val * val);
+            }
+        }
+        rloc = std::sqrt(rloc / grid.fluid_cells().size()); // Final residual
+    }
+}
+
+void Fields::calculate_electric_fields(Grid &grid) {
+    for (auto currentCell : grid.fluid_cells()) {
+        int i = currentCell->i();
+        int j = currentCell->j();
+        ex(i, j) = (phi(i + 1, j) - phi(i - 1, j)) / (2 * grid.dx());
+        ey(i, j) = (phi(i, j + 1) - phi(i, j - 1)) / (2 * grid.dy());
+    }
+}
+
+void Fields::calculate_em_forces(Grid &grid) {
+
+    double coeff = _k * _Bz * grid.dx() * grid.dy() / _rho;
+
+    for (auto currentCell : grid.fluid_cells()) {
+        int i = currentCell->i();
+        int j = currentCell->j();
+        fx(i, j) = coeff * ey(i, j);
+        fy(i, j) = -coeff * ex(i, j);
+    }
+}
+
 double Fields::calculate_dt(Grid &grid) {
 
     auto max_u = 0.0;
@@ -459,6 +523,11 @@ double &Fields::t(int i, int j) { return _T(i, j); }
 double &Fields::f(int i, int j) { return _F(i, j); }
 double &Fields::g(int i, int j) { return _G(i, j); }
 double &Fields::rs(int i, int j) { return _RS(i, j); }
+double &Fields::phi(int i, int j) { return _PHI(i, j); }
+double &Fields::ex(int i, int j) { return _Ex(i, j); }
+double &Fields::ey(int i, int j) { return _Ey(i, j); }
+double &Fields::fx(int i, int j) { return _Fx(i, j); };
+double &Fields::fy(int i, int j) { return _Fy(i, j); };
 
 Matrix<double> &Fields::u_matrix() { return _U; }
 Matrix<double> &Fields::v_matrix() { return _V; }
@@ -466,5 +535,10 @@ Matrix<double> &Fields::t_matrix() { return _T; }
 Matrix<double> &Fields::p_matrix() { return _P; }
 Matrix<double> &Fields::f_matrix() { return _F; }
 Matrix<double> &Fields::g_matrix() { return _G; }
+Matrix<double> &Fields::phi_matrix() { return _PHI; }
+Matrix<double> &Fields::ex_matrix() { return _Ex; }
+Matrix<double> &Fields::ey_matrix() { return _Ey; }
+Matrix<double> &Fields::fx_matrix() { return _Fx; }
+Matrix<double> &Fields::fy_matrix() { return _Fy; }
 
 double Fields::dt() const { return _dt; }
