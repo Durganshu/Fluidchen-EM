@@ -21,15 +21,6 @@ class PressureSolver {
      * @param[in] boundary to be used
      */
     virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) = 0;
-
-    /**
-     * @brief Solve the pressure equation on given field, grid and boundary
-     *
-     * @param[in] field to be used
-     * @param[in] grid to be used
-     * @param[in] boundary to be used
-     */
-    virtual double solve_potential(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries) = 0;
 };
 
 /**
@@ -58,16 +49,6 @@ class SOR : public PressureSolver {
      * @param[in] boundary to be used
      */
     virtual double solve(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundaries);
-
-    /**
-     * @brief Solve for potential using SOR
-     *
-     * @param[in] field to be used
-     * @param[in] grid to be used
-     * @param[in] boundary to be used
-     *
-     */
-    virtual double solve_potential(Fields &field, Grid &grid, const std::vector<std::unique_ptr<Boundary>> &boundary);
 
   private:
     double _omega;

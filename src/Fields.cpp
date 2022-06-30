@@ -412,6 +412,42 @@ void Fields::calculate_velocities(Grid &grid) {
     }
 }
 
+void Fields::solve_potential(Grid &grid) {
+
+    double tol = 1e-6;
+    double rloc = 1000.;
+    double omega = 1.7;
+
+    while (rloc > tol) {
+        double dx = grid.dx();
+        double dy = grid.dy();
+
+        double coeff = omega / (2.0 * (1.0 / (dx * dx) + 1.0 / (dy * dy)));
+
+        // Run an SOR Iteration
+        for (auto currentCell : grid.fluid_cells()) {
+            int i = currentCell->i();
+            int j = currentCell->j();
+            if (i != 0 && j != 0 && i != grid.imax() + 1 && j != grid.jmax() + 1) { // exclude the buffer cells
+                phi(i, j) = (1.0 - omega) * phi(i, j) + coeff * (Discretization::sor_helper(phi_matrix(), i, j));
+            }
+        }
+
+        // Calcualte Residual
+        double res = 0.0;
+        double rloc = 0.0;
+        for (auto currentCell : grid.fluid_cells()) {
+            int i = currentCell->i();
+            int j = currentCell->j();
+            if (i != 0 && j != 0 && i != grid.imax() + 1 && j != grid.jmax() + 1) { // exclude the buffer cells
+                double val = Discretization::laplacian(phi_matrix(), i, j);
+                rloc += (val * val);
+            }
+        }
+        rloc = std::sqrt(rloc / grid.fluid_cells().size()); // Final residual
+    }
+}
+
 void Fields::calculate_electric_fields(Grid &grid) {
     for (auto currentCell : grid.fluid_cells()) {
         int i = currentCell->i();

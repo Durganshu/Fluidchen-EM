@@ -196,7 +196,7 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
     std::map<int, double> temp1 = {{3, wall_temp_3}};
     std::map<int, double> temp2 = {{4, wall_temp_4}};
     std::map<int, double> temp3 = {{5, wall_temp_5}};
-
+    
     std::map<int, double> temp4 = {{11, phi1}};
     std::map<int, double> temp5 = {{12, phi2}};
 
@@ -501,15 +501,7 @@ void Case::simulate() {
         ////**************************** Apply Potential Boundary ********************************////
 
         // Solve for Potential
-        int it = 0;
-        double res = 1000.;
-        while (res >= _tolerance) {
-            for (auto &i : _potential_boundaries) {
-                i->apply_potential(_field);
-            }
-            res = _pressure_solver->solve_potential(_field, _grid, _boundaries); // Local sum
-            it++;
-        }
+        _field.solve_potential(_grid);
 
         // Calculate Electric Fields
         _field.calculate_electric_fields(_grid);
@@ -534,6 +526,7 @@ void Case::simulate() {
 
             // Perform SOR Iterations
             int it = 0;
+            double res = 1000.;
             while (it <= _max_iter && res >= _tolerance) {
                 for (auto &i : _boundaries) {
                     i->apply_pressure(_field);
