@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "Cell.hpp"
+#include "Datastructures.hpp"
 #include "Fields.hpp"
 
 /**
@@ -19,21 +20,31 @@ class Boundary {
      * @param[in] Field to be applied
      */
     virtual void apply(Fields &field) = 0;
+
     /**
-     * @brief Main method to patch the boundary conditons to given field and
+     * @brief Main method to patch the pressure boundary conditons to given field and
      * grid
      *
      * @param[in] Field to be applied
      */
-    virtual void apply_pressure(Fields &field) = 0;  
+    virtual void apply_pressure(Fields &field) = 0;
+
     /**
-     * @brief Main method to patch the boundary conditons to given field and
+     * @brief Main method to patch the temperature boundary conditons to given field and
      * grid
      *
      * @param[in] Field to be applied
      */
-    virtual void apply_temperature(Fields &field) const = 0;   
-     
+    virtual void apply_temperature(Fields &field) const = 0;
+
+    /**
+     * @brief Main method to patch the potential boundary conditons to given field and
+     * grid
+     *
+     * @param[in] Field to be applied
+     */
+    virtual void apply_potential(Fields &field) const = 0;
+
     virtual ~Boundary() = default;
 };
 
@@ -49,23 +60,27 @@ class FixedWallBoundary : public Boundary {
     virtual ~FixedWallBoundary() = default;
     virtual void apply(Fields &field);
     virtual void apply_pressure(Fields &field);
-    void apply_temperature(Fields &field) const;
-    
+    virtual void apply_temperature(Fields &field) const;
+    virtual void apply_potential(Fields &field) const;
+
   private:
     std::vector<Cell *> _cells;
     const std::map<int, double> _wall_temperature;
 };
 /**
  * @brief Potential boundary condition for the outer boundaries of the domain.
- * Dirichlet for potential 
+ * Dirichlet for potential
  */
-class PotentialBoundary{
-    public: 
+class PotentialBoundary : public Boundary {
+  public:
     PotentialBoundary(std::vector<Cell *> cells, std::map<int, double> phi);
     virtual ~PotentialBoundary() = default;
-    void apply_potential(Fields &field) const;
+    virtual void apply(Fields &field);
+    virtual void apply_pressure(Fields &field);
+    virtual void apply_temperature(Fields &field) const;
+    virtual void apply_potential(Fields &field) const;
 
-    private:
+  private:
     std::vector<Cell *> _cells;
     const std::map<int, double> _phi;
 };
@@ -81,12 +96,12 @@ class InflowBoundary : public Boundary {
     virtual void apply(Fields &field);
     virtual void apply_pressure(Fields &field);
     virtual void apply_temperature(Fields &field) const;
+    virtual void apply_potential(Fields &field) const;
 
   private:
     std::vector<Cell *> _cells;
     double _x_velocity;
     double _y_velocity;
-    
 };
 
 /**
@@ -95,11 +110,12 @@ class InflowBoundary : public Boundary {
  */
 class OutflowBoundary : public Boundary {
   public:
-    OutflowBoundary(std::vector<Cell *> cells,double outlet_pressure);
+    OutflowBoundary(std::vector<Cell *> cells, double outlet_pressure);
     virtual ~OutflowBoundary() = default;
     virtual void apply(Fields &field);
     virtual void apply_pressure(Fields &field);
     virtual void apply_temperature(Fields &field) const;
+    virtual void apply_potential(Fields &field) const;
 
   private:
     std::vector<Cell *> _cells;
@@ -119,7 +135,8 @@ class MovingWallBoundary : public Boundary {
     virtual ~MovingWallBoundary() = default;
     virtual void apply(Fields &field);
     virtual void apply_pressure(Fields &field);
-    virtual void apply_temperature(Fields &field) const ;
+    virtual void apply_temperature(Fields &field) const;
+    virtual void apply_potential(Fields &field) const;
 
   private:
     std::vector<Cell *> _cells;

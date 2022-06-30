@@ -1,5 +1,6 @@
 #include "Boundary.hpp"
 #include "Enums.hpp"
+
 #include <cmath>
 #include <iostream>
 
@@ -326,24 +327,7 @@ int FixedWallBoundary::check_neighbours(Cell *cell) {
     return number_of_fluid_neighbours;
 }
 
-PotentialBoundary::PotentialBoundary(std::vector<Cell *> cells,
-                                     std::map<int, double> phi) // Call constructor of PotentialBoundary  class
-    : _cells(cells), _phi(phi) {}
-void PotentialBoundary::apply_potential(Fields &field) const {
-    const double wall_phi = _phi.begin()->second;
-    for (auto &elem : _cells) {
-        int i = elem->i();
-        int j = elem->j();
-
-        if (elem->is_border(border_position::TOP)) {
-            //field.phi(i, j) = 2 * wall_phi - field.phi(i, elem->neighbour(border_position::TOP)->j());
-        }
-
-        if (elem->is_border(border_position::BOTTOM)) {
-            //field.phi(i, j) = 2 * wall_phi - field.phi(i, elem->neighbour(border_position::BOTTOM)->j());
-        }
-    }
-}
+void FixedWallBoundary::apply_potential(Fields &field) const {}
 
 MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, double wall_velocity) : _cells(cells) {
     _wall_velocity.insert(std::pair(LidDrivenCavity::moving_wall_id, wall_velocity));
@@ -373,6 +357,7 @@ void MovingWallBoundary::apply_pressure(Fields &field) {
 
 // Temperature BC for moving_wall is not in the scope of this worksheet so the function is kept as a dummy.
 void MovingWallBoundary::apply_temperature(Fields &field) const {}
+void MovingWallBoundary::apply_potential(Fields &field) const {}
 
 InflowBoundary::InflowBoundary(std::vector<Cell *> cells, double inflow_x_velocity, double inflow_y_velocity)
     : _cells(cells), _x_velocity(inflow_x_velocity), _y_velocity(inflow_y_velocity) {}
@@ -397,6 +382,7 @@ void InflowBoundary::apply_pressure(Fields &field) {
 
 // Temperature BC for inflow is not in the scope of this worksheet so the function is kept as a dummy.
 void InflowBoundary::apply_temperature(Fields &field) const {}
+void InflowBoundary::apply_potential(Fields &field) const {}
 
 OutflowBoundary::OutflowBoundary(std::vector<Cell *> cells, double outlet_pressure)
     : _cells(cells), _pressure(outlet_pressure) {}
@@ -421,3 +407,27 @@ void OutflowBoundary::apply_pressure(Fields &field) {
 
 // Temperature BC for outflow is not in the scope of this worksheet so the function is kept as a dummy.
 void OutflowBoundary::apply_temperature(Fields &field) const {}
+void OutflowBoundary::apply_potential(Fields &field) const {}
+
+PotentialBoundary::PotentialBoundary(std::vector<Cell *> cells,
+                                     std::map<int, double> phi) // Call constructor of PotentialBoundary  class
+    : _cells(cells), _phi(phi) {}
+void PotentialBoundary::apply_potential(Fields &field) const {
+    const double wall_phi = _phi.begin()->second;
+    for (auto &elem : _cells) {
+        int i = elem->i();
+        int j = elem->j();
+
+        if (elem->is_border(border_position::TOP)) {
+            field.phi(i, j) = 2 * wall_phi - field.phi(i, elem->neighbour(border_position::TOP)->j());
+        }
+
+        if (elem->is_border(border_position::BOTTOM)) {
+            field.phi(i, j) = 2 * wall_phi - field.phi(i, elem->neighbour(border_position::BOTTOM)->j());
+        }
+    }
+
+}
+void PotentialBoundary::apply(Fields &field) {}
+void PotentialBoundary::apply_pressure(Fields &field) {}
+void PotentialBoundary::apply_temperature(Fields &field) const {}

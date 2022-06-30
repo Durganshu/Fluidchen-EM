@@ -1,5 +1,9 @@
 #pragma once
 
+#include <memory>
+#include <vector>
+
+#include "Boundary.hpp"
 #include "Datastructures.hpp"
 #include "Discretization.hpp"
 #include "Grid.hpp"
@@ -105,14 +109,6 @@ class Fields {
      *
      */
     void calculate_velocities(Grid &grid);
-
-    /**
-     * @brief Solve for potential using SOR
-     *
-     * @param[in] grid in which the calculations are done
-     *
-     */
-    void solve_potential(Grid &grid);
 
     /**
      * @brief Electric field calculation
