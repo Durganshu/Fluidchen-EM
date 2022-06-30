@@ -107,14 +107,6 @@ class Fields {
     void calculate_velocities(Grid &grid);
 
     /**
-     * @brief Solve for potential using SOR
-     *
-     * @param[in] grid in which the calculations are done
-     *
-     */
-    void solve_potential(Grid &grid);
-
-    /**
      * @brief Electric field calculation
      *
      * @param[in] grid in which the calculations are done
