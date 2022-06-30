@@ -196,7 +196,7 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
     std::map<int, double> temp1 = {{3, wall_temp_3}};
     std::map<int, double> temp2 = {{4, wall_temp_4}};
     std::map<int, double> temp3 = {{5, wall_temp_5}};
-    
+
     std::map<int, double> temp4 = {{11, phi1}};
     std::map<int, double> temp5 = {{12, phi2}};
 
@@ -417,7 +417,7 @@ void Case::simulate() {
             Communication::communicate(_field.t_matrix(), _grid.domain(), _rank);
 
             // Calculate Fluxes
-            _field.calculate_fluxes(_grid, _energy_eq);
+            _field.calculate_fluxes(_grid, 1);
             Communication::communicate(_field.f_matrix(), _grid.domain(), _rank);
             Communication::communicate(_field.g_matrix(), _grid.domain(), _rank);
 
@@ -498,16 +498,25 @@ void Case::simulate() {
     } else {
         if (_rank == 0) std::cout << "ELECTROMAGNETIC EQUATION ON" << std::endl;
 
-        ////**************************** Apply Potential Boundary ********************************////
-
         // Solve for Potential
-        _field.solve_potential(_grid);
+        double res = 1000.;
+        while (res >= 1e-6) {
+            for (auto &i : _potential_boundaries) {
+                i->apply_potential(_field);
+            }
+            res = _pressure_solver->solve_potential(_field, _grid, _potential_boundaries); // Local sum
+            res = Communication::reduce_sum(res);                      // Sum reduction over all domains
+            number_fluid_cells = _grid.fluid_cells().size();
+            number_fluid_cells = Communication::reduce_sum(number_fluid_cells); // Sum of fluid cells over all domains
+            res = std::sqrt(res / number_fluid_cells);                          // Final residual
+            Communication::communicate(_field.phi_matrix(), _grid.domain(), _rank);
+        }
 
         // Calculate Electric Fields
-        _field.calculate_electric_fields(_grid);
+        //_field.calculate_electric_fields(_grid);
 
         // Calculate Forces
-        _field.calculate_em_forces(_grid);
+        //_field.calculate_em_forces(_grid);
 
         while (t < _t_end) {
 
@@ -517,7 +526,7 @@ void Case::simulate() {
             }
 
             // Calculate Fluxes
-            _field.calculate_fluxes(_grid, 2);
+            _field.calculate_fluxes(_grid, 0);
             Communication::communicate(_field.f_matrix(), _grid.domain(), _rank);
             Communication::communicate(_field.g_matrix(), _grid.domain(), _rank);
 
@@ -526,7 +535,7 @@ void Case::simulate() {
 
             // Perform SOR Iterations
             int it = 0;
-            double res = 1000.;
+            res = 1000.;
             while (it <= _max_iter && res >= _tolerance) {
                 for (auto &i : _boundaries) {
                     i->apply_pressure(_field);
