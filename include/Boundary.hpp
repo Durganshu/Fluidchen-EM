@@ -59,7 +59,7 @@ class FixedWallBoundary : public Boundary {
  * @brief Potential boundary condition for the outer boundaries of the domain.
  * Dirichlet for potential 
  */
-class PotentialBoundary: public Boundary {
+class PotentialBoundary{
     public: 
     PotentialBoundary(std::vector<Cell *> cells, std::map<int, double> phi);
     virtual ~PotentialBoundary() = default;

@@ -73,11 +73,11 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
     double alpha; /* Thermal diffusivity */
 
     /*ELECTRO-MAGNETIC VARIABLES*/
-    double k;   /* Electric Conductivity */
-    double rho; /* Density*/
-    double v1;  /* Potential at Electrode 1*/
-    double v2;  /* Potential at Electrode 2*/
-    double Bz;  /* Magnetic Flux Density Perpendicular to Simulation Plane*/
+    double k;    /* Electric Conductivity */
+    double rho;  /* Density*/
+    double phi1; /* Potential at Electrode 1*/
+    double phi2; /* Potential at Electrode 2*/
+    double Bz;   /* Magnetic Flux Density Perpendicular to Simulation Plane*/
 
     if (file.is_open()) {
 
@@ -125,8 +125,8 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
                     file >> temp;
                     if (temp == "on") _em_eq = true;
                 }
-                if (var == "v1") file >> v1;
-                if (var == "v2") file >> v2;
+                if (var == "v1") file >> phi1;
+                if (var == "v2") file >> phi2;
                 if (var == "k") file >> k;
                 if (var == "rho") file >> rho;
                 if (var == "Bz") file >> Bz;
@@ -196,6 +196,9 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
     std::map<int, double> temp1 = {{3, wall_temp_3}};
     std::map<int, double> temp2 = {{4, wall_temp_4}};
     std::map<int, double> temp3 = {{5, wall_temp_5}};
+    
+    std::map<int, double> temp4 = {{11, phi1}};
+    std::map<int, double> temp5 = {{12, phi2}};
 
     // Construct boundaries
     if (not _grid.moving_wall_cells().empty()) {
@@ -219,6 +222,13 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
     }
     if (not _grid.outflow_cells().empty()) {
         _boundaries.push_back(std::make_unique<OutflowBoundary>(_grid.outflow_cells(), P_out));
+    }
+    // Constructing Potential Boundaries
+    if (not _grid.higher_potential_cells().empty()) {
+        _potential_boundaries.push_back(std::make_unique<PotentialBoundary>(_grid.higher_potential_cells(), temp4));
+    }
+    if (not _grid.lower_potential_cells().empty()) {
+        _potential_boundaries.push_back(std::make_unique<PotentialBoundary>(_grid.lower_potential_cells(), temp5));
     }
 }
 
