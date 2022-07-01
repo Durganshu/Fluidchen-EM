@@ -40,7 +40,7 @@ double SOR::solve_potential(Fields &field, Grid &grid,
                             const std::vector<std::unique_ptr<PotentialBoundary>> &boundaries) {
     double dx = grid.dx();
     double dy = grid.dy();
-
+    
     double coeff = _omega / (2.0 * (1.0 / (dx * dx) + 1.0 / (dy * dy))); // = _omega * h^2 / 4.0, if dx == dy == h
 
     for (auto currentCell : grid.fluid_cells()) {

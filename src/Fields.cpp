@@ -102,8 +102,8 @@ void Fields::calculate_fluxes(Grid &grid, int eq_type) {
                                          Discretization::convection_v(_U, _V, i, j) + _gy);
 
             if (eq_type == 1) {
-                _F(i, j) -= _gx * _dt * (_beta * 0.5 * (_T(i, j) + _T(i + 1, j))) + _dt * _gx;
-                _G(i, j) -= _gy * _dt * (_beta * 0.5 * (_T(i, j) + _T(i, j + 1))) + _dt * _gy;
+                _F(i, j) -=  (_gx * _dt * (_beta * 0.5 * (_T(i, j) + _T(i + 1, j))) + _dt * _gx);
+                _G(i, j) -= (_gy * _dt * (_beta * 0.5 * (_T(i, j) + _T(i, j + 1))) + _dt * _gy);
             }
 
             if (eq_type == 2) {

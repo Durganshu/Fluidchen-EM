@@ -331,16 +331,18 @@ PotentialBoundary::PotentialBoundary(std::vector<Cell *> cells,
     : _cells(cells), _phi(phi) {}
 void PotentialBoundary::apply_potential(Fields &field) const {
     const double wall_phi = _phi.begin()->second;
+    
     for (auto &elem : _cells) {
         int i = elem->i();
         int j = elem->j();
 
         if (elem->is_border(border_position::TOP)) {
-            //field.phi(i, j) = 2 * wall_phi - field.phi(i, elem->neighbour(border_position::TOP)->j());
+           
+            field.phi(i, j) = 2 * wall_phi - field.phi(i, elem->neighbour(border_position::TOP)->j());
         }
 
         if (elem->is_border(border_position::BOTTOM)) {
-            //field.phi(i, j) = 2 * wall_phi - field.phi(i, elem->neighbour(border_position::BOTTOM)->j());
+            field.phi(i, j) = 2 * wall_phi - field.phi(i, elem->neighbour(border_position::BOTTOM)->j());
         }
     }
 }

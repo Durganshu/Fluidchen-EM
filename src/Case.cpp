@@ -500,10 +500,14 @@ void Case::simulate() {
 
         // Solve for Potential
         double res = 1000.;
+     
         while (res >= 1e-6) {
+
             for (auto &i : _potential_boundaries) {
                 i->apply_potential(_field);
+              
             }
+           
             res = _pressure_solver->solve_potential(_field, _grid, _potential_boundaries); // Local sum
             res = Communication::reduce_sum(res);                      // Sum reduction over all domains
             number_fluid_cells = _grid.fluid_cells().size();
@@ -511,20 +515,45 @@ void Case::simulate() {
             res = std::sqrt(res / number_fluid_cells);                          // Final residual
             Communication::communicate(_field.phi_matrix(), _grid.domain(), _rank);
         }
+        
+        
 
         // Calculate Electric Fields
-        //_field.calculate_electric_fields(_grid);
+        _field.calculate_electric_fields(_grid);
+        // std::ofstream ex_log;
+        // ex_log.open("EX_LOG_FILE.log");
+        // for (int i=0; i<_grid.imax()+2;i++)
+        //     {
+        //         for(int j=0; j<_grid.jmax()+2; j++)
+        //         {
+        //             ex_log<<_field.ex(i,j)<<" ";
+        //         }
+        //         ex_log<<std::endl;
+        //     }
+        // ex_log.close();
 
+        // std::ofstream ey_log;
+        // ey_log.open("EY_LOG_FILE.log");
+        // for (int i=0; i<_grid.imax()+2;i++)
+        //     {
+        //         for(int j=0; j<_grid.jmax()+2; j++)
+        //         {
+        //             ey_log<<_field.ey(i,j)<<" ";
+        //         }
+        //         ey_log<<std::endl;
+        //     }
+        // ey_log.close();
+        
         // Calculate Forces
-        //_field.calculate_em_forces(_grid);
+        _field.calculate_em_forces(_grid);
 
         while (t < _t_end) {
-
+            //std::cout<<"entered simulation loop for EM case \n";
             // Apply BCs
             for (auto &i : _boundaries) {
                 i->apply(_field);
             }
-
+            //std::cout<<"applied BC \n";
             // Calculate Fluxes
             _field.calculate_fluxes(_grid, 0);
             Communication::communicate(_field.f_matrix(), _grid.domain(), _rank);
