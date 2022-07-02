@@ -326,6 +326,27 @@ int FixedWallBoundary::check_neighbours(Cell *cell) {
     return number_of_fluid_neighbours;
 }
 
+PotentialBoundary::PotentialBoundary(std::vector<Cell *> cells,
+                                     std::map<int, double> phi) // Call constructor of PotentialBoundary  class
+    : _cells(cells), _phi(phi) {}
+void PotentialBoundary::apply_potential(Fields &field) const {
+    const double wall_phi = _phi.begin()->second;
+    
+    for (auto &elem : _cells) {
+        int i = elem->i();
+        int j = elem->j();
+
+        if (elem->is_border(border_position::TOP)) {
+           
+            field.phi(i, j) = 2 * wall_phi - field.phi(i, elem->neighbour(border_position::TOP)->j());
+        }
+
+        if (elem->is_border(border_position::BOTTOM)) {
+            field.phi(i, j) = 2 * wall_phi - field.phi(i, elem->neighbour(border_position::BOTTOM)->j());
+        }
+    }
+}
+
 MovingWallBoundary::MovingWallBoundary(std::vector<Cell *> cells, double wall_velocity) : _cells(cells) {
     _wall_velocity.insert(std::pair(LidDrivenCavity::moving_wall_id, wall_velocity));
 }
@@ -379,15 +400,24 @@ void InflowBoundary::apply_pressure(Fields &field) {
 // Temperature BC for inflow is not in the scope of this worksheet so the function is kept as a dummy.
 void InflowBoundary::apply_temperature(Fields &field) const {}
 
-OutflowBoundary::OutflowBoundary(std::vector<Cell *> cells, double outlet_pressure) : _cells(cells), _pressure(outlet_pressure) {}
+OutflowBoundary::OutflowBoundary(std::vector<Cell *> cells, double outlet_pressure)
+    : _cells(cells), _pressure(outlet_pressure) {}
 
 void OutflowBoundary::apply(Fields &field) {
     for (auto &elem : _cells) {
+        
         int i = elem->i();
         int j = elem->j();
 
-        field.u(i, j) = field.u(elem->neighbour(border_position::LEFT)->i(), j);
-        field.v(i, j) = field.v(elem->neighbour(border_position::LEFT)->i(), j);
+        if(elem->is_border(border_position::LEFT)){
+            field.u(i, j) = field.u(elem->neighbour(border_position::LEFT)->i(), j);
+            field.v(i, j) = field.v(elem->neighbour(border_position::LEFT)->i(), j);
+        }
+        else{
+            field.u(i, j) = field.u(elem->neighbour(border_position::RIGHT)->i(), j);
+            field.v(i, j) = field.v(elem->neighbour(border_position::RIGHT)->i(), j);
+        }
+        
     }
 }
 

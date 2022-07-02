@@ -2,10 +2,8 @@
 
 // If no geometry file is provided in the input file, lid driven cavity case
 // will run by default. In the Grid.cpp, geometry will be created following
-// PGM convention, which is:
-// 0: fluid, 3: fixed wall, 4: moving wall
 namespace LidDrivenCavity {
-const int moving_wall_id = 8;
+const int moving_wall_id = 9;
 const int fixed_wall_id = 6;
 const double wall_velocity = 1.0;
 } // namespace LidDrivenCavity
@@ -33,5 +31,7 @@ enum class cell_type {
     ADIABATIC_FIXED_WALL,
     FIXED_WALL,
     MOVING_WALL,
+    HIGHER_POTENTIAL_WALL,
+    LOWER_POTENTIAL_WALL,
     DEFAULT
 };
