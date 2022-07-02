@@ -185,7 +185,7 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
     } else if (_energy_eq) {
         _field = Fields(_grid, nu, dt, tau, alpha, beta, UI, VI, PI, TI, GX, GY);
     } else {
-        _field = Fields(nu, dt, k, rho, Bz, tau, UI, VI, PI, GX, GY, _grid);
+        _field = Fields(nu, dt, tau, k, rho, Bz, UI, VI, PI, GX, GY, _grid);
     }
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
@@ -555,7 +555,7 @@ void Case::simulate() {
             }
             //std::cout<<"applied BC \n";
             // Calculate Fluxes
-            _field.calculate_fluxes(_grid, 0);
+            _field.calculate_fluxes(_grid, 2);
             Communication::communicate(_field.f_matrix(), _grid.domain(), _rank);
             Communication::communicate(_field.g_matrix(), _grid.domain(), _rank);
 

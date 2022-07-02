@@ -24,7 +24,7 @@ Fields::Fields(Grid &grid, double nu, double dt, double tau, double UI, double V
     }
 }
 
-Fields::Fields(Grid &grid, double nu, double alpha, double beta, double dt, double tau, double UI, double VI, double PI,
+Fields::Fields(Grid &grid, double nu, double dt, double tau, double alpha, double beta, double UI, double VI, double PI,
                double TI, double GX, double GY)
     : _nu(nu), _alpha(alpha), _beta(beta), _dt(dt), _tau(tau), _gx(GX), _gy(GY) {
 
@@ -47,8 +47,9 @@ Fields::Fields(Grid &grid, double nu, double alpha, double beta, double dt, doub
     }
 }
 
-Fields::Fields(double _nu, double _dt, double _tau, double _k, double _rho, double _Bz, double UI, double VI, double PI,
-               double GX, double GY, Grid &grid) {
+Fields::Fields(double nu, double dt, double tau, double k, double rho, double Bz, double UI, double VI, double PI,
+               double GX, double GY, Grid &grid) 
+               : _nu(nu),  _dt(dt), _tau(tau), _k (k), _rho (rho), _Bz(Bz), _gx(GX), _gy(GY) {
 
     _U = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
     _V = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
@@ -383,7 +384,13 @@ void Fields::calculate_fluxes(Grid &grid, int eq_type) {
         int i = elem->i();
         int j = elem->j();
 
-        _F(elem->neighbour(border_position::LEFT)->i(), j) = _U(elem->neighbour(border_position::LEFT)->i(), j);
+        if (elem->is_border(border_position::LEFT)){
+            _F(elem->neighbour(border_position::LEFT)->i(), j) = _U(elem->neighbour(border_position::LEFT)->i(), j);
+        }
+        else{
+            _F(elem->neighbour(border_position::RIGHT)->i(), j) = _U(elem->neighbour(border_position::RIGHT)->i(), j);
+        }
+        
     }
 }
 

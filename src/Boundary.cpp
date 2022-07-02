@@ -405,11 +405,19 @@ OutflowBoundary::OutflowBoundary(std::vector<Cell *> cells, double outlet_pressu
 
 void OutflowBoundary::apply(Fields &field) {
     for (auto &elem : _cells) {
+        
         int i = elem->i();
         int j = elem->j();
 
-        field.u(i, j) = field.u(elem->neighbour(border_position::LEFT)->i(), j);
-        field.v(i, j) = field.v(elem->neighbour(border_position::LEFT)->i(), j);
+        if(elem->is_border(border_position::LEFT)){
+            field.u(i, j) = field.u(elem->neighbour(border_position::LEFT)->i(), j);
+            field.v(i, j) = field.v(elem->neighbour(border_position::LEFT)->i(), j);
+        }
+        else{
+            field.u(i, j) = field.u(elem->neighbour(border_position::RIGHT)->i(), j);
+            field.v(i, j) = field.v(elem->neighbour(border_position::RIGHT)->i(), j);
+        }
+        
     }
 }
 
