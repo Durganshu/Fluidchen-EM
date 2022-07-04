@@ -108,8 +108,8 @@ void Fields::calculate_fluxes(Grid &grid, int eq_type) {
             }
 
             if (eq_type == 2) {
-                _F(i, j) += fx(i, j);
-                _G(i, j) += fy(i, j);
+                _F(i, j) += ((fx(i, j)+fx(i+1, j))/2);
+                _G(i, j) += ((fy(i, j)+fy(i,j+1))/2);
             }
         }
     }
@@ -386,10 +386,11 @@ void Fields::calculate_fluxes(Grid &grid, int eq_type) {
 
         if (elem->is_border(border_position::LEFT)){
             _F(elem->neighbour(border_position::LEFT)->i(), j) = _U(elem->neighbour(border_position::LEFT)->i(), j);
+           
         }
-        else{
+        else if((elem->is_border(border_position::RIGHT))){
             _F(elem->neighbour(border_position::RIGHT)->i(), j) = _U(elem->neighbour(border_position::RIGHT)->i(), j);
-        }
+                    }
         
     }
 }
@@ -422,8 +423,8 @@ void Fields::calculate_electric_fields(Grid &grid) {
     for (auto currentCell : grid.fluid_cells()) {
         int i = currentCell->i();
         int j = currentCell->j();
-        ex(i, j) = (phi(i + 1, j) - phi(i - 1, j)) / (2 * grid.dx());
-        ey(i, j) = (phi(i, j + 1) - phi(i, j - 1)) / (2 * grid.dy());
+        ex(i, j) = -(phi(i + 1, j) - phi(i , j)) / ( grid.dx());
+        ey(i, j) = -(phi(i, j + 1) - phi(i, j )) / ( grid.dy());
     }
 }
 
