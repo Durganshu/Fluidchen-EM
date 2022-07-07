@@ -692,6 +692,21 @@ void Case::output_vtk(int timestep) {
     Temperature->SetName("temperature");
     Temperature->SetNumberOfComponents(1);
 
+     // Potential Array
+    vtkDoubleArray *Potential = vtkDoubleArray::New();
+    Potential->SetName("electric_potential");
+    Potential->SetNumberOfComponents(1);
+     
+     // Electric field Array
+    vtkDoubleArray *EField = vtkDoubleArray::New();
+    EField->SetName("electric_field");
+    EField->SetNumberOfComponents(2);
+
+     // EM Force Array
+    vtkDoubleArray *EMForce = vtkDoubleArray::New();
+    EMForce->SetName("em_force");
+    EMForce->SetNumberOfComponents(2);
+
     // Print pressure and temperature from bottom to top
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {
         for (int i = 1; i < _grid.domain().size_x + 1; i++) {
@@ -699,6 +714,8 @@ void Case::output_vtk(int timestep) {
             Pressure->InsertNextTuple(&pressure);
         }
     }
+    
+    
 
     // Temp Velocity
     float vel[3];
@@ -725,6 +742,37 @@ void Case::output_vtk(int timestep) {
 
         // Add Temperature to Structured Grid
         structuredGrid->GetCellData()->AddArray(Temperature);
+    }
+
+    if (_em_eq == true){
+        float e_field[3], em_force[3];
+        e_field[2] = 0;
+        em_force[2] = 0;
+        // Print Potential, e_field and em_force array
+        for (int j = 0; j < _grid.domain().size_y + 1; j++) {
+            for (int i = 0; i < _grid.domain().size_x + 1; i++) {
+                e_field[0] = _field.ex(i, j);
+                e_field[1] = _field.ey(i, j);
+                em_force[0] = _field.fx(i, j);
+                em_force[1] = _field.fy(i, j);
+
+                EField->InsertNextTuple(e_field);
+                EMForce->InsertNextTuple(em_force);
+            }
+        }
+
+        for (int j = 1; j < _grid.domain().size_y + 1; j++) {
+            for (int i = 1; i < _grid.domain().size_x + 1; i++) {
+                double potential = _field.phi(i, j);
+                Potential->InsertNextTuple(&potential);
+
+            }
+        }
+
+        // Add potential, e_field and em_force to Structured Grid
+        structuredGrid->GetCellData()->AddArray(Potential);
+        structuredGrid->GetPointData()->AddArray(EField);
+        structuredGrid->GetPointData()->AddArray(EMForce);
     }
 
     // Add Pressure to Structured Grid
