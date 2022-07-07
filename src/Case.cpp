@@ -506,12 +506,28 @@ void Case::simulate() {
         if (_rank == 0) std::cout << "ELECTROMAGNETIC EQUATION ON" << std::endl;
 
         const std::string config_file_name("precice-config.xml");
-        const std::string solver_name("EM_Pump");
+        const std::string solver_name("EM_Solver");
         const std::string mesh_name("EM_Pump-Mesh");
-        const std::string data_write_name("Velocity");
+        //const std::string data_write_name("Velocity");
         precice::SolverInterface precice(solver_name, config_file_name, _rank, _size);
         
         double precice_dt = precice.initialize();
+
+        int dim = precice.getDimensions();
+        int meshID = precice.getMeshID("EM_Pump-Mesh");
+        int vertexSize; // number of vertices at wet surface 
+        // determine vertexSize
+        double* coords = new double[vertexSize*dim]; // coords of coupling vertices 
+        // determine coordinates
+        int* vertexIDs = new int[vertexSize];
+        precice.setMeshVertices(meshID, vertexSize, coords, vertexIDs); 
+        delete[] coords;
+
+        int U_ID = precice.getDataID("X_Velocity", meshID); 
+        int V_ID = precice.getDataID("Y_Velocity", meshID); 
+        double* U = new double[vertexSize*dim];
+        double* V = new double[vertexSize*dim];
+
 
         // Solve for Potential
         double res = 1000.;
@@ -612,14 +628,18 @@ void Case::simulate() {
 
             // Updating current time
             t = t + dt;
-
+            precice.writeBlockVectorData(U_ID, vertexSize, vertexIDs, U);
+            precice.writeBlockVectorData(V_ID, vertexSize, vertexIDs, V);
             //  Calculate Adaptive Time step
             dt = _field.calculate_dt(_grid);
             dt = Communication::reduce_min(dt);
+            precice_dt = precice.advance(dt);
             dt = std::min(dt, precice_dt);
+            
         }
 
-         precice.finalize();
+        precice.finalize();
+        delete[] vertexIDs, U, V;
     }
 
     // Storing values at the last time step

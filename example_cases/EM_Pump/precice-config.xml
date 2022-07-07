@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+
+<precice-configuration>
+
+  <solver-interface dimensions="2">
+
+    <data:vector name="X_Velocity"/>
+    <data:vector name="Y_Velocity"/>
+
+    <mesh name="FluidMesh">
+      <use-data name="X_Velocity"/>
+      <use-data name="Y_Velocity"/>
+    </mesh>
+
+    <mesh name="EM_Pump-Mesh">
+      <use-data name="X_Velocity"/>
+      <use-data name="Y_Velocity"/>
+    </mesh>
+
+    <participant name="FluidSolver">
+      <use-mesh name="FluidMesh" provide="yes"/>
+      <use-mesh name="EM_Pump-Mesh" from="EM_Solver"/>
+      <read-data  name="X_Velocity" mesh="FluidMesh"/>
+      <read-data  name="Y_Velocity" mesh="FluidMesh"/>
+      <mapping:nearest-neighbor direction="read" from="EM_Pump-Mesh" 
+                                to="FluidMesh" constraint="consistent"/>
+    </participant>
+
+    <participant name="EM_Solver">
+      <use-mesh name="EM_Pump-Mesh" provide="yes"/>
+      <write-data  name="X_Velocity" mesh="EM_Pump-Mesh"/>
+      <write-data  name="Y_Velocity" mesh="EM_Pump-Mesh"/>
+    </participant>
+
+    <m2n:sockets from="EM_Solver" to="FluidSolver"/>
+
+    <coupling-scheme:serial-explicit>
+      <participants first="EM_Solver" second="FluidSolver"/>
+      <max-time-windows value="10" />
+      <time-window-size value="1.0" />
+      <exchange data="X_Velocity" mesh="EM_Pump-Mesh" from="EM_Solver" to="FluidSolver"/>
+      <exchange data="Y_Velocity" mesh="EM_Pump-Mesh" from="EM_Solver" to="FluidSolver"/>
+    </coupling-scheme:serial-explicit>
+
+  </solver-interface>
+
+</precice-configuration>

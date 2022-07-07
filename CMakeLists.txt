@@ -39,7 +39,7 @@ target_compile_definitions(fluidchen PUBLIC -Dsolution_parallelization)
 find_package(MPI REQUIRED)
 # Find a package with different components e.g. BOOST
 # find_package(Boost COMPONENTS filesystem REQUIRED)
-
+FIND_PACKAGE(precice REQUIRED CONFIG)
 # VTK Library
 find_package(VTK REQUIRED)
 message (STATUS "VTK_VERSION: ${VTK_VERSION}")
@@ -70,6 +70,7 @@ endif()
 # if you use external libraries you have to link them like
 target_link_libraries(fluidchen PRIVATE MPI::MPI_CXX)
 target_link_libraries(fluidchen PRIVATE ${VTK_LIBRARIES})
+TARGET_LINK_LIBRARIES(fluidchen PRIVATE precice::precice)
 
 install(TARGETS fluidchen DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 # If you write tests, you can include your subdirectory (in this case tests) as done here
