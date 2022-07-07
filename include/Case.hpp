@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+
 #include "Boundary.hpp"
 #include "Discretization.hpp"
 #include "Domain.hpp"
@@ -75,6 +76,9 @@ class Case {
 
     /// Set to true to enable electro-magnetic equations
     bool _em_eq = false;
+
+    /// Coupling variable
+    bool _couple = false;
 
     /// Parallelizing variables
     int _rank = 0;

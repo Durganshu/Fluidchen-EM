@@ -2,6 +2,7 @@
 #include "Communication.hpp"
 #include "Enums.hpp"
 
+#include <precice/SolverInterface.hpp>
 #include <algorithm>
 #include <iomanip>
 #include <iterator>
@@ -130,6 +131,11 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
                 if (var == "k") file >> k;
                 if (var == "rho") file >> rho;
                 if (var == "Bz") file >> Bz;
+                if (var == "couple") {
+                    std::string temp;
+                    file >> temp;
+                    if (temp == "on") _couple = true;
+                }
                 if (var == "x") {
                     file >> _iproc;
                     if (_iproc < 1) {
@@ -496,27 +502,33 @@ void Case::simulate() {
             dt = Communication::reduce_min(dt);
         }
     } else {
+
         if (_rank == 0) std::cout << "ELECTROMAGNETIC EQUATION ON" << std::endl;
+
+        const std::string config_file_name("precice-config.xml");
+        const std::string solver_name("EM_Pump");
+        const std::string mesh_name("EM_Pump-Mesh");
+        const std::string data_write_name("Velocity");
+        precice::SolverInterface precice(solver_name, config_file_name, _rank, _size);
+        
+        double precice_dt = precice.initialize();
 
         // Solve for Potential
         double res = 1000.;
-     
+
         while (res >= 1e-6) {
 
             for (auto &i : _potential_boundaries) {
                 i->apply_potential(_field);
-              
             }
-           
+
             res = _pressure_solver->solve_potential(_field, _grid, _potential_boundaries); // Local sum
-            res = Communication::reduce_sum(res);                      // Sum reduction over all domains
+            res = Communication::reduce_sum(res); // Sum reduction over all domains
             number_fluid_cells = _grid.fluid_cells().size();
             number_fluid_cells = Communication::reduce_sum(number_fluid_cells); // Sum of fluid cells over all domains
             res = std::sqrt(res / number_fluid_cells);                          // Final residual
             Communication::communicate(_field.phi_matrix(), _grid.domain(), _rank);
         }
-        
-        
 
         // Calculate Electric Fields
         _field.calculate_electric_fields(_grid);
@@ -528,12 +540,12 @@ void Case::simulate() {
         Communication::communicate(_field.fy_matrix(), _grid.domain(), _rank);
 
         while (t < _t_end) {
-            
+
             // Apply BCs
             for (auto &i : _boundaries) {
                 i->apply(_field);
             }
-            
+
             // Calculate Fluxes
             _field.calculate_fluxes(_grid, 2);
             Communication::communicate(_field.f_matrix(), _grid.domain(), _rank);
@@ -604,7 +616,10 @@ void Case::simulate() {
             //  Calculate Adaptive Time step
             dt = _field.calculate_dt(_grid);
             dt = Communication::reduce_min(dt);
+            dt = std::min(dt, precice_dt);
         }
+
+         precice.finalize();
     }
 
     // Storing values at the last time step
@@ -672,17 +687,17 @@ void Case::output_vtk(int timestep) {
     Temperature->SetName("temperature");
     Temperature->SetNumberOfComponents(1);
 
-     // Potential Array
+    // Potential Array
     vtkDoubleArray *Potential = vtkDoubleArray::New();
     Potential->SetName("electric_potential");
     Potential->SetNumberOfComponents(1);
-     
-     // Electric field Array
+
+    // Electric field Array
     vtkDoubleArray *EField = vtkDoubleArray::New();
     EField->SetName("electric_field");
     EField->SetNumberOfComponents(2);
 
-     // EM Force Array
+    // EM Force Array
     vtkDoubleArray *EMForce = vtkDoubleArray::New();
     EMForce->SetName("em_force");
     EMForce->SetNumberOfComponents(2);
@@ -694,8 +709,6 @@ void Case::output_vtk(int timestep) {
             Pressure->InsertNextTuple(&pressure);
         }
     }
-    
-    
 
     // Temp Velocity
     float vel[3];
@@ -724,7 +737,7 @@ void Case::output_vtk(int timestep) {
         structuredGrid->GetCellData()->AddArray(Temperature);
     }
 
-    if (_em_eq == true){
+    if (_em_eq == true) {
         float e_field[3], em_force[3];
         e_field[2] = 0;
         em_force[2] = 0;
@@ -745,7 +758,6 @@ void Case::output_vtk(int timestep) {
             for (int i = 1; i < _grid.domain().size_x + 1; i++) {
                 double potential = _field.phi(i, j);
                 Potential->InsertNextTuple(&potential);
-
             }
         }
 
