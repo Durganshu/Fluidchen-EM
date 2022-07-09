@@ -700,12 +700,12 @@ void Case::output_vtk(int timestep) {
      // Electric field Array
     vtkDoubleArray *EField = vtkDoubleArray::New();
     EField->SetName("electric_field");
-    EField->SetNumberOfComponents(2);
+    EField->SetNumberOfComponents(3);
 
      // EM Force Array
     vtkDoubleArray *EMForce = vtkDoubleArray::New();
     EMForce->SetName("em_force");
-    EMForce->SetNumberOfComponents(2);
+    EMForce->SetNumberOfComponents(3);
 
     // Print pressure and temperature from bottom to top
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {
