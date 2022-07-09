@@ -515,7 +515,7 @@ void Case::simulate() {
 
         int dim = precice.getDimensions();
         int meshID = precice.getMeshID("EM_Pump-Mesh");
-        int vertexSize; // number of vertices at wet surface 
+        int vertexSize ; // number of vertices at wet surface 
         // determine vertexSize
         double* coords = new double[vertexSize*dim]; // coords of coupling vertices 
         // determine coordinates
@@ -628,9 +628,14 @@ void Case::simulate() {
 
             // Updating current time
             t = t + dt;
+            if (precice.isWriteDataRequired(dt)){
+                //calculate_border_UV()
             precice.writeBlockVectorData(U_ID, vertexSize, vertexIDs, U);
             precice.writeBlockVectorData(V_ID, vertexSize, vertexIDs, V);
+            }
+
             //  Calculate Adaptive Time step
+            
             dt = _field.calculate_dt(_grid);
             dt = Communication::reduce_min(dt);
             precice_dt = precice.advance(dt);
