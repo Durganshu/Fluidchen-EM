@@ -71,6 +71,23 @@ class PotentialBoundary{
 };
 
 /**
+ * @brief Coupled boundary condition for the outer boundaries of the domain.
+ * 
+ */
+class CoupledBoundary{
+    public: 
+    CoupledBoundary(std::vector<Cell *> cells);
+    virtual ~CoupledBoundary() = default;
+    void apply_dirichlet_velocity(Fields &field, double *U , double *V);
+    void apply_neumann_velocity(Fields &field);
+    void apply_dirichlet_pressure(Fields &field, double *P);
+    void apply_neumann_pressure(Fields &field);
+    
+    private:
+    std::vector<Cell *> _cells;
+};
+
+/**
  * @brief Inflow boundary condition for the outer boundaries of the domain.
  * Dirichlet for velocities and pressure
  */
@@ -81,7 +98,7 @@ class InflowBoundary : public Boundary {
     virtual void apply(Fields &field);
     virtual void apply_pressure(Fields &field);
     virtual void apply_temperature(Fields &field) const;
-
+  
   private:
     std::vector<Cell *> _cells;
     double _x_velocity;

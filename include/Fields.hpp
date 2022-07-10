@@ -192,6 +192,11 @@ class Fields {
     Matrix<double> &fx_matrix();
     Matrix<double> &fy_matrix();
 
+    /// get border values
+    void get_border_U(Grid &grid, double *U);
+    void get_border_V(Grid &grid, double *V);
+    void get_border_P(Grid &grid, double *P);
+
   private:
     /// x-velocity matrix
     Matrix<double> _U;

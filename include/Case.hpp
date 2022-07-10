@@ -70,6 +70,7 @@ class Case {
     std::unique_ptr<PressureSolver> _pressure_solver;
     std::vector<std::unique_ptr<Boundary>> _boundaries;
     std::vector<std::unique_ptr<PotentialBoundary>> _potential_boundaries;
+    std::vector<std::unique_ptr<CoupledBoundary>> _coupled_boundaries;
 
     /// Set to true to enable energy equations
     bool _energy_eq = false;

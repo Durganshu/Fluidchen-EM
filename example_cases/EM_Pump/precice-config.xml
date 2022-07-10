@@ -47,6 +47,7 @@
       <time-window-size value="1.0" />
       <exchange data="X_Velocity" mesh="EM_Pump-Mesh" from="EM_Solver" to="FluidSolver"/>
       <exchange data="Y_Velocity" mesh="EM_Pump-Mesh" from="EM_Solver" to="FluidSolver"/>
+      <exchange data="Pressure" mesh="EM_Pump-Mesh" from="FluidSolver" to="EM_Solver"/>
     </coupling-scheme:serial-explicit>
 
   </solver-interface>

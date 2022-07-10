@@ -2,11 +2,11 @@
 #include "Communication.hpp"
 #include "Enums.hpp"
 
-#include <precice/SolverInterface.hpp>
 #include <algorithm>
 #include <iomanip>
 #include <iterator>
 #include <mpi.h>
+#include <precice/SolverInterface.hpp>
 #include <string>
 
 #ifdef GCC_VERSION_9_OR_HIGHER
@@ -236,6 +236,10 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
     if (not _grid.lower_potential_cells().empty()) {
         _potential_boundaries.push_back(std::make_unique<PotentialBoundary>(_grid.lower_potential_cells(), temp5));
     }
+    // Constructing Coupled Boundaries
+    if (not _grid.coupled_cells().empty()) {
+        _coupled_boundaries.push_back(std::make_unique<CoupledBoundary>(_grid.coupled_cells()));
+    }
 }
 
 void Case::set_file_names(std::string file_name) {
@@ -328,11 +332,43 @@ void Case::simulate() {
 
         if (_rank == 0) std::cout << "ENERGY EQUATION OFF" << std::endl;
 
+        const std::string config_file_name("precice-config.xml");
+        const std::string solver_name("FluidSolver");
+        const std::string mesh_name("FluidMesh");
+        // const std::string data_write_name("Velocity");
+        precice::SolverInterface precice(solver_name, config_file_name, _rank, _size);
+
+        double precice_dt = precice.initialize();
+
+        int dim = precice.getDimensions();
+        int meshID = precice.getMeshID("FluidMesh");
+        int vertexSize; // number of vertices at wet surface
+        // determine vertexSize
+        double *coords = new double[vertexSize * dim]; // coords of coupling vertices
+        // determine coordinates
+        int *vertexIDs = new int[vertexSize];
+        precice.setMeshVertices(meshID, vertexSize, coords, vertexIDs);
+        delete[] coords;
+
+        int U_ID = precice.getDataID("X_Velocity", meshID);
+        int V_ID = precice.getDataID("Y_Velocity", meshID);
+        int P_ID = precice.getDataID("Pressure", meshID);
+        double *U = new double[vertexSize * dim];
+        double *V = new double[vertexSize * dim];
+        double *P = new double[vertexSize * dim];
+
         while (t < _t_end) {
 
+            if (precice.isReadDataAvailable()) {
+                precice.readBlockVectorData(U_ID, vertexSize, vertexIDs, U);
+                precice.readBlockVectorData(V_ID, vertexSize, vertexIDs, V);
+            }
             // Apply BCs
             for (auto &i : _boundaries) {
                 i->apply(_field);
+            }
+            for (auto &i : _coupled_boundaries) {
+                i->apply_dirichlet_velocity(_field, U, V);
             }
 
             // Calculate Fluxes
@@ -350,9 +386,11 @@ void Case::simulate() {
                 for (auto &i : _boundaries) {
                     i->apply_pressure(_field);
                 }
-
+                for (auto &i : _coupled_boundaries) {
+                    i->apply_neumann_pressure(_field);
+                }
                 res = _pressure_solver->solve(_field, _grid, _boundaries); // Local sum
-                res = Communication::reduce_sum(res);                      // Sum reduction over all domains
+                res = Communication::reduce_sum(res); // Sum reduction over all domains
                 number_fluid_cells = _grid.fluid_cells().size();
                 number_fluid_cells =
                     Communication::reduce_sum(number_fluid_cells); // Sum of fluid cells over all domains
@@ -399,13 +437,19 @@ void Case::simulate() {
             }
             counter++;
 
+            if (precice.isWriteDataRequired(dt)) {
+                _field.get_border_P(_grid, P);
+                precice.writeBlockVectorData(P_ID, vertexSize, vertexIDs, P);
+            }
             // Updating current time
             t = t + dt;
-
+            precice_dt = precice.advance(dt);
             //  Calculate Adaptive Time step
             dt = _field.calculate_dt(_grid);
             dt = Communication::reduce_min(dt);
+            dt = std::min(dt, precice_dt);
         }
+
     } else if (!_em_eq && _energy_eq) {
         if (_rank == 0) {
             std::cout << "ENERGY EQN ON" << std::endl;
@@ -508,26 +552,27 @@ void Case::simulate() {
         const std::string config_file_name("precice-config.xml");
         const std::string solver_name("EM_Solver");
         const std::string mesh_name("EM_Pump-Mesh");
-        //const std::string data_write_name("Velocity");
+        // const std::string data_write_name("Velocity");
         precice::SolverInterface precice(solver_name, config_file_name, _rank, _size);
-        
+
         double precice_dt = precice.initialize();
 
         int dim = precice.getDimensions();
         int meshID = precice.getMeshID("EM_Pump-Mesh");
-        int vertexSize ; // number of vertices at wet surface 
+        int vertexSize; // number of vertices at wet surface
         // determine vertexSize
-        double* coords = new double[vertexSize*dim]; // coords of coupling vertices 
+        double *coords = new double[vertexSize * dim]; // coords of coupling vertices
         // determine coordinates
-        int* vertexIDs = new int[vertexSize];
-        precice.setMeshVertices(meshID, vertexSize, coords, vertexIDs); 
+        int *vertexIDs = new int[vertexSize];
+        precice.setMeshVertices(meshID, vertexSize, coords, vertexIDs);
         delete[] coords;
 
-        int U_ID = precice.getDataID("X_Velocity", meshID); 
-        int V_ID = precice.getDataID("Y_Velocity", meshID); 
-        double* U = new double[vertexSize*dim];
-        double* V = new double[vertexSize*dim];
-
+        int U_ID = precice.getDataID("X_Velocity", meshID);
+        int V_ID = precice.getDataID("Y_Velocity", meshID);
+        int P_ID = precice.getDataID("Pressure", meshID);
+        double *U = new double[vertexSize * dim];
+        double *V = new double[vertexSize * dim];
+        double *P = new double[vertexSize * dim];
 
         // Solve for Potential
         double res = 1000.;
@@ -556,10 +601,16 @@ void Case::simulate() {
         Communication::communicate(_field.fy_matrix(), _grid.domain(), _rank);
 
         while (t < _t_end) {
-
+            if (precice.isReadDataAvailable()) {
+                precice.readBlockVectorData(P_ID, vertexSize, vertexIDs, P);
+            }
             // Apply BCs
             for (auto &i : _boundaries) {
                 i->apply(_field);
+            }
+                        
+            for (auto &i : _coupled_boundaries) {
+                i->apply_neumann_velocity(_field);
             }
 
             // Calculate Fluxes
@@ -577,7 +628,9 @@ void Case::simulate() {
                 for (auto &i : _boundaries) {
                     i->apply_pressure(_field);
                 }
-
+            for (auto &i : _coupled_boundaries) {
+                i->apply_dirichlet_pressure(_field, P);
+            }
                 res = _pressure_solver->solve(_field, _grid, _boundaries); // Local sum
                 res = Communication::reduce_sum(res);                      // Sum reduction over all domains
                 number_fluid_cells = _grid.fluid_cells().size();
@@ -626,25 +679,24 @@ void Case::simulate() {
             }
             counter++;
 
+            if (precice.isWriteDataRequired(dt)) {
+                _field.get_border_U(_grid, U);
+                _field.get_border_V(_grid, V);
+
+                precice.writeBlockVectorData(U_ID, vertexSize, vertexIDs, U);
+                precice.writeBlockVectorData(V_ID, vertexSize, vertexIDs, V);
+            }
             // Updating current time
             t = t + dt;
-            if (precice.isWriteDataRequired(dt)){
-                //calculate_border_UV()
-            precice.writeBlockVectorData(U_ID, vertexSize, vertexIDs, U);
-            precice.writeBlockVectorData(V_ID, vertexSize, vertexIDs, V);
-            }
-
+            precice_dt = precice.advance(dt);
             //  Calculate Adaptive Time step
-            
             dt = _field.calculate_dt(_grid);
             dt = Communication::reduce_min(dt);
-            precice_dt = precice.advance(dt);
             dt = std::min(dt, precice_dt);
-            
         }
 
         precice.finalize();
-        delete[] vertexIDs, U, V;
+        delete[] vertexIDs, U, V, P;
     }
 
     // Storing values at the last time step
