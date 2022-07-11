@@ -335,10 +335,9 @@ void Case::simulate() {
         const std::string config_file_name("precice-config.xml");
         const std::string solver_name("FluidSolver");
         const std::string mesh_name("FluidMesh");
-        // const std::string data_write_name("Velocity");
-        precice::SolverInterface precice(solver_name, config_file_name, _rank, _size);
 
-        double precice_dt = precice.initialize();
+        // constructing precice object
+        precice::SolverInterface precice(solver_name, config_file_name, _rank, _size);
 
         int dim = precice.getDimensions();
         int meshID = precice.getMeshID("FluidMesh");
@@ -364,9 +363,13 @@ void Case::simulate() {
         int U_ID = precice.getDataID("X_Velocity", meshID);
         int V_ID = precice.getDataID("Y_Velocity", meshID);
         int P_ID = precice.getDataID("Pressure", meshID);
-        double *U = new double[vertexSize * dim];
-        double *V = new double[vertexSize * dim];
-        double *P = new double[vertexSize * dim];
+        double *U = new double[vertexSize];
+        double *V = new double[vertexSize];
+        double *P = new double[vertexSize];
+
+        // initializing precice
+        double precice_dt = precice.initialize();
+        dt = std::min(dt, precice_dt);
 
         while (precice.isCouplingOngoing()) {
 
@@ -566,14 +569,15 @@ void Case::simulate() {
         const std::string config_file_name("precice-config.xml");
         const std::string solver_name("EM_Solver");
         const std::string mesh_name("EM_Pump-Mesh");
-        // const std::string data_write_name("Velocity");
+
+        // constructing precice object
         precice::SolverInterface precice(solver_name, config_file_name, _rank, _size);
 
-        double precice_dt = precice.initialize();
+        if (_rank == 0) std::cout << "ELECTROMAGNETIC EQUATION ON" << std::endl;
 
         int dim = precice.getDimensions();
         int meshID = precice.getMeshID("EM_Pump-Mesh");
-        int vertexSize; // number of vertices at wet surface
+        int vertexSize=20; // number of vertices at wet surface
         // determine vertexSize
         double *coords = new double[vertexSize * dim]; // coords of coupling vertices
         int count = 0;
@@ -593,9 +597,9 @@ void Case::simulate() {
         int U_ID = precice.getDataID("X_Velocity", meshID);
         int V_ID = precice.getDataID("Y_Velocity", meshID);
         int P_ID = precice.getDataID("Pressure", meshID);
-        double *U = new double[vertexSize * dim];
-        double *V = new double[vertexSize * dim];
-        double *P = new double[vertexSize * dim];
+        double *U = new double[vertexSize];
+        double *V = new double[vertexSize];
+        double *P = new double[vertexSize];
 
         // Solve for Potential
         double res = 1000.;
@@ -622,6 +626,10 @@ void Case::simulate() {
         _field.calculate_em_forces(_grid);
         Communication::communicate(_field.fx_matrix(), _grid.domain(), _rank);
         Communication::communicate(_field.fy_matrix(), _grid.domain(), _rank);
+
+        // initializing precice
+        double precice_dt = precice.initialize();
+        dt = std::min(dt, precice_dt);
 
         while (precice.isCouplingOngoing()) {
             if (precice.isReadDataAvailable()) {
