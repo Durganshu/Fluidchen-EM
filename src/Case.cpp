@@ -342,9 +342,20 @@ void Case::simulate() {
 
         int dim = precice.getDimensions();
         int meshID = precice.getMeshID("FluidMesh");
-        int vertexSize; // number of vertices at wet surface
-        // determine vertexSize
-        double *coords = new double[vertexSize * dim]; // coords of coupling vertices
+        int vertexSize = 20; // number of vertices at wet surface
+
+        // assigning coords of coupling vertices
+        double *coords = new double[vertexSize * dim];
+        int count = 0;
+        for (const auto &elem : _grid.coupled_cells()) {
+            int i = elem->i();
+            int j = elem->j() - 1;
+
+            coords[count] = i * _grid.dx() + 10;
+            coords[count + 1] = j * _grid.dy();
+            count += 2;
+        }
+
         // determine coordinates
         int *vertexIDs = new int[vertexSize];
         precice.setMeshVertices(meshID, vertexSize, coords, vertexIDs);
@@ -357,7 +368,7 @@ void Case::simulate() {
         double *V = new double[vertexSize * dim];
         double *P = new double[vertexSize * dim];
 
-        while (t < _t_end) {
+        while (precice.isCouplingOngoing()) {
 
             if (precice.isReadDataAvailable()) {
                 precice.readBlockVectorData(U_ID, vertexSize, vertexIDs, U);
@@ -390,7 +401,7 @@ void Case::simulate() {
                     i->apply_neumann_pressure(_field);
                 }
                 res = _pressure_solver->solve(_field, _grid, _boundaries); // Local sum
-                res = Communication::reduce_sum(res); // Sum reduction over all domains
+                res = Communication::reduce_sum(res);                      // Sum reduction over all domains
                 number_fluid_cells = _grid.fluid_cells().size();
                 number_fluid_cells =
                     Communication::reduce_sum(number_fluid_cells); // Sum of fluid cells over all domains
@@ -449,6 +460,9 @@ void Case::simulate() {
             dt = Communication::reduce_min(dt);
             dt = std::min(dt, precice_dt);
         }
+
+        precice.finalize();
+        delete[] vertexIDs, U, V, P;
 
     } else if (!_em_eq && _energy_eq) {
         if (_rank == 0) {
@@ -562,6 +576,15 @@ void Case::simulate() {
         int vertexSize; // number of vertices at wet surface
         // determine vertexSize
         double *coords = new double[vertexSize * dim]; // coords of coupling vertices
+        int count = 0;
+        for (const auto &elem : _grid.coupled_cells()) {
+            int i = elem->i() - 1;
+            int j = elem->j() - 1;
+
+            coords[count] = i * _grid.dx();
+            coords[count + 1] = j * _grid.dy();
+            count += 2;
+        }
         // determine coordinates
         int *vertexIDs = new int[vertexSize];
         precice.setMeshVertices(meshID, vertexSize, coords, vertexIDs);
@@ -600,7 +623,7 @@ void Case::simulate() {
         Communication::communicate(_field.fx_matrix(), _grid.domain(), _rank);
         Communication::communicate(_field.fy_matrix(), _grid.domain(), _rank);
 
-        while (t < _t_end) {
+        while (precice.isCouplingOngoing()) {
             if (precice.isReadDataAvailable()) {
                 precice.readBlockVectorData(P_ID, vertexSize, vertexIDs, P);
             }
@@ -608,7 +631,7 @@ void Case::simulate() {
             for (auto &i : _boundaries) {
                 i->apply(_field);
             }
-                        
+
             for (auto &i : _coupled_boundaries) {
                 i->apply_neumann_velocity(_field);
             }
@@ -628,9 +651,9 @@ void Case::simulate() {
                 for (auto &i : _boundaries) {
                     i->apply_pressure(_field);
                 }
-            for (auto &i : _coupled_boundaries) {
-                i->apply_dirichlet_pressure(_field, P);
-            }
+                for (auto &i : _coupled_boundaries) {
+                    i->apply_dirichlet_pressure(_field, P);
+                }
                 res = _pressure_solver->solve(_field, _grid, _boundaries); // Local sum
                 res = Communication::reduce_sum(res);                      // Sum reduction over all domains
                 number_fluid_cells = _grid.fluid_cells().size();

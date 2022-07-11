@@ -30,6 +30,7 @@
                                 to="FluidMesh" constraint="conservative"/>
       <mapping:nearest-neighbor direction="write" from="FluidMesh" 
                                 to="EM_Pump-Mesh" constraint="consistent"/>
+      <export : vtk directory="precice-fluid-output">
     </participant>
 
     <participant name="EM_Solver">
@@ -37,14 +38,15 @@
       <write-data  name="X_Velocity" mesh="EM_Pump-Mesh"/>
       <write-data  name="Y_Velocity" mesh="EM_Pump-Mesh"/>
       <read-data  name="Pressure" mesh="EM_Pump-Mesh"/>
+      <export : vtk directory="precice-emhd-output">
     </participant>
 
     <m2n:sockets from="EM_Solver" to="FluidSolver"/>
 
     <coupling-scheme:serial-explicit>
       <participants first="EM_Solver" second="FluidSolver"/>
-      <max-time-windows value="10" />
-      <time-window-size value="1.0" />
+      <max-time value="0.2" />
+      <time-window-size value="0.005" />
       <exchange data="X_Velocity" mesh="EM_Pump-Mesh" from="EM_Solver" to="FluidSolver"/>
       <exchange data="Y_Velocity" mesh="EM_Pump-Mesh" from="EM_Solver" to="FluidSolver"/>
       <exchange data="Pressure" mesh="EM_Pump-Mesh" from="FluidSolver" to="EM_Solver"/>
