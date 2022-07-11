@@ -1,7 +1,7 @@
 #--------------------------------------------
 #           geometry file            
 #--------------------------------------------
-geo_file     PlaneShearFlow.pgm
+geo_file     FluidChannel.pgm
 
 #--------------------------------------------
 #           group results
