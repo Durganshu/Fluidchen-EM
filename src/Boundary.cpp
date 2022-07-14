@@ -439,7 +439,7 @@ void OutflowBoundary::apply_temperature(Fields &field) const {}
 
 CoupledBoundary::CoupledBoundary(std::vector<Cell *> cells):_cells(cells) {}
 
-void CoupledBoundary::apply_dirichlet_velocity(Fields &field, double *U, double *V) {
+void CoupledBoundary::apply_dirichlet_velocity(Fields &field, std::vector<double> U, std::vector<double> V) {
     for (auto &elem : _cells) {
 
         int i = elem->i();
@@ -463,7 +463,7 @@ void CoupledBoundary::apply_neumann_velocity(Fields &field) {
         }
     }
 }
-void CoupledBoundary::apply_dirichlet_pressure(Fields &field, double *P) {
+void CoupledBoundary::apply_dirichlet_pressure(Fields &field, std::vector<double> P) {
     for (auto &elem : _cells) {
 
         int i = elem->i();

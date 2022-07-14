@@ -512,19 +512,19 @@ Matrix<double> &Fields::fy_matrix() { return _Fy; }
 
 double Fields::dt() const { return _dt; }
 
-void Fields::get_border_U(Grid &grid, double *U) {
+void Fields::get_border_U(Grid &grid, std::vector<double> U) {
     std::vector<double> temp = _U.get_col(grid.jmax());
     for (int i = 0; i < temp.size(); i++) {
         U[i] = temp[i];
     }
 }
-void Fields::get_border_V(Grid &grid, double *V) {
+void Fields::get_border_V(Grid &grid, std::vector<double> V) {
     std::vector<double> temp = _V.get_col(grid.jmax());
     for (int i = 0; i < temp.size(); i++) {
         V[i] = temp[i];
     }
 }
-void Fields::get_border_P(Grid &grid, double *P) {
+void Fields::get_border_P(Grid &grid, std::vector<double> P) {
     std::vector<double> temp = _P.get_col(grid.jmax());
     for (int i = 0; i < temp.size(); i++) {
         P[i] = temp[i];

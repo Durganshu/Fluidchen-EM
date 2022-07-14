@@ -193,9 +193,9 @@ class Fields {
     Matrix<double> &fy_matrix();
 
     /// get border values
-    void get_border_U(Grid &grid, double *U);
-    void get_border_V(Grid &grid, double *V);
-    void get_border_P(Grid &grid, double *P);
+    void get_border_U(Grid &grid, std::vector<double> U);
+    void get_border_V(Grid &grid, std::vector<double> V);
+    void get_border_P(Grid &grid, std::vector<double> P);
 
   private:
     /// x-velocity matrix

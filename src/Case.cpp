@@ -341,10 +341,11 @@ void Case::simulate() {
 
         int dim = precice.getDimensions();
         int meshID = precice.getMeshID("FluidMesh");
-        int vertexSize = 20; // number of vertices at wet surface
+        int vertexSize = _grid.coupled_cells().size(); // number of vertices at wet surface
 
         // assigning coords of coupling vertices
-        double *coords = new double[vertexSize * dim];
+        std::vector<double> coords(vertexSize * dim);
+
         int count = 0;
         for (const auto &elem : _grid.coupled_cells()) {
             int i = elem->i();
@@ -356,16 +357,16 @@ void Case::simulate() {
         }
 
         // determine coordinates
-        int *vertexIDs = new int[vertexSize];
-        precice.setMeshVertices(meshID, vertexSize, coords, vertexIDs);
-        delete[] coords;
+        std::vector<int> vertexIDs(vertexSize);
+        precice.setMeshVertices(meshID, vertexSize, coords.data(), vertexIDs.data());
 
         int U_ID = precice.getDataID("X_Velocity", meshID);
         int V_ID = precice.getDataID("Y_Velocity", meshID);
         int P_ID = precice.getDataID("Pressure", meshID);
-        double *U = new double[vertexSize];
-        double *V = new double[vertexSize];
-        double *P = new double[vertexSize];
+
+        std::vector<double> U(vertexSize);
+        std::vector<double> V(vertexSize);
+        std::vector<double> P(vertexSize);
 
         // initializing precice
         double precice_dt = precice.initialize();
@@ -374,8 +375,8 @@ void Case::simulate() {
         while (precice.isCouplingOngoing()) {
 
             if (precice.isReadDataAvailable()) {
-                precice.readBlockScalarData(U_ID, vertexSize, vertexIDs, U);
-                precice.readBlockScalarData(V_ID, vertexSize, vertexIDs, V);
+                precice.readBlockScalarData(U_ID, vertexSize, vertexIDs.data(), U.data());
+                precice.readBlockScalarData(V_ID, vertexSize, vertexIDs.data(), V.data());
             }
             // Apply BCs
             for (auto &i : _boundaries) {
@@ -429,7 +430,7 @@ void Case::simulate() {
                               << " completed] Writing Data at t=" << t << "s\n";
                 }
             }
- 
+
             // Writing simulation data in a log file
             if (_rank == 0) {
                 output_file << std::left << "Simulation Time[s] = " << std::setw(7) << t
@@ -453,7 +454,7 @@ void Case::simulate() {
 
             if (precice.isWriteDataRequired(dt)) {
                 _field.get_border_P(_grid, P);
-                precice.writeBlockScalarData(P_ID, vertexSize, vertexIDs, P);
+                precice.writeBlockScalarData(P_ID, vertexSize, vertexIDs.data(), P.data());
             }
             // Updating current time
             t = t + dt;
@@ -464,8 +465,8 @@ void Case::simulate() {
             dt = std::min(dt, precice_dt);
         }
 
+        //Terminating precice
         precice.finalize();
-        delete[] vertexIDs, U, V, P;
 
     } else if (!_em_eq && _energy_eq) {
         if (_rank == 0) {
@@ -577,9 +578,10 @@ void Case::simulate() {
 
         int dim = precice.getDimensions();
         int meshID = precice.getMeshID("EM_Pump-Mesh");
-        int vertexSize=20; // number of vertices at wet surface
+        int vertexSize = _grid.coupled_cells().size(); // number of vertices at wet surface
         // determine vertexSize
-        double *coords = new double[vertexSize * dim]; // coords of coupling vertices
+        std::vector<double> coords(vertexSize * dim); // coords of coupling vertices
+
         int count = 0;
         for (const auto &elem : _grid.coupled_cells()) {
             int i = elem->i() - 1;
@@ -589,21 +591,21 @@ void Case::simulate() {
             coords[count + 1] = j * _grid.dy();
             count += 2;
         }
+
         // determine coordinates
-        int *vertexIDs = new int[vertexSize];
-        precice.setMeshVertices(meshID, vertexSize, coords, vertexIDs);
-        delete[] coords;
+        std::vector<int> vertexIDs(vertexSize);
+        precice.setMeshVertices(meshID, vertexSize, coords.data(), vertexIDs.data());
 
         int U_ID = precice.getDataID("X_Velocity", meshID);
         int V_ID = precice.getDataID("Y_Velocity", meshID);
         int P_ID = precice.getDataID("Pressure", meshID);
-        double *U = new double[vertexSize];
-        double *V = new double[vertexSize];
-        double *P = new double[vertexSize];
+        
+        std::vector<double> U(vertexSize);
+        std::vector<double> V(vertexSize);
+        std::vector<double> P(vertexSize);
 
         // Solve for Potential
         double res = 1000.;
-
         while (res >= 1e-6) {
 
             for (auto &i : _potential_boundaries) {
@@ -633,7 +635,7 @@ void Case::simulate() {
 
         while (precice.isCouplingOngoing()) {
             if (precice.isReadDataAvailable()) {
-                precice.readBlockScalarData(P_ID, vertexSize, vertexIDs, P);
+                precice.readBlockScalarData(P_ID, vertexSize, vertexIDs.data(), P.data());
             }
             // Apply BCs
             for (auto &i : _boundaries) {
@@ -687,7 +689,7 @@ void Case::simulate() {
                     std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
                               << " completed] Writing Data at t=" << t << "s\n";
                 }
-            } 
+            }
 
             // Writing simulation data in a log file
             if (_rank == 0) {
@@ -714,8 +716,8 @@ void Case::simulate() {
                 _field.get_border_U(_grid, U);
                 _field.get_border_V(_grid, V);
 
-                precice.writeBlockScalarData(U_ID, vertexSize, vertexIDs, U);
-                precice.writeBlockScalarData(V_ID, vertexSize, vertexIDs, V);
+                precice.writeBlockScalarData(U_ID, vertexSize, vertexIDs.data(), U.data());
+                precice.writeBlockScalarData(V_ID, vertexSize, vertexIDs.data(), V.data());
             }
             // Updating current time
             t = t + dt;
@@ -727,7 +729,6 @@ void Case::simulate() {
         }
 
         precice.finalize();
-        delete[] vertexIDs, U, V, P;
     }
 
     // Storing values at the last time step
