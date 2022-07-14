@@ -71,10 +71,9 @@ void FixedWallBoundary::apply(Fields &field) {
             if (elem->is_border(border_position::RIGHT)) {
                 field.u(i, j) = 0;
                 field.v(i, elem->neighbour(border_position::BOTTOM)->j()) = 0;
-                field.u(elem->neighbour(border_position::LEFT)->i(), j) = -field.u(
-                    elem->neighbour(border_position::LEFT)->i(), elem->neighbour(border_position::BOTTOM)->j());
+                field.u(elem->neighbour(border_position::LEFT)->i(), j) = - 
+                field.u(elem->neighbour(border_position::LEFT)->i(), elem->neighbour(border_position::BOTTOM)->j());
                 field.v(i, j) = -field.v(elem->neighbour(border_position::RIGHT)->i(), j);
-                2;
             }
 
             // SW corner
@@ -439,7 +438,7 @@ void OutflowBoundary::apply_temperature(Fields &field) const {}
 
 CoupledBoundary::CoupledBoundary(std::vector<Cell *> cells):_cells(cells) {}
 
-void CoupledBoundary::apply_dirichlet_velocity(Fields &field, std::vector<double> U, std::vector<double> V) {
+void CoupledBoundary::apply_dirichlet_velocity(Fields &field, std::vector<double> &U, std::vector<double> &V) {
     for (auto &elem : _cells) {
 
         int i = elem->i();
@@ -463,7 +462,7 @@ void CoupledBoundary::apply_neumann_velocity(Fields &field) {
         }
     }
 }
-void CoupledBoundary::apply_dirichlet_pressure(Fields &field, std::vector<double> P) {
+void CoupledBoundary::apply_dirichlet_pressure(Fields &field, std::vector<double> &P) {
     for (auto &elem : _cells) {
 
         int i = elem->i();

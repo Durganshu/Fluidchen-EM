@@ -78,9 +78,9 @@ class CoupledBoundary{
     public: 
     CoupledBoundary(std::vector<Cell *> cells);
     virtual ~CoupledBoundary() = default;
-    void apply_dirichlet_velocity(Fields &field, std::vector<double> U , std::vector<double> V);
+    void apply_dirichlet_velocity(Fields &field, std::vector<double> &U , std::vector<double> &V);
     void apply_neumann_velocity(Fields &field);
-    void apply_dirichlet_pressure(Fields &field, std::vector<double> P);
+    void apply_dirichlet_pressure(Fields &field, std::vector<double> &P);
     void apply_neumann_pressure(Fields &field);
     
     private:
