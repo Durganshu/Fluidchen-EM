@@ -374,8 +374,8 @@ void Case::simulate() {
         while (precice.isCouplingOngoing()) {
 
             if (precice.isReadDataAvailable()) {
-                precice.readBlockVectorData(U_ID, vertexSize, vertexIDs, U);
-                precice.readBlockVectorData(V_ID, vertexSize, vertexIDs, V);
+                precice.readBlockScalarData(U_ID, vertexSize, vertexIDs, U);
+                precice.readBlockScalarData(V_ID, vertexSize, vertexIDs, V);
             }
             // Apply BCs
             for (auto &i : _boundaries) {
@@ -429,7 +429,7 @@ void Case::simulate() {
                               << " completed] Writing Data at t=" << t << "s\n";
                 }
             }
-
+ 
             // Writing simulation data in a log file
             if (_rank == 0) {
                 output_file << std::left << "Simulation Time[s] = " << std::setw(7) << t
@@ -453,7 +453,7 @@ void Case::simulate() {
 
             if (precice.isWriteDataRequired(dt)) {
                 _field.get_border_P(_grid, P);
-                precice.writeBlockVectorData(P_ID, vertexSize, vertexIDs, P);
+                precice.writeBlockScalarData(P_ID, vertexSize, vertexIDs, P);
             }
             // Updating current time
             t = t + dt;
@@ -633,7 +633,7 @@ void Case::simulate() {
 
         while (precice.isCouplingOngoing()) {
             if (precice.isReadDataAvailable()) {
-                precice.readBlockVectorData(P_ID, vertexSize, vertexIDs, P);
+                precice.readBlockScalarData(P_ID, vertexSize, vertexIDs, P);
             }
             // Apply BCs
             for (auto &i : _boundaries) {
@@ -687,7 +687,7 @@ void Case::simulate() {
                     std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
                               << " completed] Writing Data at t=" << t << "s\n";
                 }
-            }
+            } 
 
             // Writing simulation data in a log file
             if (_rank == 0) {
@@ -714,8 +714,8 @@ void Case::simulate() {
                 _field.get_border_U(_grid, U);
                 _field.get_border_V(_grid, V);
 
-                precice.writeBlockVectorData(U_ID, vertexSize, vertexIDs, U);
-                precice.writeBlockVectorData(V_ID, vertexSize, vertexIDs, V);
+                precice.writeBlockScalarData(U_ID, vertexSize, vertexIDs, U);
+                precice.writeBlockScalarData(V_ID, vertexSize, vertexIDs, V);
             }
             // Updating current time
             t = t + dt;
