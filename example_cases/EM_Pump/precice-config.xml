@@ -4,9 +4,9 @@
 
   <solver-interface dimensions="2">
 
-    <data:vector name="X_Velocity" />
-    <data:vector name="Y_Velocity" />
-    <data:vector name="Pressure" />
+    <data:scalar name="X_Velocity" />
+    <data:scalar name="Y_Velocity" />
+    <data:scalar name="Pressure" />
 
     <mesh name="FluidMesh">
       <use-data name="X_Velocity" />
