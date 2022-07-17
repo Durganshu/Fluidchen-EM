@@ -332,7 +332,7 @@ void Case::simulate() {
 
         if (_rank == 0) std::cout << "ENERGY EQUATION OFF" << std::endl;
 
-        const std::string config_file_name("precice-config.xml");
+        const std::string config_file_name("../example_cases/EM_Pump/precice-config.xml");
         const std::string solver_name("FluidSolver");
         const std::string mesh_name("FluidMesh");
 
