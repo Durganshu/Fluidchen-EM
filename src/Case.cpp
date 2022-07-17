@@ -236,10 +236,13 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
     if (not _grid.lower_potential_cells().empty()) {
         _potential_boundaries.push_back(std::make_unique<PotentialBoundary>(_grid.lower_potential_cells(), temp5));
     }
+
     // Constructing Coupled Boundaries
+    #ifdef PRECICE
     if (not _grid.coupled_cells().empty()) {
         _coupled_boundaries.push_back(std::make_unique<CoupledBoundary>(_grid.coupled_cells()));
     }
+    #endif
 }
 
 void Case::set_file_names(std::string file_name) {
@@ -332,10 +335,11 @@ void Case::simulate() {
 
         if (_rank == 0) std::cout << "ENERGY EQUATION OFF" << std::endl;
 
+        #ifdef PRECICE
         const std::string config_file_name("../example_cases/EM_Pump/precice-config.xml");
         const std::string solver_name("FluidSolver");
         const std::string mesh_name("FluidMesh");
-
+    
         // constructing precice object
         precice::SolverInterface precice(solver_name, config_file_name, _rank, _size);
 
@@ -385,7 +389,9 @@ void Case::simulate() {
         // initializing precice
         double precice_dt = precice.initialize();
         dt = std::min(dt, precice_dt);
+        #endif
 
+        #ifdef PRECICE
         while (precice.isCouplingOngoing()) {
 
             if (precice.isReadDataAvailable()) {
@@ -395,23 +401,29 @@ void Case::simulate() {
                 precice.readBlockScalarData(F1_ID, vertexSize, vertexIDs.data(), F1.data());
                 precice.readBlockScalarData(G1_ID, vertexSize, vertexIDs.data(), G1.data());
             }
+        #else 
+        while (t < _t_end) {
+        #endif
             // Apply BCs
             for (auto &i : _boundaries) {
                 i->apply(_field);
             }
+            #ifdef PRECICE
             for (auto &i : _coupled_boundaries) {
                 i->apply_dirichlet_velocity(_field, U1, V1);
             }
-
+            #endif
+            
             // Calculate Fluxes
             _field.calculate_fluxes(_grid);
             Communication::communicate(_field.f_matrix(), _grid.domain(), _rank);
             Communication::communicate(_field.g_matrix(), _grid.domain(), _rank);
 
+            #ifdef PRECICE
             for (auto &i : _coupled_boundaries) {
                 i->apply_dirichlet_flux(_field, F1, G1);
             }
-
+            #endif
             //  Calculate RHS of PPE
             _field.calculate_rs(_grid);
 
@@ -422,9 +434,13 @@ void Case::simulate() {
                 for (auto &i : _boundaries) {
                     i->apply_pressure(_field);
                 }
+
+                #ifdef PRECICE
                 for (auto &i : _coupled_boundaries) {
                     i->apply_dirichlet_pressure(_field, P1);
                 }
+                #endif
+
                 res = _pressure_solver->solve(_field, _grid, _boundaries); // Local sum
                 res = Communication::reduce_sum(res);                      // Sum reduction over all domains
                 number_fluid_cells = _grid.fluid_cells().size();
@@ -473,6 +489,7 @@ void Case::simulate() {
             }
             counter++;
 
+            #ifdef PRECICE
             if (precice.isWriteDataRequired(dt)) {
                 _field.get_border_U(1, U2);
                 _field.get_border_V(1, V2);
@@ -485,17 +502,26 @@ void Case::simulate() {
                 precice.writeBlockScalarData(F2_ID, vertexSize, vertexIDs.data(), F2.data());
                 precice.writeBlockScalarData(G2_ID, vertexSize, vertexIDs.data(), G2.data());
             }
+            #endif
+
             // Updating current time
             t = t + dt;
+            #ifdef PRECICE
             precice_dt = precice.advance(dt);
+            #endif
+
             //  Calculate Adaptive Time step
             dt = _field.calculate_dt(_grid);
             dt = Communication::reduce_min(dt);
+            #ifdef PRECICE
             dt = std::min(dt, precice_dt);
+            #endif
         }
 
+        #ifdef PRECICE
         //Terminating precice
         precice.finalize();
+        #endif
 
     } else if (!_em_eq && _energy_eq) {
         if (_rank == 0) {
@@ -596,14 +622,13 @@ void Case::simulate() {
 
         if (_rank == 0) std::cout << "ELECTROMAGNETIC EQUATION ON" << std::endl;
 
-        const std::string config_file_name("precice-config.xml");
+        #ifdef PRECICE
+        const std::string config_file_name("../example_cases/EM_Pump/precice-config.xml");
         const std::string solver_name("EM_Solver");
         const std::string mesh_name("EM_Pump-Mesh");
 
         // constructing precice object
         precice::SolverInterface precice(solver_name, config_file_name, _rank, _size);
-
-        if (_rank == 0) std::cout << "ELECTROMAGNETIC EQUATION ON" << std::endl;
 
         int dim = precice.getDimensions();
         int meshID = precice.getMeshID("EM_Pump-Mesh");
@@ -647,6 +672,8 @@ void Case::simulate() {
         std::vector<double> P2(vertexSize);
         std::vector<double> F2(vertexSize);
         std::vector<double> G2(vertexSize);
+        
+        #endif
 
         // Solve for Potential
         double res = 1000.;
@@ -673,6 +700,7 @@ void Case::simulate() {
         Communication::communicate(_field.fx_matrix(), _grid.domain(), _rank);
         Communication::communicate(_field.fy_matrix(), _grid.domain(), _rank);
 
+        #ifdef PRECICE
         // initializing precice
         double precice_dt = precice.initialize();
         dt = std::min(dt, precice_dt);
@@ -685,23 +713,30 @@ void Case::simulate() {
                 precice.readBlockScalarData(F2_ID, vertexSize, vertexIDs.data(), F2.data());
                 precice.readBlockScalarData(G2_ID, vertexSize, vertexIDs.data(), G2.data());
             }
+        #else
+        while (t < _t_end){      
+        #endif
             // Apply BCs
             for (auto &i : _boundaries) {
                 i->apply(_field);
             }
 
+            #ifdef PRECICE
             for (auto &i : _coupled_boundaries) {
                 i->apply_dirichlet_velocity(_field, U2, V2);
             }
+            #endif
 
             // Calculate Fluxes
             _field.calculate_fluxes(_grid, 2);
             Communication::communicate(_field.f_matrix(), _grid.domain(), _rank);
             Communication::communicate(_field.g_matrix(), _grid.domain(), _rank);
 
+            #ifdef PRECICE
             for (auto &i : _coupled_boundaries) {
                 i->apply_dirichlet_flux(_field, F2, G2);
             }
+            #endif 
 
             //  Calculate RHS of PPE
             _field.calculate_rs(_grid);
@@ -713,9 +748,13 @@ void Case::simulate() {
                 for (auto &i : _boundaries) {
                     i->apply_pressure(_field);
                 }
+
+                #ifdef PRECICE
                 for (auto &i : _coupled_boundaries) {
                     i->apply_dirichlet_pressure(_field, P2);
                 }
+                #endif
+
                 res = _pressure_solver->solve(_field, _grid, _boundaries); // Local sum
                 res = Communication::reduce_sum(res);                      // Sum reduction over all domains
                 number_fluid_cells = _grid.fluid_cells().size();
@@ -763,7 +802,8 @@ void Case::simulate() {
                 if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0);
             }
             counter++;
-
+            
+            #ifdef PRECICE
             if (precice.isWriteDataRequired(dt)) {
                 _field.get_border_U(_grid.imax(), U1);
                 _field.get_border_U(_grid.imax(), U1);
@@ -778,16 +818,27 @@ void Case::simulate() {
                 precice.writeBlockScalarData(F1_ID, vertexSize, vertexIDs.data(), F1.data());
                 precice.writeBlockScalarData(G1_ID, vertexSize, vertexIDs.data(), G1.data());
             }
+            #endif
+
             // Updating current time
             t = t + dt;
+
+            #ifdef PRECICE
             precice_dt = precice.advance(dt);
+            #endif
+
             //  Calculate Adaptive Time step
             dt = _field.calculate_dt(_grid);
             dt = Communication::reduce_min(dt);
+
+            #ifdef PRECICE
             dt = std::min(dt, precice_dt);
+            #endif
         }
 
+        #ifdef PRECICE
         precice.finalize();
+        #endif
     }
 
     // Storing values at the last time step

@@ -18,6 +18,9 @@ SET( CMAKE_CXX_FLAGS_DEBUG " -pg -g" )
 # flags for the compiler in release mode
 SET( CMAKE_CXX_FLAGS_RELEASE " -O3 -s -DNDEBUG" )
 
+# flags for the compiler in precice mode
+SET( CMAKE_CXX_FLAGS_PRECICE " -O3 -s -DPRECICE" )
+
 IF( NOT CMAKE_BUILD_TYPE )
   SET( CMAKE_BUILD_TYPE RELEASE )
 ENDIF()
