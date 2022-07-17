@@ -486,3 +486,14 @@ void CoupledBoundary::apply_neumann_pressure(Fields &field) {
         }
     }
 }
+
+void CoupledBoundary::apply_dirichlet_flux(Fields &field, std::vector<double> &F, std::vector<double> &G) {
+    for (auto &elem : _cells) {
+
+        int i = elem->i();
+        int j = elem->j();
+
+        field.f(i, j) = F[j - 1];
+        field.g(i, j) = G[j - 1];
+    }
+}

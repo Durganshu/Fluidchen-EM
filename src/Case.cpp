@@ -360,13 +360,27 @@ void Case::simulate() {
         std::vector<int> vertexIDs(vertexSize);
         precice.setMeshVertices(meshID, vertexSize, coords.data(), vertexIDs.data());
 
-        int U_ID = precice.getDataID("X_Velocity", meshID);
-        int V_ID = precice.getDataID("Y_Velocity", meshID);
-        int P_ID = precice.getDataID("Pressure", meshID);
+        int U1_ID = precice.getDataID("X_Velocity1", meshID);
+        int V1_ID = precice.getDataID("Y_Velocity1", meshID);
+        int P1_ID = precice.getDataID("Pressure1", meshID);
+        int F1_ID = precice.getDataID("X_Flux1", meshID);
+        int G1_ID = precice.getDataID("Y_Flux1", meshID);
+        int U2_ID = precice.getDataID("X_Velocity2", meshID);
+        int V2_ID = precice.getDataID("Y_Velocity2", meshID);
+        int P2_ID = precice.getDataID("Pressure2", meshID);
+        int F2_ID = precice.getDataID("X_Flux2", meshID);
+        int G2_ID = precice.getDataID("Y_Flux2", meshID);
 
-        std::vector<double> U(vertexSize);
-        std::vector<double> V(vertexSize);
-        std::vector<double> P(vertexSize);
+        std::vector<double> U1(vertexSize);
+        std::vector<double> V1(vertexSize);
+        std::vector<double> P1(vertexSize);
+        std::vector<double> F1(vertexSize);
+        std::vector<double> G1(vertexSize);
+        std::vector<double> U2(vertexSize);
+        std::vector<double> V2(vertexSize);
+        std::vector<double> P2(vertexSize);
+        std::vector<double> F2(vertexSize);
+        std::vector<double> G2(vertexSize);
 
         // initializing precice
         double precice_dt = precice.initialize();
@@ -375,21 +389,28 @@ void Case::simulate() {
         while (precice.isCouplingOngoing()) {
 
             if (precice.isReadDataAvailable()) {
-                precice.readBlockScalarData(U_ID, vertexSize, vertexIDs.data(), U.data());
-                precice.readBlockScalarData(V_ID, vertexSize, vertexIDs.data(), V.data());
+                precice.readBlockScalarData(U1_ID, vertexSize, vertexIDs.data(), U1.data());
+                precice.readBlockScalarData(V1_ID, vertexSize, vertexIDs.data(), V1.data());
+                precice.readBlockScalarData(P1_ID, vertexSize, vertexIDs.data(), P1.data());
+                precice.readBlockScalarData(F1_ID, vertexSize, vertexIDs.data(), F1.data());
+                precice.readBlockScalarData(G1_ID, vertexSize, vertexIDs.data(), G1.data());
             }
             // Apply BCs
             for (auto &i : _boundaries) {
                 i->apply(_field);
             }
             for (auto &i : _coupled_boundaries) {
-                i->apply_dirichlet_velocity(_field, U, V);
+                i->apply_dirichlet_velocity(_field, U1, V1);
             }
 
             // Calculate Fluxes
             _field.calculate_fluxes(_grid);
             Communication::communicate(_field.f_matrix(), _grid.domain(), _rank);
             Communication::communicate(_field.g_matrix(), _grid.domain(), _rank);
+
+            for (auto &i : _coupled_boundaries) {
+                i->apply_dirichlet_flux(_field, F1, G1);
+            }
 
             //  Calculate RHS of PPE
             _field.calculate_rs(_grid);
@@ -402,7 +423,7 @@ void Case::simulate() {
                     i->apply_pressure(_field);
                 }
                 for (auto &i : _coupled_boundaries) {
-                    i->apply_neumann_pressure(_field);
+                    i->apply_dirichlet_pressure(_field, P1);
                 }
                 res = _pressure_solver->solve(_field, _grid, _boundaries); // Local sum
                 res = Communication::reduce_sum(res);                      // Sum reduction over all domains
@@ -453,8 +474,16 @@ void Case::simulate() {
             counter++;
 
             if (precice.isWriteDataRequired(dt)) {
-                _field.get_border_P(_grid, P);
-                precice.writeBlockScalarData(P_ID, vertexSize, vertexIDs.data(), P.data());
+                _field.get_border_U(1, U2);
+                _field.get_border_V(1, V2);
+                _field.get_border_P(1, P2);
+                _field.get_border_F(1, F2);
+                _field.get_border_G(1, G2);
+                precice.writeBlockScalarData(U2_ID, vertexSize, vertexIDs.data(), U2.data());
+                precice.writeBlockScalarData(V2_ID, vertexSize, vertexIDs.data(), V2.data());
+                precice.writeBlockScalarData(P2_ID, vertexSize, vertexIDs.data(), P2.data());
+                precice.writeBlockScalarData(F2_ID, vertexSize, vertexIDs.data(), F2.data());
+                precice.writeBlockScalarData(G2_ID, vertexSize, vertexIDs.data(), G2.data());
             }
             // Updating current time
             t = t + dt;
@@ -596,13 +625,28 @@ void Case::simulate() {
         std::vector<int> vertexIDs(vertexSize);
         precice.setMeshVertices(meshID, vertexSize, coords.data(), vertexIDs.data());
 
-        int U_ID = precice.getDataID("X_Velocity", meshID);
-        int V_ID = precice.getDataID("Y_Velocity", meshID);
-        int P_ID = precice.getDataID("Pressure", meshID);
+        int U1_ID = precice.getDataID("X_Velocity1", meshID);
+        int V1_ID = precice.getDataID("Y_Velocity1", meshID);
+        int P1_ID = precice.getDataID("Pressure1", meshID);
+        int F1_ID = precice.getDataID("X_Flux1", meshID);
+        int G1_ID = precice.getDataID("Y_Flux1", meshID);
+        int U2_ID = precice.getDataID("X_Velocity2", meshID);
+        int V2_ID = precice.getDataID("Y_Velocity2", meshID);
+        int P2_ID = precice.getDataID("Pressure2", meshID);
+        int F2_ID = precice.getDataID("X_Flux2", meshID);
+        int G2_ID = precice.getDataID("Y_Flux2", meshID);
+
         
-        std::vector<double> U(vertexSize);
-        std::vector<double> V(vertexSize);
-        std::vector<double> P(vertexSize);
+        std::vector<double> U1(vertexSize);
+        std::vector<double> V1(vertexSize);
+        std::vector<double> P1(vertexSize);
+        std::vector<double> F1(vertexSize);
+        std::vector<double> G1(vertexSize);
+        std::vector<double> U2(vertexSize);
+        std::vector<double> V2(vertexSize);
+        std::vector<double> P2(vertexSize);
+        std::vector<double> F2(vertexSize);
+        std::vector<double> G2(vertexSize);
 
         // Solve for Potential
         double res = 1000.;
@@ -635,7 +679,11 @@ void Case::simulate() {
 
         while (precice.isCouplingOngoing()) {
             if (precice.isReadDataAvailable()) {
-                precice.readBlockScalarData(P_ID, vertexSize, vertexIDs.data(), P.data());
+                precice.readBlockScalarData(U2_ID, vertexSize, vertexIDs.data(), U2.data());
+                precice.readBlockScalarData(V2_ID, vertexSize, vertexIDs.data(), V2.data());
+                precice.readBlockScalarData(P2_ID, vertexSize, vertexIDs.data(), P2.data());
+                precice.readBlockScalarData(F2_ID, vertexSize, vertexIDs.data(), F2.data());
+                precice.readBlockScalarData(G2_ID, vertexSize, vertexIDs.data(), G2.data());
             }
             // Apply BCs
             for (auto &i : _boundaries) {
@@ -643,13 +691,17 @@ void Case::simulate() {
             }
 
             for (auto &i : _coupled_boundaries) {
-                i->apply_neumann_velocity(_field);
+                i->apply_dirichlet_velocity(_field, U2, V2);
             }
 
             // Calculate Fluxes
             _field.calculate_fluxes(_grid, 2);
             Communication::communicate(_field.f_matrix(), _grid.domain(), _rank);
             Communication::communicate(_field.g_matrix(), _grid.domain(), _rank);
+
+            for (auto &i : _coupled_boundaries) {
+                i->apply_dirichlet_flux(_field, F2, G2);
+            }
 
             //  Calculate RHS of PPE
             _field.calculate_rs(_grid);
@@ -662,7 +714,7 @@ void Case::simulate() {
                     i->apply_pressure(_field);
                 }
                 for (auto &i : _coupled_boundaries) {
-                    i->apply_dirichlet_pressure(_field, P);
+                    i->apply_dirichlet_pressure(_field, P2);
                 }
                 res = _pressure_solver->solve(_field, _grid, _boundaries); // Local sum
                 res = Communication::reduce_sum(res);                      // Sum reduction over all domains
@@ -713,11 +765,18 @@ void Case::simulate() {
             counter++;
 
             if (precice.isWriteDataRequired(dt)) {
-                _field.get_border_U(_grid, U);
-                _field.get_border_V(_grid, V);
+                _field.get_border_U(_grid.imax(), U1);
+                _field.get_border_U(_grid.imax(), U1);
+                _field.get_border_V(_grid.imax(), V1);
+                _field.get_border_P(_grid.imax(), P1);
+                _field.get_border_F(_grid.imax(), F1);
+                _field.get_border_G(_grid.imax(), G1);
 
-                precice.writeBlockScalarData(U_ID, vertexSize, vertexIDs.data(), U.data());
-                precice.writeBlockScalarData(V_ID, vertexSize, vertexIDs.data(), V.data());
+                precice.writeBlockScalarData(U1_ID, vertexSize, vertexIDs.data(), U1.data());
+                precice.writeBlockScalarData(V1_ID, vertexSize, vertexIDs.data(), V1.data());
+                precice.writeBlockScalarData(P1_ID, vertexSize, vertexIDs.data(), P1.data());
+                precice.writeBlockScalarData(F1_ID, vertexSize, vertexIDs.data(), F1.data());
+                precice.writeBlockScalarData(G1_ID, vertexSize, vertexIDs.data(), G1.data());
             }
             // Updating current time
             t = t + dt;

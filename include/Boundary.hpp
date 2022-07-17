@@ -82,6 +82,7 @@ class CoupledBoundary{
     void apply_neumann_velocity(Fields &field);
     void apply_dirichlet_pressure(Fields &field, std::vector<double> &P);
     void apply_neumann_pressure(Fields &field);
+    void apply_dirichlet_flux(Fields &field, std::vector<double> &F, std::vector<double> &G);
     
     private:
     std::vector<Cell *> _cells;

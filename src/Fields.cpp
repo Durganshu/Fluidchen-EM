@@ -512,22 +512,35 @@ Matrix<double> &Fields::fy_matrix() { return _Fy; }
 
 double Fields::dt() const { return _dt; }
 
-void Fields::get_border_U(Grid &grid, std::vector<double> &U) {
-    std::vector<double> temp = _U.get_col(grid.jmax());
+void Fields::get_border_U(int col, std::vector<double> &U) {
+    std::vector<double> temp = _U.get_col(col);
     for (int i = 0; i < U.size(); i++) {
         U[i] = temp[i + 1];
     }
 }
-void Fields::get_border_V(Grid &grid, std::vector<double> &V) {
-    std::vector<double> temp = _V.get_col(grid.jmax());
+void Fields::get_border_V(int col, std::vector<double> &V) {
+    std::vector<double> temp = _V.get_col(col);
     for (int i = 0; i < V.size(); i++) {
         V[i] = temp[i + 1];
     }
 }
-void Fields::get_border_P(Grid &grid, std::vector<double> &P) {
-    std::vector<double> temp = _P.get_col(grid.jmax());
+void Fields::get_border_P(int col, std::vector<double> &P) {
+    std::vector<double> temp = _P.get_col(col);
     for (int i = 0; i < P.size(); i++) {
         P[i] = temp[i + 1];
+    }
+}
+
+void Fields::get_border_F(int col, std::vector<double> &F) {
+    std::vector<double> temp = _F.get_col(col);
+    for (int i = 0; i < F.size(); i++) {
+        F[i] = temp[i + 1];
+    }
+}
+void Fields::get_border_G(int col, std::vector<double> &G) {
+    std::vector<double> temp = _G.get_col(col);
+    for (int i = 0; i < G.size(); i++) {
+        G[i] = temp[i + 1];
     }
 }
 
