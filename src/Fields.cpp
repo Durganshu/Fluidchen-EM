@@ -391,6 +391,20 @@ void Fields::calculate_fluxes(Grid &grid, int eq_type) {
             _F(elem->neighbour(border_position::RIGHT)->i(), j) = _U(elem->neighbour(border_position::RIGHT)->i(), j);
         }
     }
+
+    //Flux setup for coupled cells
+    // for (auto &elem : grid.coupled_cells()) {
+    //     int i = elem->i();
+    //     int j = elem->j();
+
+    //     if(elem->is_border(border_position::LEFT)){
+    //         _F(elem->neighbour(border_position::LEFT)->i(), j) = _U(elem->neighbour(border_position::LEFT)->i(), j);
+            
+    //     }
+    //     else{
+    //          _F(i, j) = _U(i, j);
+    //     }
+    // }
 }
 
 void Fields::calculate_rs(Grid &grid) {
@@ -513,21 +527,32 @@ Matrix<double> &Fields::fy_matrix() { return _Fy; }
 double Fields::dt() const { return _dt; }
 
 void Fields::get_border_U(Grid &grid, std::vector<double> &U) {
-    std::vector<double> temp = _U.get_col(grid.jmax());
+    std::vector<double> temp = _U.get_col(grid.imax());
     for (int i = 0; i < U.size(); i++) {
         U[i] = temp[i + 1];
     }
 }
 void Fields::get_border_V(Grid &grid, std::vector<double> &V) {
-    std::vector<double> temp = _V.get_col(grid.jmax());
+    std::vector<double> temp = _V.get_col(grid.imax());
     for (int i = 0; i < V.size(); i++) {
         V[i] = temp[i + 1];
     }
 }
 void Fields::get_border_P(Grid &grid, std::vector<double> &P) {
-    std::vector<double> temp = _P.get_col(grid.jmax());
+    std::vector<double> temp = _P.get_col(1);
     for (int i = 0; i < P.size(); i++) {
         P[i] = temp[i + 1];
     }
 }
-
+void Fields::get_border_F(Grid &grid, std::vector<double> &F) {
+    std::vector<double> temp = _F.get_col(grid.imax());
+    for (int i = 0; i < F.size(); i++) {
+        F[i] = temp[i + 1];
+    }
+}
+void Fields::get_border_G(Grid &grid, std::vector<double> &G) {
+    std::vector<double> temp = _G.get_col(grid.imax());
+    for (int i = 0; i < G.size(); i++) {
+        G[i] = temp[i + 1];
+    }
+}

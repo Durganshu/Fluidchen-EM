@@ -486,3 +486,29 @@ void CoupledBoundary::apply_neumann_pressure(Fields &field) {
         }
     }
 }
+
+void CoupledBoundary::apply_dirichlet_flux(Fields &field, std::vector<double> &F, std::vector<double> &G){
+    for (auto &elem : _cells) {
+
+        int i = elem->i();
+        int j = elem->j();
+
+        field.f(i, j) = F[j - 1];
+        field.g(i, j) = G[j - 1];
+    }
+}
+
+void CoupledBoundary::apply_neumann_flux(Fields &field){
+    for (auto &elem : _cells) {
+
+        int i = elem->i();
+        int j = elem->j();
+        if (elem->is_border(border_position::LEFT)) {
+            field.f(i, j) = field.u(elem->neighbour(border_position::LEFT)->i(), j);
+            field.g(i, j) = field.v(elem->neighbour(border_position::LEFT)->i(), j);
+        } else {
+            field.f(i, j) = field.u(elem->neighbour(border_position::RIGHT)->i(), j);
+            field.g(i, j) = field.v(elem->neighbour(border_position::RIGHT)->i(), j);
+        }
+    }
+}
