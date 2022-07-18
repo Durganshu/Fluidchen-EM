@@ -61,6 +61,8 @@ class Case {
 
     /// Simulation time
     double _t_end;
+    /// Time interval where the EM force is ramped 
+    double _ramp_dt;
     /// Solution file outputting frequency
     double _output_freq;
     Fields _field;

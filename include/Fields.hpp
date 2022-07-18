@@ -67,6 +67,11 @@ class Fields {
     Fields(double _nu, double _dt, double _tau, double _k, double _rho, double _Bz, double UI, double VI, double PI,
            double GX, double GY, Grid &grid);
 
+    /// Elapsed time
+    double elapsed_t;
+    /// Ramp time interval
+    double ramp_dt;
+
     /**
      * @brief Calculates the temperature based on explicit discretization of energy
      * equations

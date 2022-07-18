@@ -78,7 +78,7 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
     double phi1; /* Potential at Electrode 1*/
     double phi2; /* Potential at Electrode 2*/
     double Bz;   /* Magnetic Flux Density Perpendicular to Simulation Plane*/
-
+    
     if (file.is_open()) {
 
         std::string var;
@@ -125,6 +125,7 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
                     file >> temp;
                     if (temp == "on") _em_eq = true;
                 }
+                if (var == "ramp_dt") file >> _ramp_dt;
                 if (var == "v1") file >> phi1;
                 if (var == "v2") file >> phi2;
                 if (var == "k") file >> k;
@@ -520,12 +521,7 @@ void Case::simulate() {
 
         // Calculate Electric Fields
         _field.calculate_electric_fields(_grid);
-        // std::ofstream ex_log;
-        // ex_log.open("EX_LOG_FILE.log");
-        // for (int i=0; i<_grid.imax()+2;i++)
-        //     {
-        //         for(int j=0; j<_grid.jmax()+2; j++)
-        //         {
+        // std::ofstream,t,ramp_dt
         //             ex_log<<_field.ex(i,j)<<" ";
         //         }
         //         ex_log<<std::endl;
@@ -547,6 +543,30 @@ void Case::simulate() {
         // Calculate Forces
         _field.calculate_em_forces(_grid);
 
+        // std::ofstream fy_log;
+        // fy_log.open("fY_LOG_FILE.log");
+        // for (int j=0; j<_grid.jmax()+2;j++)
+        //     {
+        //         for(int i=0; i<_grid.imax()+2; i++)
+        //         {
+        //             fy_log<<_field.fy(i,j)<<" ";
+        //         }
+        //         fy_log<<std::endl;
+        //     }
+        // fy_log.close();
+        // std::ofstream fx_log;
+        // fx_log.open("fx_LOG_FILE.log");
+        // for (int j=0; j<_grid.jmax()+2;j++)
+        //     {
+        //         for(int i=0; i<_grid.imax()+2; i++)
+        //         {
+        //             fx_log<<_field.fx(i,j)<<" ";
+        //         }
+        //         fx_log<<std::endl;
+        //     }
+        // fx_log.close();
+
+
         while (t < _t_end) {
             //std::cout<<"entered simulation loop for EM case \n";
             // Apply BCs
@@ -555,6 +575,8 @@ void Case::simulate() {
             }
             //std::cout<<"applied BC \n";
             // Calculate Fluxes
+            _field.elapsed_t=t;
+            _field.ramp_dt=_ramp_dt;
             _field.calculate_fluxes(_grid, 2);
             Communication::communicate(_field.f_matrix(), _grid.domain(), _rank);
             Communication::communicate(_field.g_matrix(), _grid.domain(), _rank);
