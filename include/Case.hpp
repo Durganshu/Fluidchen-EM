@@ -3,7 +3,11 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <mpi.h>
 
+#ifdef PRECICE
+#include <precice/SolverInterface.hpp>
+#endif
 
 #include "Boundary.hpp"
 #include "Discretization.hpp"
@@ -78,6 +82,9 @@ class Case {
 
     /// Set to true to enable energy equations
     bool _energy_eq = false;
+
+    /// Input Temperature
+    double _TI;
 
     /// Set to true to enable electro-magnetic equations
     bool _em_eq = false;

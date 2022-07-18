@@ -45,6 +45,15 @@ Fields::Fields(Grid &grid, double nu, double dt, double tau, double alpha, doubl
         _P(i, j) = PI;
         _T(i, j) = TI;
     }
+    for (const auto &elem : grid.coupled_cells()) {
+        int i = elem->i();
+        int j = elem->j();
+
+        _U(i, j) = UI;
+        _V(i, j) = VI;
+        _P(i, j) = PI;
+        _T(i, j) = TI;
+    }
 }
 
 Fields::Fields(double nu, double dt, double tau, double k, double rho, double Bz, double UI, double VI, double PI,
@@ -103,8 +112,8 @@ void Fields::calculate_fluxes(Grid &grid, int eq_type) {
                                          Discretization::convection_v(_U, _V, i, j) + _gy);
 
             if (eq_type == 1) {
-                _F(i, j) -= (_gx * _dt * (_beta * 0.5 * (_T(i, j) + _T(i + 1, j))) + _dt * _gx);
-                _G(i, j) -= (_gy * _dt * (_beta * 0.5 * (_T(i, j) + _T(i, j + 1))) + _dt * _gy);
+                _F(i, j) -= (_gx * _dt * (_beta * 0.5 * (_T(i, j) + _T(i + 1, j)) + 1));
+                _G(i, j) -= (_gy * _dt * (_beta * 0.5 * (_T(i, j) + _T(i, j + 1)) + 1));
             }
 
             if (eq_type == 2) {

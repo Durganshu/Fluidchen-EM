@@ -1,0 +1,97 @@
+#--------------------------------------------
+#           geometry file            
+#--------------------------------------------
+geo_file     EM_Pump.pgm
+
+#--------------------------------------------
+#            size of the domain             
+#--------------------------------------------
+xlength      10
+ylength      2
+
+#--------------------------------------------
+#            number of cells
+#--------------------------------------------
+imax         100
+jmax         20
+
+#--------------------------------------------
+#        number of parallel regions             
+#--------------------------------------------
+x      1
+y      1
+
+#--------------------------------------------
+#               time steps
+# dt: time step size
+# tau: safety factor for time step size control
+#--------------------------------------------
+dt           0.00005
+tau          0.5
+t_end	     0.1
+
+#--------------------------------------------
+#               output
+# dt_value: time interval for writing files
+#--------------------------------------------
+dt_value     0.0005
+
+#--------------------------------------------
+#               pressure
+# itermax: maximum number of pressure iterations
+# eps: tolerance for pressure iteration (residual < eps)
+# omg: relaxation factor for SOR
+# gamma: upwind differencing factor
+#--------------------------------------------
+itermax      5000
+eps          0.0001
+omg          1.7
+gamma        0.5
+
+#--------------------------------------------
+#      fluid properties
+# k: electric conductivity
+# rho: density
+# nu: kinematic viscosity
+#--------------------------------------------
+k            3.5e6
+rho          828
+nu           27.42
+
+#--------------------------------------------
+#        boundary conditions
+# em_eq: set to on for electromagnetic equations
+# v1: potential on electrode 1
+# v2: potential on electrode 2
+# Bz: magentic field perpendicular to simulation plane
+# UIN: Inlet velocity in x-direction
+# VIN: Inlet velocity in y-direction
+#--------------------------------------------
+em_eq        on
+v1           10.0
+v2           -10.0
+Bz           -1e-4
+#UIN          0.0
+#VIN          0.0
+
+#--------------------------------------------
+#        precice settings
+# couple: set to on for coupling using precice
+#--------------------------------------------
+couple     on
+
+#--------------------------------------------
+#        gravity / external forces
+#--------------------------------------------
+GX           0.0
+GY           0.0
+
+#--------------------------------------------
+#         initial conditions
+# PI: initial pressure
+# UI: initial x-velocity
+# VI: initial y-velocity
+#--------------------------------------------
+PI           0.0
+UI           0.0
+VI           0.0

@@ -67,21 +67,22 @@ GY           -9.81
 PI           0.0
 UI           0.0
 VI           0.0
+
 #--------------------------------------------
 #          energy
-# TI:     initial temperature
+# TI:     initial and inlet temperature
 # beta:   thermal expansion coefficient
 # alpha:  thermal diffusivity (nu/Pr)
 #--------------------------------------------
 energy_eq    on
-TI           293
-beta         0.00179
-alpha        0.00000237
+TI           750
+beta         0.00063
+alpha        6.87e-5
 
 #--------------------------------------------
 #          wall clusterss
 # wall_temp_3       cold wall temperature
 # wall_temp_4       hot wall temperature
 #--------------------------------------------
-wall_temp_3  491.20
-wall_temp_4  494.78
+wall_temp_3  748
+wall_temp_4  752

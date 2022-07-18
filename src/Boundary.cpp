@@ -378,6 +378,9 @@ void MovingWallBoundary::apply_temperature(Fields &field) const {}
 InflowBoundary::InflowBoundary(std::vector<Cell *> cells, double inflow_x_velocity, double inflow_y_velocity)
     : _cells(cells), _x_velocity(inflow_x_velocity), _y_velocity(inflow_y_velocity) {}
 
+InflowBoundary::InflowBoundary(std::vector<Cell *> cells, double inflow_x_velocity, double inflow_y_velocity, double T_in)
+    : _cells(cells), _x_velocity(inflow_x_velocity), _y_velocity(inflow_y_velocity), _T(T_in) {}
+
 void InflowBoundary::apply(Fields &field) {
     for (auto &elem : _cells) {
         int i = elem->i();
@@ -397,7 +400,15 @@ void InflowBoundary::apply_pressure(Fields &field) {
 }
 
 // Temperature BC for inflow is not in the scope of this worksheet so the function is kept as a dummy.
-void InflowBoundary::apply_temperature(Fields &field) const {}
+void InflowBoundary::apply_temperature(Fields &field) const {
+    for (auto &elem : _cells) {
+
+        int i = elem->i();
+        int j = elem->j();
+    
+        field.t(i,j) = _T;
+    }
+}
 
 OutflowBoundary::OutflowBoundary(std::vector<Cell *> cells, double outlet_pressure)
     : _cells(cells), _pressure(outlet_pressure) {}
@@ -434,7 +445,19 @@ void OutflowBoundary::apply_pressure(Fields &field) {
 }
 
 // Temperature BC for outflow is not in the scope of this worksheet so the function is kept as a dummy.
-void OutflowBoundary::apply_temperature(Fields &field) const {}
+void OutflowBoundary::apply_temperature(Fields &field) const {
+    for(const auto &elem : _cells)
+    {
+        int i = elem->i();
+        int j = elem->j();
+        
+        if (elem->is_border(border_position::LEFT)) {
+            field.t(i, j) = field.t(elem->neighbour(border_position::LEFT)->i(), j);
+        } else {
+            field.t(i, j) = field.t(elem->neighbour(border_position::RIGHT)->i(), j);
+        }
+    }
+}
 
 CoupledBoundary::CoupledBoundary(std::vector<Cell *> cells):_cells(cells) {}
 
@@ -495,5 +518,15 @@ void CoupledBoundary::apply_dirichlet_flux(Fields &field, std::vector<double> &F
 
         field.f(i, j) = F[j - 1];
         field.g(i, j) = G[j - 1];
+    }
+}
+
+void CoupledBoundary::apply_temperature(Fields &field, double T_in){
+    for( const auto &elem: _cells)
+    {
+        int i = elem->i();
+        int j = elem->j();
+
+        field.t(i,j) = T_in;
     }
 }

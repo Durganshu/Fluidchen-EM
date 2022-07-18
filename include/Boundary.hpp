@@ -83,6 +83,7 @@ class CoupledBoundary{
     void apply_dirichlet_pressure(Fields &field, std::vector<double> &P);
     void apply_neumann_pressure(Fields &field);
     void apply_dirichlet_flux(Fields &field, std::vector<double> &F, std::vector<double> &G);
+    void apply_temperature(Fields &field, double T_in);
     
     private:
     std::vector<Cell *> _cells;
@@ -95,6 +96,7 @@ class CoupledBoundary{
 class InflowBoundary : public Boundary {
   public:
     InflowBoundary(std::vector<Cell *> cells, double inflow_x_velocity, double inflow_y_velocity);
+    InflowBoundary(std::vector<Cell *> cells, double inflow_x_velocity, double inflow_y_velocity, double T_in);
     virtual ~InflowBoundary() = default;
     virtual void apply(Fields &field);
     virtual void apply_pressure(Fields &field);
@@ -104,6 +106,7 @@ class InflowBoundary : public Boundary {
     std::vector<Cell *> _cells;
     double _x_velocity;
     double _y_velocity;
+    double _T;
     
 };
 
