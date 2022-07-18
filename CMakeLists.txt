@@ -4,6 +4,8 @@ cmake_minimum_required(VERSION 3.0)
 # Definition of the Project
 project(FLUIDCHEN_EM VERSION 1.0)
 
+set(CMAKE_CONFIGURATION_TYPES DEBUG RELEASE PRECICE)
+
 # Define all configuration options
 option(gpp9 "compile with gpp9 filesystem" ON)
 
@@ -38,11 +40,6 @@ target_compile_definitions(fluidchen_em PUBLIC -Dsolution_parallelization)
 
 # find_package(MPI)
 find_package(MPI REQUIRED)
-# if( CMAKE_BUILD_TYPE EQUAL PRECICE)
-# find_package(precice REQUIRED CONFIG)
-# message (STATUS "FOUND PREICE")
-# endif()
-find_package(precice REQUIRED CONFIG)
 # VTK Library
 find_package(VTK REQUIRED)
 message (STATUS "VTK_VERSION: ${VTK_VERSION}")
@@ -61,6 +58,12 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   endif()
 endif()
 
+if( CMAKE_BUILD_TYPE STREQUAL PRECICE)
+  find_package(precice REQUIRED CONFIG)
+  message ("FOUND PRECICE")
+  target_link_libraries(fluidchen_em PRIVATE precice::precice)
+endif()
+
 # Add include directory
 target_include_directories(fluidchen_em PUBLIC include)
 
@@ -70,7 +73,6 @@ endif()
 
 target_link_libraries(fluidchen_em PRIVATE MPI::MPI_CXX)
 target_link_libraries(fluidchen_em PRIVATE ${VTK_LIBRARIES})
-target_link_libraries(fluidchen_em PRIVATE precice::precice)
 
 install(TARGETS fluidchen_em DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
