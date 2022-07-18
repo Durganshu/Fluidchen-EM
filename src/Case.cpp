@@ -566,7 +566,7 @@ void Case::simulate() {
         //     }
         // fx_log.close();
 
-
+        _field.ramp_dt=_ramp_dt;
         while (t < _t_end) {
             //std::cout<<"entered simulation loop for EM case \n";
             // Apply BCs
@@ -576,7 +576,7 @@ void Case::simulate() {
             //std::cout<<"applied BC \n";
             // Calculate Fluxes
             _field.elapsed_t=t;
-            _field.ramp_dt=_ramp_dt;
+            
             _field.calculate_fluxes(_grid, 2);
             Communication::communicate(_field.f_matrix(), _grid.domain(), _rank);
             Communication::communicate(_field.g_matrix(), _grid.domain(), _rank);
