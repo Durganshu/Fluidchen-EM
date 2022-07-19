@@ -91,7 +91,7 @@ class Case {
 
     /// Coupling variable
     bool _couple = false;
-
+    
     /// Parallelizing variables
     int _rank = 0;
     int _iproc=1;
