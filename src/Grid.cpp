@@ -106,6 +106,10 @@ void Grid::assign_cell_types(std::vector<std::vector<int>> &geometry_data) {
                 if (!isBuffer) _lower_potential_cells.push_back(&_cells(i, j));
                 if (!isBuffer) _fixed_wall_cells.push_back(&_cells(i, j));
             }
+            else if(geometry_data.at(i_geom).at(j_geom) == 9){
+                _cells(i, j) = Cell(i, j, cell_type::FLUID, geometry_data.at(i_geom).at(j_geom));
+                if (!isBuffer) _coupled_cells.push_back(&_cells(i, j));
+            }
             ++i;
         }
         ++j;
@@ -388,3 +392,5 @@ const std::vector<Cell *> &Grid::adiabatic_fixed_wall_cells() const { return _ad
 const std::vector<Cell *> &Grid::higher_potential_cells() const { return _higher_potential_cells; }
 
 const std::vector<Cell *> &Grid::lower_potential_cells() const { return _lower_potential_cells; }
+
+const std::vector<Cell *> &Grid::coupled_cells() const { return _coupled_cells; }

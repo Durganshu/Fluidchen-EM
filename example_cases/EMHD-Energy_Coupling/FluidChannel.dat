@@ -1,13 +1,19 @@
 #--------------------------------------------
 #           geometry file            
 #--------------------------------------------
-geo_file     EM_Pump.pgm
+geo_file     FluidChannel.pgm
 
 #--------------------------------------------
 #            size of the domain             
 #--------------------------------------------
 xlength      10
 ylength      2
+
+#--------------------------------------------
+#            offset from origin            
+#--------------------------------------------
+x_offset     4.9
+y_offset      0
 
 #--------------------------------------------
 #            number of cells
@@ -28,13 +34,13 @@ y      1
 #--------------------------------------------
 dt           0.00005
 tau          0.5
-t_end	     0.1
+t_end        0.5
 
 #--------------------------------------------
 #               output
 # dt_value: time interval for writing files
 #--------------------------------------------
-dt_value     0.0005
+dt_value     0.001
 
 #--------------------------------------------
 #               pressure
@@ -43,42 +49,15 @@ dt_value     0.0005
 # omg: relaxation factor for SOR
 # gamma: upwind differencing factor
 #--------------------------------------------
-itermax      5000
+itermax      500
 eps          0.001
 omg          1.7
 gamma        0.5
 
 #--------------------------------------------
-#      fluid properties
-# k: electric conductivity
-# rho: density
-# nu: kinematic viscosity
+#     kinematic viscosity
 #--------------------------------------------
-k            3.5e6
-rho          828
 nu           27.42
-
-#--------------------------------------------
-#        boundary conditions
-# em_eq: set to on for electromagnetic equations
-# v1: potential on electrode 1
-# v2: potential on electrode 2
-# Bz: magentic field perpendicular to simulation plane
-# UIN: Inlet velocity in x-direction
-# VIN: Inlet velocity in y-direction
-#--------------------------------------------
-em_eq        on
-v1           10.0
-v2           -10.0
-Bz           -1e-4
-#UIN          0.0
-#VIN          0.0
-
-#--------------------------------------------
-#        precice settings
-# couple: set to on for coupling using precice
-#--------------------------------------------
-couple     on
 
 #--------------------------------------------
 #        gravity / external forces
@@ -95,3 +74,22 @@ GY           0.0
 PI           0.0
 UI           0.0
 VI           0.0
+
+#--------------------------------------------
+#          energy
+# TI:     initial and inlet temperature
+# beta:   thermal expansion coefficient
+# alpha:  thermal diffusivity (nu/Pr)
+#--------------------------------------------
+energy_eq    on
+TI           750
+beta         0.00063
+alpha        6.87e-2
+
+#--------------------------------------------
+#          wall clusterss
+# wall_temp_3       cold wall temperature
+# wall_temp_4       hot wall temperature
+#--------------------------------------------
+wall_temp_3  748
+wall_temp_4  752

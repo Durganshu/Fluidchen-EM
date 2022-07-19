@@ -3,7 +3,7 @@
 // If no geometry file is provided in the input file, lid driven cavity case
 // will run by default. In the Grid.cpp, geometry will be created following
 namespace LidDrivenCavity {
-const int moving_wall_id = 9;
+const int moving_wall_id = 10;
 const int fixed_wall_id = 6;
 const double wall_velocity = 1.0;
 } // namespace LidDrivenCavity
@@ -33,5 +33,6 @@ enum class cell_type {
     MOVING_WALL,
     HIGHER_POTENTIAL_WALL,
     LOWER_POTENTIAL_WALL,
+    COUPLED_BOUNDARY,
     DEFAULT
 };

@@ -45,11 +45,20 @@ Fields::Fields(Grid &grid, double nu, double dt, double tau, double alpha, doubl
         _P(i, j) = PI;
         _T(i, j) = TI;
     }
+    for (const auto &elem : grid.coupled_cells()) {
+        int i = elem->i();
+        int j = elem->j();
+
+        _U(i, j) = UI;
+        _V(i, j) = VI;
+        _P(i, j) = PI;
+        _T(i, j) = TI;
+    }
 }
 
 Fields::Fields(double nu, double dt, double tau, double k, double rho, double Bz, double UI, double VI, double PI,
-               double GX, double GY, Grid &grid) 
-               : _nu(nu),  _dt(dt), _tau(tau), _k (k), _rho (rho), _Bz(Bz), _gx(GX), _gy(GY) {
+               double GX, double GY, Grid &grid)
+    : _nu(nu), _dt(dt), _tau(tau), _k(k), _rho(rho), _Bz(Bz), _gx(GX), _gy(GY) {
 
     _U = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
     _V = Matrix<double>(grid.imax() + 2, grid.jmax() + 2, 0.0);
@@ -103,8 +112,8 @@ void Fields::calculate_fluxes(Grid &grid, int eq_type) {
                                          Discretization::convection_v(_U, _V, i, j) + _gy);
 
             if (eq_type == 1) {
-                _F(i, j) -=  (_gx * _dt * (_beta * 0.5 * (_T(i, j) + _T(i + 1, j))) + _dt * _gx);
-                _G(i, j) -= (_gy * _dt * (_beta * 0.5 * (_T(i, j) + _T(i, j + 1))) + _dt * _gy);
+                _F(i, j) -= (_gx * _dt * (_beta * 0.5 * (_T(i, j) + _T(i + 1, j)) + 1));
+                _G(i, j) -= (_gy * _dt * (_beta * 0.5 * (_T(i, j) + _T(i, j + 1)) + 1));
             }
 
             if (eq_type == 2 && elapsed_t<=ramp_dt) {
@@ -390,14 +399,12 @@ void Fields::calculate_fluxes(Grid &grid, int eq_type) {
         int i = elem->i();
         int j = elem->j();
 
-        if (elem->is_border(border_position::LEFT)){
+        if (elem->is_border(border_position::LEFT)) {
             _F(elem->neighbour(border_position::LEFT)->i(), j) = _U(elem->neighbour(border_position::LEFT)->i(), j);
-           
-        }
-        else if((elem->is_border(border_position::RIGHT))){
+
+        } else if ((elem->is_border(border_position::RIGHT))) {
             _F(elem->neighbour(border_position::RIGHT)->i(), j) = _U(elem->neighbour(border_position::RIGHT)->i(), j);
-                    }
-        
+        }
     }
 }
 
@@ -429,8 +436,8 @@ void Fields::calculate_electric_fields(Grid &grid) {
     for (auto currentCell : grid.fluid_cells()) {
         int i = currentCell->i();
         int j = currentCell->j();
-        ex(i, j) = -(phi(i + 1, j) - phi(i-1 , j)) / ( 2*grid.dx());
-        ey(i, j) = -(phi(i, j + 1) - phi(i, j-1 )) / ( 2*grid.dy());
+        ex(i, j) = -(phi(i + 1, j) - phi(i - 1, j)) / (2 * grid.dx());
+        ey(i, j) = -(phi(i, j + 1) - phi(i, j - 1)) / (2 * grid.dy());
     }
 }
 
@@ -519,3 +526,36 @@ Matrix<double> &Fields::fx_matrix() { return _Fx; }
 Matrix<double> &Fields::fy_matrix() { return _Fy; }
 
 double Fields::dt() const { return _dt; }
+
+void Fields::get_border_U(int col, std::vector<double> &U) {
+    std::vector<double> temp = _U.get_col(col);
+    for (int i = 0; i < U.size(); i++) {
+        U[i] = temp[i + 1];
+    }
+}
+void Fields::get_border_V(int col, std::vector<double> &V) {
+    std::vector<double> temp = _V.get_col(col);
+    for (int i = 0; i < V.size(); i++) {
+        V[i] = temp[i + 1];
+    }
+}
+void Fields::get_border_P(int col, std::vector<double> &P) {
+    std::vector<double> temp = _P.get_col(col);
+    for (int i = 0; i < P.size(); i++) {
+        P[i] = temp[i + 1];
+    }
+}
+
+void Fields::get_border_F(int col, std::vector<double> &F) {
+    std::vector<double> temp = _F.get_col(col);
+    for (int i = 0; i < F.size(); i++) {
+        F[i] = temp[i + 1];
+    }
+}
+void Fields::get_border_G(int col, std::vector<double> &G) {
+    std::vector<double> temp = _G.get_col(col);
+    for (int i = 0; i < G.size(); i++) {
+        G[i] = temp[i + 1];
+    }
+}
+

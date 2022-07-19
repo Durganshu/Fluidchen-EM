@@ -71,10 +71,9 @@ void FixedWallBoundary::apply(Fields &field) {
             if (elem->is_border(border_position::RIGHT)) {
                 field.u(i, j) = 0;
                 field.v(i, elem->neighbour(border_position::BOTTOM)->j()) = 0;
-                field.u(elem->neighbour(border_position::LEFT)->i(), j) = -field.u(
-                    elem->neighbour(border_position::LEFT)->i(), elem->neighbour(border_position::BOTTOM)->j());
+                field.u(elem->neighbour(border_position::LEFT)->i(), j) = - 
+                field.u(elem->neighbour(border_position::LEFT)->i(), elem->neighbour(border_position::BOTTOM)->j());
                 field.v(i, j) = -field.v(elem->neighbour(border_position::RIGHT)->i(), j);
-                2;
             }
 
             // SW corner
@@ -331,13 +330,13 @@ PotentialBoundary::PotentialBoundary(std::vector<Cell *> cells,
     : _cells(cells), _phi(phi) {}
 void PotentialBoundary::apply_potential(Fields &field) const {
     const double wall_phi = _phi.begin()->second;
-    
+
     for (auto &elem : _cells) {
         int i = elem->i();
         int j = elem->j();
 
         if (elem->is_border(border_position::TOP)) {
-           
+
             field.phi(i, j) = 2 * wall_phi - field.phi(i, elem->neighbour(border_position::TOP)->j());
         }
 
@@ -379,13 +378,16 @@ void MovingWallBoundary::apply_temperature(Fields &field) const {}
 InflowBoundary::InflowBoundary(std::vector<Cell *> cells, double inflow_x_velocity, double inflow_y_velocity)
     : _cells(cells), _x_velocity(inflow_x_velocity), _y_velocity(inflow_y_velocity) {}
 
+InflowBoundary::InflowBoundary(std::vector<Cell *> cells, double inflow_x_velocity, double inflow_y_velocity, double T_in)
+    : _cells(cells), _x_velocity(inflow_x_velocity), _y_velocity(inflow_y_velocity), _T(T_in) {}
+
 void InflowBoundary::apply(Fields &field) {
     for (auto &elem : _cells) {
         int i = elem->i();
         int j = elem->j();
 
         field.u(i, j) = _x_velocity;
-        field.v(i, j) = -field.v(elem->neighbour(border_position::RIGHT)->i(), j);
+        field.v(i, j) = 2 * (_y_velocity)-field.v(elem->neighbour(border_position::RIGHT)->i(), j);
     }
 }
 
@@ -398,26 +400,32 @@ void InflowBoundary::apply_pressure(Fields &field) {
 }
 
 // Temperature BC for inflow is not in the scope of this worksheet so the function is kept as a dummy.
-void InflowBoundary::apply_temperature(Fields &field) const {}
+void InflowBoundary::apply_temperature(Fields &field) const {
+    for (auto &elem : _cells) {
+
+        int i = elem->i();
+        int j = elem->j();
+    
+        field.t(i,j) = _T;
+    }
+}
 
 OutflowBoundary::OutflowBoundary(std::vector<Cell *> cells, double outlet_pressure)
     : _cells(cells), _pressure(outlet_pressure) {}
 
 void OutflowBoundary::apply(Fields &field) {
     for (auto &elem : _cells) {
-        
+
         int i = elem->i();
         int j = elem->j();
 
-        if(elem->is_border(border_position::LEFT)){
+        if (elem->is_border(border_position::LEFT)) {
             field.u(i, j) = field.u(elem->neighbour(border_position::LEFT)->i(), j);
             field.v(i, j) = field.v(elem->neighbour(border_position::LEFT)->i(), j);
-        }
-        else{
+        } else {
             field.u(i, j) = field.u(elem->neighbour(border_position::RIGHT)->i(), j);
             field.v(i, j) = field.v(elem->neighbour(border_position::RIGHT)->i(), j);
         }
-        
     }
 }
 
@@ -425,15 +433,100 @@ void OutflowBoundary::apply_pressure(Fields &field) {
     for (auto &elem : _cells) {
         int i = elem->i();
         int j = elem->j();
-        //when right end is outflow
-        if(elem->is_border(border_position::LEFT)){
-            field.p(i, j) = 2*_pressure-field.p(i-1,j);}
-        //when left end is outflow
-        else if(elem->is_border(border_position::RIGHT)){
-            field.p(i, j) = 2*_pressure-field.p(i+1,j);
+        // when right end is outflow
+        if (elem->is_border(border_position::LEFT)) {
+            field.p(i, j) = 2 * _pressure - field.p(i - 1, j);
+        }
+        // when left end is outflow
+        else if (elem->is_border(border_position::RIGHT)) {
+            field.p(i, j) = 2 * _pressure - field.p(i + 1, j);
         }
     }
 }
 
 // Temperature BC for outflow is not in the scope of this worksheet so the function is kept as a dummy.
-void OutflowBoundary::apply_temperature(Fields &field) const {}
+void OutflowBoundary::apply_temperature(Fields &field) const {
+    for(const auto &elem : _cells)
+    {
+        int i = elem->i();
+        int j = elem->j();
+        
+        if (elem->is_border(border_position::LEFT)) {
+            field.t(i, j) = field.t(elem->neighbour(border_position::LEFT)->i(), j);
+        } else {
+            field.t(i, j) = field.t(elem->neighbour(border_position::RIGHT)->i(), j);
+        }
+    }
+}
+
+CoupledBoundary::CoupledBoundary(std::vector<Cell *> cells):_cells(cells) {}
+
+void CoupledBoundary::apply_dirichlet_velocity(Fields &field, std::vector<double> &U, std::vector<double> &V) {
+    for (auto &elem : _cells) {
+
+        int i = elem->i();
+        int j = elem->j();
+
+        field.u(i, j) = U[j - 1];
+        field.v(i, j) = V[j - 1];
+    }
+}
+void CoupledBoundary::apply_neumann_velocity(Fields &field) {
+    for (auto &elem : _cells) {
+
+        int i = elem->i();
+        int j = elem->j();
+        if (elem->is_border(border_position::LEFT)) {
+            field.u(i, j) = field.u(elem->neighbour(border_position::LEFT)->i(), j);
+            field.v(i, j) = field.v(elem->neighbour(border_position::LEFT)->i(), j);
+        } else {
+            field.u(i, j) = field.u(elem->neighbour(border_position::RIGHT)->i(), j);
+            field.v(i, j) = field.v(elem->neighbour(border_position::RIGHT)->i(), j);
+        }
+    }
+}
+void CoupledBoundary::apply_dirichlet_pressure(Fields &field, std::vector<double> &P) {
+    for (auto &elem : _cells) {
+
+        int i = elem->i();
+        int j = elem->j();
+
+        field.p(i, j) = P[j - 1];
+    }
+}
+void CoupledBoundary::apply_neumann_pressure(Fields &field) {
+    for (auto &elem : _cells) {
+
+        int i = elem->i();
+        int j = elem->j();
+        // when right end is outflow
+        if (elem->is_border(border_position::LEFT)) {
+            field.p(i, j) =  - field.p(i - 1, j);
+        }
+        // when left end is outflow
+        else if (elem->is_border(border_position::RIGHT)) {
+            field.p(i, j) =  - field.p(i + 1, j);
+        }
+    }
+}
+
+void CoupledBoundary::apply_dirichlet_flux(Fields &field, std::vector<double> &F, std::vector<double> &G) {
+    for (auto &elem : _cells) {
+
+        int i = elem->i();
+        int j = elem->j();
+
+        field.f(i, j) = F[j - 1];
+        field.g(i, j) = G[j - 1];
+    }
+}
+
+void CoupledBoundary::apply_temperature(Fields &field, double T_in){
+    for( const auto &elem: _cells)
+    {
+        int i = elem->i();
+        int j = elem->j();
+
+        field.t(i,j) = T_in;
+    }
+}
