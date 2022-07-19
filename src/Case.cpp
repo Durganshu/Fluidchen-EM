@@ -822,6 +822,10 @@ void Case::simulate() {
 #else
         while (t < _t_end) {
 #endif
+
+            //Pass time to field
+            _field.elapsed_t=t;
+
             // Apply BCs
             for (auto &i : _boundaries) {
                 i->apply(_field);
@@ -834,8 +838,6 @@ void Case::simulate() {
 #endif
 
             // Calculate Fluxes
-            _field.elapsed_t=t;
-            
             _field.calculate_fluxes(_grid, 2);
             Communication::communicate(_field.f_matrix(), _grid.domain(), _rank);
             Communication::communicate(_field.g_matrix(), _grid.domain(), _rank);
