@@ -84,7 +84,7 @@ VI           0.0
 energy_eq    on
 TI           750
 beta         0.00063
-alpha        0.687
+alpha        6.87e-2
 
 #--------------------------------------------
 #          wall clusterss
