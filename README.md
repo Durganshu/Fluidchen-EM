@@ -84,7 +84,7 @@ In order to run **fluidchen_em**, the case file should be given as input paramet
 
 This will run the case file and create the output folder `../example_cases/LidDrivenCavity/LidDrivenCavity_Output`, which holds the `.vtk` files of the solution.
 
-If the input file does not contain a geometry file, `fluidchen_em` will run the lid-driven cavity case with the given parameters (see below).
+If the input file does not contain a geometry file, `fluidchen_em` will run the lid-driven cavity case with the given parameters (see [below](https://gitlab.lrz.de/durganshu/group-i-cfd-lab/-/blob/EMHD_precice/README.md#geometry-files)).
 
 ### For `PRECICE`` configuration type
 
