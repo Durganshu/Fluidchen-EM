@@ -82,7 +82,7 @@ In order to run **fluidchen_em**, the case file should be given as input paramet
 ./fluidchen_em ../example_cases/LidDrivenCavity/LidDrivenCavity.dat
 ```
 
-This will run the case file and create the output folder `../example_cases/LidDrivenCavity/LidDrivenCavity_Output`, which holds the `.vtk` files of the solution.
+This will run the case file and create the output folder `../example_cases/LidDrivenCavity/LidDrivenCavity_Output`, which holds the `.vtk` files of the solution. The `.vtk` files can be visualized using [ParaView](https://www.paraview.org/) or any similar software.
 
 If the input file does not contain a geometry file, `fluidchen_em` will run the lid-driven cavity case with the given parameters (see [below](https://gitlab.lrz.de/durganshu/group-i-cfd-lab/-/blob/EMHD_precice/README.md#geometry-files)).
 
