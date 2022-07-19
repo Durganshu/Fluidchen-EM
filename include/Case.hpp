@@ -104,6 +104,10 @@ class Case {
     /// Maximum number of iterations for the solver
     int _max_iter;
 
+    /// Offset of geometry from origin
+    double _x_offset=0;
+    double _y_offset=0;
+
     /**
      * @brief Creating file names from given input data file
      *

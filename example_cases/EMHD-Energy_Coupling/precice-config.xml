@@ -76,7 +76,7 @@
 
     <coupling-scheme:serial-explicit>
       <participants first="EM_Solver" second="EnergySolver" />
-      <max-time value="0.1" />
+      <max-time value="0.5" />
       <time-window-size value="0.0005" />
       <exchange data="X_Velocity1" mesh="EM_Pump-Mesh" from="EM_Solver" to="EnergySolver" />
       <exchange data="Y_Velocity1" mesh="EM_Pump-Mesh" from="EM_Solver" to="EnergySolver" />

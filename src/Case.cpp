@@ -134,6 +134,8 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
                     file >> temp;
                     if (temp == "on") _couple = true;
                 }
+                if (var == "x_offset") file >> _x_offset;
+                if (var == "y_offset") file >> _y_offset;
                 if (var == "x") {
                     file >> _iproc;
                     if (_iproc < 1) {
@@ -358,8 +360,8 @@ void Case::simulate() {
             int i = elem->i();
             int j = elem->j() - 1;
 
-            coords[count] = i * _grid.dx() + 10;
-            coords[count + 1] = j * _grid.dy();
+            coords[count] = i * _grid.dx() + _x_offset;
+            coords[count + 1] = j * _grid.dy() + _y_offset;
             count += 2;
         }
 
@@ -550,8 +552,8 @@ void Case::simulate() {
             int i = elem->i();
             int j = elem->j() - 1;
 
-            coords[count] = i * _grid.dx() + 10;
-            coords[count + 1] = j * _grid.dy();
+            coords[count] = i * _grid.dx() + _x_offset;
+            coords[count + 1] = j * _grid.dy() + _y_offset;
             count += 2;
         }
 
@@ -745,8 +747,8 @@ void Case::simulate() {
             int i = elem->i() - 1;
             int j = elem->j() - 1;
 
-            coords[count] = i * _grid.dx();
-            coords[count + 1] = j * _grid.dy();
+            coords[count] = i * _grid.dx() + _x_offset;
+            coords[count + 1] = j * _grid.dy() + _y_offset;
             count += 2;
         }
 
@@ -959,8 +961,8 @@ void Case::output_vtk(int timestep) {
     double dx = _grid.dx();
     double dy = _grid.dy();
 
-    double x = _grid.domain().imin * dx;
-    double y = _grid.domain().jmin * dy;
+    double x = _grid.domain().imin * dx + _x_offset;
+    double y = _grid.domain().jmin * dy + _y_offset;
 
     { y += dy; }
     { x += dx; }
@@ -968,7 +970,7 @@ void Case::output_vtk(int timestep) {
     double z = 0;
 
     for (int col = 0; col < _grid.domain().size_y + 1; col++) {
-        x = _grid.domain().imin * dx;
+        x = _grid.domain().imin * dx + _x_offset;
         { x += dx; }
         for (int row = 0; row < _grid.domain().size_x + 1; row++) {
             points->InsertNextPoint(x, y, z);
@@ -1017,12 +1019,12 @@ void Case::output_vtk(int timestep) {
     // Electric field Array
     vtkDoubleArray *EField = vtkDoubleArray::New();
     EField->SetName("electric_field");
-    EField->SetNumberOfComponents(2);
+    EField->SetNumberOfComponents(3);
 
     // EM Force Array
     vtkDoubleArray *EMForce = vtkDoubleArray::New();
     EMForce->SetName("em_force");
-    EMForce->SetNumberOfComponents(2);
+    EMForce->SetNumberOfComponents(3);
 
     // Print pressure and temperature from bottom to top
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {

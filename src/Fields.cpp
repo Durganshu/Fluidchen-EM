@@ -430,8 +430,8 @@ void Fields::calculate_electric_fields(Grid &grid) {
     for (auto currentCell : grid.fluid_cells()) {
         int i = currentCell->i();
         int j = currentCell->j();
-        ex(i, j) = -(phi(i + 1, j) - phi(i, j)) / (grid.dx());
-        ey(i, j) = -(phi(i, j + 1) - phi(i, j)) / (grid.dy());
+        ex(i, j) = -(phi(i + 1, j) - phi(i - 1, j)) / (2 * grid.dx());
+        ey(i, j) = -(phi(i, j + 1) - phi(i, j - 1)) / (2 * grid.dy());
     }
 }
 
