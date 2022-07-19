@@ -116,9 +116,15 @@ void Fields::calculate_fluxes(Grid &grid, int eq_type) {
                 _G(i, j) -= (_gy * _dt * (_beta * 0.5 * (_T(i, j) + _T(i, j + 1)) + 1));
             }
 
-            if (eq_type == 2) {
-                _F(i, j) += ((fx(i, j) + fx(i + 1, j)) / 2);
-                _G(i, j) += ((fy(i, j) + fy(i, j + 1)) / 2);
+            if (eq_type == 2 && elapsed_t<=ramp_dt) {
+                _F(i, j) =_F(i,j)+ (elapsed_t/ramp_dt)*((fx(i, j)+fx(i+1, j))/2);
+                _G(i, j) =_G(i,j)+ (elapsed_t/ramp_dt)*((fy(i, j)+fy(i,j+1))/2);
+                }
+            
+
+            if (eq_type == 2 && elapsed_t>ramp_dt) {
+                _F(i, j) =_F(i,j)+ ((fx(i, j)+fx(i+1, j))/2);
+                _G(i, j) =_G(i,j)+ ((fy(i, j)+fy(i,j+1))/2);
             }
         }
     }

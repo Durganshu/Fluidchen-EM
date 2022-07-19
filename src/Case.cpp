@@ -77,7 +77,7 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
     double phi1; /* Potential at Electrode 1*/
     double phi2; /* Potential at Electrode 2*/
     double Bz;   /* Magnetic Flux Density Perpendicular to Simulation Plane*/
-
+    
     if (file.is_open()) {
 
         std::string var;
@@ -124,6 +124,7 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
                     file >> temp;
                     if (temp == "on") _em_eq = true;
                 }
+                if (var == "ramp_dt") file >> _ramp_dt;
                 if (var == "v1") file >> phi1;
                 if (var == "v2") file >> phi2;
                 if (var == "k") file >> k;
@@ -833,6 +834,8 @@ void Case::simulate() {
 #endif
 
             // Calculate Fluxes
+            _field.elapsed_t=t;
+            
             _field.calculate_fluxes(_grid, 2);
             Communication::communicate(_field.f_matrix(), _grid.domain(), _rank);
             Communication::communicate(_field.g_matrix(), _grid.domain(), _rank);
