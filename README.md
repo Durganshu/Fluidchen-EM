@@ -84,11 +84,11 @@ In order to run **fluidchen_em**, the case file should be given as input paramet
 
 This will run the case file and create the output folder `../example_cases/LidDrivenCavity/LidDrivenCavity_Output`, which holds the `.vtk` files of the solution. The `.vtk` files can be visualized using [ParaView](https://www.paraview.org/) or any similar software.
 
-If the input file does not contain a geometry file, `fluidchen_em` will run the lid-driven cavity case with the given parameters (see [below](https://gitlab.lrz.de/durganshu/group-i-cfd-lab/-/blob/EMHD_precice/README.md#geometry-files)).
+If the input file does not contain a geometry file, `fluidchen_em` will run the lid-driven cavity case by default with the given parameters (see [below](https://gitlab.lrz.de/durganshu/group-i-cfd-lab/-/blob/EMHD_precice/README.md#geometry-files)).
 
 ### For `PRECICE`` configuration type
 
-In this case, apart from the input file, the precice configuration file (*.xml) needs to be provided as well. An example file is present in `../example_cases/EM_Pump`. 
+In this case, apart from the input file, the precice configuration file (*.xml) needs to be provided as well as argument 2. An example file is present in `../example_cases/EM_Pump`. 
 
 **Make sure to check the preCICE documentation before doing any changes to the configuration file.**
 
@@ -100,6 +100,6 @@ shell2$ ./fluidchen_em ../example_cases/EM_Pump/FluidChannel.dat ../example_case
 ```
 ## Geometry files
 
-We have our own simple format, based on the [“portable graymap” format (PGM)](https://en.wikipedia.org/wiki/Netpbm#File_formats). This is a text file with two sections: a header and the data. The header comprises of one line with a “magic number” defining its type (with P2 meaning “Portable GrayMap”, i.e. multiple gray values), one line with the number of cells per row and column (including the domain borders), as well as one line with the number of “colors” (each color being a type of cell, e.g. “fluid”, “obstacle”, “inflow”, “outflow”). After this information, a “color” for each cell follows. You can find examples in any of the subdirectories in `example_cases` (except for the LidDrivenCavity) and you can also create your own PGM files in any way you like (they are plain text files anyway).
+We have our own simple format for reading geometry, based on the [“portable graymap” format (PGM)](https://en.wikipedia.org/wiki/Netpbm#File_formats). This is a text file with two sections: a header and the data. The header comprises of one line with a “magic number” defining its type (with P2 meaning “Portable GrayMap”, i.e. multiple gray values), one line with the number of cells per row and column (including the domain borders), as well as one line with the number of “colors” (each color being a type of cell, e.g. “fluid”, “obstacle”, “inflow”, “outflow”). After this information, a “color” for each cell follows. You can find examples in any of the subdirectories in `example_cases` (except for the LidDrivenCavity) and you can also create your own PGM files in any way you like (they are plain text files anyway).
 
 The input files need to specify the location of the geometry files. If the input file does not contain a geometry file, `fluidchen_em` will run the lid-driven cavity case with the given parameters.
