@@ -86,7 +86,7 @@ This will run the case file and create the output folder `../example_cases/LidDr
 
 If the input file does not contain a geometry file, `fluidchen_em` will run the lid-driven cavity case by default with the given parameters (see [below](https://gitlab.lrz.de/durganshu/group-i-cfd-lab/-/blob/EMHD_precice/README.md#geometry-files)).
 
-### For `PRECICE`` configuration type
+### For `PRECICE` configuration type
 
 In this case, apart from the input file, the precice configuration file (*.xml) needs to be provided as well as argument 2. An example file is present in `../example_cases/EM_Pump`. 
 
