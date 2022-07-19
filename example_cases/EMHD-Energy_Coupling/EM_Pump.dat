@@ -25,10 +25,13 @@ y      1
 #               time steps
 # dt: time step size
 # tau: safety factor for time step size control
+# t_end: end time
+# ramp_dt: ramped force time
 #--------------------------------------------
 dt           0.00005
 tau          0.5
 t_end	     0.5
+ramp_dt      0.0
 
 #--------------------------------------------
 #               output
@@ -71,14 +74,6 @@ em_eq        on
 v1           10.0
 v2           -10.0
 Bz           -1e-4
-#UIN          0.0
-#VIN          0.0
-
-#--------------------------------------------
-#        precice settings
-# couple: set to on for coupling using precice
-#--------------------------------------------
-couple     on
 
 #--------------------------------------------
 #        gravity / external forces
