@@ -68,7 +68,7 @@ By default, **fluidchen_em** is installed in `RELEASE` mode. In case you want to
 ```shell
 cmake -DCMAKE_BUILD_TYPE= <MODE> ..
 ```
-<MODE> can be `DEBUG` or `PRECICE`
+`<MODE>` can be `DEBUG` or `PRECICE`
 
 You can see and modify all CMake options with, e.g., `ccmake .` inside `build/` (Ubuntu package `cmake-curses-gui`).
 
