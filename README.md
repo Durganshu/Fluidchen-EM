@@ -1,5 +1,5 @@
 <div align="center">
-  <img width="560" height="492" src="FluidchenLogo.png">
+  <img width="650" height="492" src="FluidchenLogo.png">
 </div>
 
 Fluidchen EM is a CFD-EM Solver developed for the CFD Lab taught at TUM Informatics, Chair of Scientific Computing in Computer Science.
