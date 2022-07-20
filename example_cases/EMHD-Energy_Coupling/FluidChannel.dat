@@ -78,12 +78,10 @@ VI           0.0
 #--------------------------------------------
 #          energy
 # TI:     initial and inlet temperature
-# beta:   thermal expansion coefficient
 # alpha:  thermal diffusivity (nu/Pr)
 #--------------------------------------------
 energy_eq    on
 TI           750
-beta         0.00063
 alpha        6.87e-2
 
 #--------------------------------------------
