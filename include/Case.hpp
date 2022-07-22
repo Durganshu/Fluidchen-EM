@@ -49,6 +49,8 @@ class Case {
      */
     void printIntro(std::ofstream &);
 
+    ~Case();
+
   private:
     /// Plain case name without paths
     std::string _case_name;

@@ -29,7 +29,7 @@ int main(int argn, char **args) {
     auto end = std::chrono::steady_clock::now();
     std::cout << "Software Runtime:" << std::chrono::duration_cast<std::chrono::seconds>(end - start).count() << "s\n\n";
     }
-    Communication::finalize();
+    
 
     return 0;
 }

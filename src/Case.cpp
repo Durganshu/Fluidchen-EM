@@ -117,6 +117,7 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
                     file >> _iproc;
                     if (_iproc < 1) {
                         std::cout << "Number of domain decomposition in x-direction cannot be less than 1.\n";
+                        Communication::finalize();
                         exit(0);
                     }
                 }
@@ -124,6 +125,7 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
                     file >> _jproc;
                     if (_jproc < 1) {
                         std::cout << "Number of domain decomposition in y-direction cannot be less than 1.\n";
+                        Communication::finalize();
                         exit(0);
                     }
                 }
@@ -202,7 +204,10 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
         _boundaries.push_back(std::make_unique<OutflowBoundary>(_grid.outflow_cells(), P_out));
     }
 }
-
+Case::~Case(){
+    
+    Communication::finalize();
+}
 void Case::set_file_names(std::string file_name) {
     std::string temp_dir;
     bool case_name_flag = true;
