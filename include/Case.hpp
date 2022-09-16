@@ -25,7 +25,7 @@ class Case {
      *
      * @param[in] Input file name
      */
-    Case(std::string file_name, int argn, char **args);
+    Case(std::string file_name, int argn, char **args,int rank,int size);
 
     /**
      * @brief Main function to simulate the flow until the end time.
@@ -41,8 +41,15 @@ class Case {
     /**
      * @brief Prints introductory message
      */
-    void printIntro();
-    void writeIntro(std::ofstream &);
+    static void printIntro();
+
+    /**
+     * @brief Writes introductory message to log file
+     * @param [in] Output file variable
+     */
+    void printIntro(std::ofstream &);
+
+    ~Case();
 
   private:
     /// Plain case name without paths
@@ -58,7 +65,6 @@ class Case {
     double _t_end;
     /// Solution file outputting frequency
     double _output_freq;
-
     Fields _field;
     Grid _grid;
     Discretization _discretization;
@@ -68,8 +74,11 @@ class Case {
     /// Set to true to enable energy equations
     bool _energy_eq = false;
 
-    /// Id to group results
+    /// Parallelizing variables
     int _rank = 0;
+    int _iproc=1;
+    int _jproc=1;
+    int _size=1;
 
     /// Solver convergence tolerance
     double _tolerance;
@@ -96,7 +105,7 @@ class Case {
      *
      * @param[in] Timestep of the solution
      */
-    void output_vtk(int t, int my_rank = 0);
+    void output_vtk(int t);
 
     void build_domain(Domain &domain, int imax_domain, int jmax_domain);
 

@@ -32,4 +32,14 @@ struct Domain {
     int domain_size_x{-1};
     /// Number of cells in y direction, not-decomposed
     int domain_size_y{-1};
+
+    /*Neighbours of a process
+        index   :   neighbour position
+        0       :   left
+        1       :   right
+        2       :   top
+        3       :   bottom
+    A value of (-1) signifies no neihgbour exists in corresponding direction
+    */
+    std::array<int,4> neighbours;
 };

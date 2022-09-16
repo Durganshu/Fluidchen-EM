@@ -19,8 +19,20 @@ class Boundary {
      * @param[in] Field to be applied
      */
     virtual void apply(Fields &field) = 0;
-    virtual void apply_pressure(Fields &field) = 0;
-    virtual void apply_temperature(Fields &field) const = 0;
+    /**
+     * @brief Main method to patch the boundary conditons to given field and
+     * grid
+     *
+     * @param[in] Field to be applied
+     */
+    virtual void apply_pressure(Fields &field) = 0;  
+    /**
+     * @brief Main method to patch the boundary conditons to given field and
+     * grid
+     *
+     * @param[in] Field to be applied
+     */
+    virtual void apply_temperature(Fields &field) const = 0;   
     virtual ~Boundary() = default;
 };
 
