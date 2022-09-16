@@ -5,7 +5,7 @@
 #include "Case.hpp"
 #include "Communication.hpp"
 
-void printIntro();
+//void printIntro();
 
 int main(int argn, char **args) {
 

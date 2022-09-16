@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <iomanip>
 #include <iterator>
-#include <mpi.h>
 #include <string>
 
 #ifdef GCC_VERSION_9_OR_HIGHER
@@ -68,10 +67,17 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
     double wall_temp_5 = -1; /* Wall temperature -1 for Adiabatic Wall  */
 
     /* ENERGY VARIABLES*/
-    double TI;    /* Initial temperature*/
-    double beta;  /* Thermal Expansion Coefficient  */
-    double alpha; /* Thermal diffusivity   */
+    double TI;    /* Initial temperature */
+    double beta;  /* Thermal Expansion Coefficient */
+    double alpha; /* Thermal diffusivity */
 
+    /*ELECTRO-MAGNETIC VARIABLES*/
+    double k;    /* Electric Conductivity */
+    double rho;  /* Density*/
+    double phi1; /* Potential at Electrode 1*/
+    double phi2; /* Potential at Electrode 2*/
+    double Bz;   /* Magnetic Flux Density Perpendicular to Simulation Plane*/
+    
     if (file.is_open()) {
 
         std::string var;
@@ -103,8 +109,6 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
                 if (var == "VIN") file >> VIN;
                 if (var == "Pout") file >> P_out;
                 if (var == "num_of_walls") file >> num_of_walls;
-                if (var == "wall_temp_3") file >> wall_temp_3;
-                if (var == "wall_temp_4") file >> wall_temp_4;
                 if (var == "TI") file >> TI;
                 if (var == "energy_eq") {
                     std::string temp;
@@ -113,6 +117,26 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
                 }
                 if (var == "beta") file >> beta;
                 if (var == "alpha") file >> alpha;
+                if (var == "wall_temp_3") file >> wall_temp_3;
+                if (var == "wall_temp_4") file >> wall_temp_4;
+                if (var == "em_eq") {
+                    std::string temp;
+                    file >> temp;
+                    if (temp == "on") _em_eq = true;
+                }
+                if (var == "ramp_dt") file >> _ramp_dt;
+                if (var == "v1") file >> phi1;
+                if (var == "v2") file >> phi2;
+                if (var == "k") file >> k;
+                if (var == "rho") file >> rho;
+                if (var == "Bz") file >> Bz;
+                if (var == "couple") {
+                    std::string temp;
+                    file >> temp;
+                    if (temp == "on") _couple = true;
+                }
+                if (var == "x_offset") file >> _x_offset;
+                if (var == "y_offset") file >> _y_offset;
                 if (var == "x") {
                     file >> _iproc;
                     if (_iproc < 1) {
@@ -134,22 +158,26 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
     }
     file.close();
 
-    if ((_iproc*_jproc) != _size) {
-        if (_rank == 0){
-            std::cout << "_iproc*_jproc != _size\nThe total number of processes must be the product of number of processes in x and y directions. "
-                << "Please input correct value. Exiting!!!\n";
+    if ((_iproc * _jproc) != _size) {
+        if (_rank == 0) {
+            std::cout << "_iproc*_jproc != _size\nThe total number of processes must be the product of number of "
+                         "processes in x and y directions. "
+                      << "Please input correct value. Exiting!!!\n";
+            Communication::finalize();
+            exit(0);
+        } else {
             Communication::finalize();
             exit(0);
         }
-        else{
-            Communication::finalize();
-            exit(0);
-        } 
     }
     std::map<int, double> wall_vel;
     if (_geom_name.compare("NONE") == 0) {
         wall_vel.insert(std::pair<int, double>(LidDrivenCavity::moving_wall_id, LidDrivenCavity::wall_velocity));
     }
+
+#ifdef PRECICE
+    _config_file_name = args[2];
+#endif
 
     // Set file names for geometry file and output directory
     set_file_names(file_name);
@@ -165,10 +193,12 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
 
     _grid = Grid(_geom_name, domain, _iproc, _jproc, _rank, _size);
 
-    if (!_energy_eq) {
+    if (!_energy_eq && !_em_eq) {
         _field = Fields(_grid, nu, dt, tau, UI, VI, PI, GX, GY);
+    } else if (_energy_eq) {
+        _field = Fields(_grid, nu, dt, tau, alpha, beta, UI, VI, PI, TI, GX, GY);
     } else {
-        _field = Fields(_grid, nu, alpha, beta, dt, tau, UI, VI, PI, TI, GX, GY);
+        _field = Fields(nu, dt, tau, k, rho, Bz, UI, VI, PI, GX, GY, _grid);
     }
 
     _discretization = Discretization(domain.dx, domain.dy, gamma);
@@ -179,6 +209,9 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
     std::map<int, double> temp1 = {{3, wall_temp_3}};
     std::map<int, double> temp2 = {{4, wall_temp_4}};
     std::map<int, double> temp3 = {{5, wall_temp_5}};
+
+    std::map<int, double> temp4 = {{11, phi1}};
+    std::map<int, double> temp5 = {{12, phi2}};
 
     // Construct boundaries
     if (not _grid.moving_wall_cells().empty()) {
@@ -198,11 +231,26 @@ Case::Case(std::string file_name, int argn, char **args, int rank, int size) {
         _boundaries.push_back(std::make_unique<FixedWallBoundary>(_grid.adiabatic_fixed_wall_cells(), temp3));
     }
     if (not _grid.inflow_cells().empty()) {
-        _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.inflow_cells(), UIN, VIN));
+        _boundaries.push_back(std::make_unique<InflowBoundary>(_grid.inflow_cells(), UIN, VIN, TI));
     }
     if (not _grid.outflow_cells().empty()) {
         _boundaries.push_back(std::make_unique<OutflowBoundary>(_grid.outflow_cells(), P_out));
     }
+    // Constructing Potential Boundaries
+    if (not _grid.higher_potential_cells().empty()) {
+        _potential_boundaries.push_back(std::make_unique<PotentialBoundary>(_grid.higher_potential_cells(), temp4));
+    }
+    if (not _grid.lower_potential_cells().empty()) {
+        _potential_boundaries.push_back(std::make_unique<PotentialBoundary>(_grid.lower_potential_cells(), temp5));
+    }
+
+// Constructing Coupled Boundaries
+#ifdef PRECICE
+    if (not _grid.coupled_cells().empty()) {
+        _coupled_boundaries.push_back(std::make_unique<CoupledBoundary>(_grid.coupled_cells()));
+        _TI = TI;
+    }
+#endif
 }
 Case::~Case(){
     
@@ -294,21 +342,99 @@ void Case::simulate() {
 
     output_vtk(timestep++); // Writing intial data
 
-    if (!_energy_eq) {
+    if (!_energy_eq && !_em_eq) {
 
         if (_rank == 0) std::cout << "ENERGY EQUATION OFF" << std::endl;
 
-        while (t < _t_end) {
+#ifdef PRECICE
 
+        const std::string solver_name("FluidSolver");
+        const std::string mesh_name("FluidMesh");
+
+        // constructing precice object
+        precice::SolverInterface precice(solver_name, _config_file_name, _rank, _size);
+
+        int dim = precice.getDimensions();
+        int meshID = precice.getMeshID("FluidMesh");
+        int vertexSize = _grid.coupled_cells().size(); // number of vertices at wet surface
+
+        // assigning coords of coupling vertices
+        std::vector<double> coords(vertexSize * dim);
+
+        int count = 0;
+        for (const auto &elem : _grid.coupled_cells()) {
+            int i = elem->i();
+            int j = elem->j() - 1;
+
+            coords[count] = i * _grid.dx() + _x_offset;
+            coords[count + 1] = j * _grid.dy() + _y_offset;
+            count += 2;
+        }
+
+        // determine coordinates
+        std::vector<int> vertexIDs(vertexSize);
+        precice.setMeshVertices(meshID, vertexSize, coords.data(), vertexIDs.data());
+
+        int U1_ID = precice.getDataID("X_Velocity1", meshID);
+        int V1_ID = precice.getDataID("Y_Velocity1", meshID);
+        int P1_ID = precice.getDataID("Pressure1", meshID);
+        int F1_ID = precice.getDataID("X_Flux1", meshID);
+        int G1_ID = precice.getDataID("Y_Flux1", meshID);
+        int U2_ID = precice.getDataID("X_Velocity2", meshID);
+        int V2_ID = precice.getDataID("Y_Velocity2", meshID);
+        int P2_ID = precice.getDataID("Pressure2", meshID);
+        int F2_ID = precice.getDataID("X_Flux2", meshID);
+        int G2_ID = precice.getDataID("Y_Flux2", meshID);
+
+        std::vector<double> U1(vertexSize);
+        std::vector<double> V1(vertexSize);
+        std::vector<double> P1(vertexSize);
+        std::vector<double> F1(vertexSize);
+        std::vector<double> G1(vertexSize);
+        std::vector<double> U2(vertexSize);
+        std::vector<double> V2(vertexSize);
+        std::vector<double> P2(vertexSize);
+        std::vector<double> F2(vertexSize);
+        std::vector<double> G2(vertexSize);
+
+        // initializing precice
+        double precice_dt = precice.initialize();
+        dt = std::min(dt, precice_dt);
+#endif
+
+#ifdef PRECICE
+        while (precice.isCouplingOngoing()) {
+
+            if (precice.isReadDataAvailable()) {
+                precice.readBlockScalarData(U1_ID, vertexSize, vertexIDs.data(), U1.data());
+                precice.readBlockScalarData(V1_ID, vertexSize, vertexIDs.data(), V1.data());
+                precice.readBlockScalarData(P1_ID, vertexSize, vertexIDs.data(), P1.data());
+                precice.readBlockScalarData(F1_ID, vertexSize, vertexIDs.data(), F1.data());
+                precice.readBlockScalarData(G1_ID, vertexSize, vertexIDs.data(), G1.data());
+            }
+#else
+        while (t < _t_end) {
+#endif
             // Apply BCs
             for (auto &i : _boundaries) {
                 i->apply(_field);
             }
+#ifdef PRECICE
+            for (auto &i : _coupled_boundaries) {
+                i->apply_dirichlet_velocity(_field, U1, V1);
+            }
+#endif
 
             // Calculate Fluxes
             _field.calculate_fluxes(_grid);
             Communication::communicate(_field.f_matrix(), _grid.domain(), _rank);
             Communication::communicate(_field.g_matrix(), _grid.domain(), _rank);
+
+#ifdef PRECICE
+            for (auto &i : _coupled_boundaries) {
+                i->apply_dirichlet_flux(_field, F1, G1);
+            }
+#endif
 
             //  Calculate RHS of PPE
             _field.calculate_rs(_grid);
@@ -320,6 +446,12 @@ void Case::simulate() {
                 for (auto &i : _boundaries) {
                     i->apply_pressure(_field);
                 }
+
+#ifdef PRECICE
+                for (auto &i : _coupled_boundaries) {
+                    i->apply_dirichlet_pressure(_field, P1);
+                }
+#endif
 
                 res = _pressure_solver->solve(_field, _grid, _boundaries); // Local sum
                 res = Communication::reduce_sum(res);                      // Sum reduction over all domains
@@ -346,16 +478,14 @@ void Case::simulate() {
                     std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
                               << " completed] Writing Data at t=" << t << "s\n";
                 }
-                    
             }
 
             // Writing simulation data in a log file
-            if (_rank == 0){
+            if (_rank == 0) {
                 output_file << std::left << "Simulation Time[s] = " << std::setw(7) << t
                             << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3) << it
                             << "\tSOR Residual = " << std::setw(7) << res << "\n";
             }
-                
 
             // Printing info and checking for errors once in 5 runs of the loop
             if (counter == 10) {
@@ -365,39 +495,142 @@ void Case::simulate() {
                               << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3)
                               << it << "\tSOR Residual = " << std::setw(7) << res << "\n";
                 }
-                    
+
                 // Check for unphysical behaviour
                 if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0);
             }
             counter++;
 
+#ifdef PRECICE
+            if (precice.isWriteDataRequired(dt)) {
+                _field.get_border_U(1, U2);
+                _field.get_border_V(1, V2);
+                _field.get_border_P(1, P2);
+                _field.get_border_F(1, F2);
+                _field.get_border_G(1, G2);
+                precice.writeBlockScalarData(U2_ID, vertexSize, vertexIDs.data(), U2.data());
+                precice.writeBlockScalarData(V2_ID, vertexSize, vertexIDs.data(), V2.data());
+                precice.writeBlockScalarData(P2_ID, vertexSize, vertexIDs.data(), P2.data());
+                precice.writeBlockScalarData(F2_ID, vertexSize, vertexIDs.data(), F2.data());
+                precice.writeBlockScalarData(G2_ID, vertexSize, vertexIDs.data(), G2.data());
+            }
+
+            precice_dt = precice.advance(dt);
+#endif
             // Updating current time
             t = t + dt;
 
             //  Calculate Adaptive Time step
             dt = _field.calculate_dt(_grid);
             dt = Communication::reduce_min(dt);
+#ifdef PRECICE
+            dt = std::min(dt, precice_dt);
+#endif
         }
-    } else {
+
+#ifdef PRECICE
+        // Terminating precice
+        precice.finalize();
+#endif
+
+    } else if (!_em_eq && _energy_eq) {
         if (_rank == 0) {
             std::cout << "ENERGY EQN ON" << std::endl;
         }
-        while (t < _t_end) {
 
+#ifdef PRECICE
+
+        const std::string solver_name("EnergySolver");
+        const std::string mesh_name("EnergyMesh");
+
+        // constructing precice object
+        precice::SolverInterface precice(solver_name, _config_file_name, _rank, _size);
+
+        int dim = precice.getDimensions();
+        int meshID = precice.getMeshID("EnergyMesh");
+        int vertexSize = _grid.coupled_cells().size(); // number of vertices at wet surface
+
+        // assigning coords of coupling vertices
+        std::vector<double> coords(vertexSize * dim);
+
+        int count = 0;
+        for (const auto &elem : _grid.coupled_cells()) {
+            int i = elem->i();
+            int j = elem->j() - 1;
+
+            coords[count] = i * _grid.dx() + _x_offset;
+            coords[count + 1] = j * _grid.dy() + _y_offset;
+            count += 2;
+        }
+
+        // determine coordinates
+        std::vector<int> vertexIDs(vertexSize);
+        precice.setMeshVertices(meshID, vertexSize, coords.data(), vertexIDs.data());
+
+        int U1_ID = precice.getDataID("X_Velocity1", meshID);
+        int V1_ID = precice.getDataID("Y_Velocity1", meshID);
+        int P1_ID = precice.getDataID("Pressure1", meshID);
+        int F1_ID = precice.getDataID("X_Flux1", meshID);
+        int G1_ID = precice.getDataID("Y_Flux1", meshID);
+        int U2_ID = precice.getDataID("X_Velocity2", meshID);
+        int V2_ID = precice.getDataID("Y_Velocity2", meshID);
+        int P2_ID = precice.getDataID("Pressure2", meshID);
+        int F2_ID = precice.getDataID("X_Flux2", meshID);
+        int G2_ID = precice.getDataID("Y_Flux2", meshID);
+
+        std::vector<double> U1(vertexSize);
+        std::vector<double> V1(vertexSize);
+        std::vector<double> P1(vertexSize);
+        std::vector<double> F1(vertexSize);
+        std::vector<double> G1(vertexSize);
+        std::vector<double> U2(vertexSize);
+        std::vector<double> V2(vertexSize);
+        std::vector<double> P2(vertexSize);
+        std::vector<double> F2(vertexSize);
+        std::vector<double> G2(vertexSize);
+
+        // initializing precice
+        double precice_dt = precice.initialize();
+        dt = std::min(dt, precice_dt);
+
+        while (precice.isCouplingOngoing()) {
+
+            if (precice.isReadDataAvailable()) {
+                precice.readBlockScalarData(U1_ID, vertexSize, vertexIDs.data(), U1.data());
+                precice.readBlockScalarData(V1_ID, vertexSize, vertexIDs.data(), V1.data());
+                precice.readBlockScalarData(P1_ID, vertexSize, vertexIDs.data(), P1.data());
+                precice.readBlockScalarData(F1_ID, vertexSize, vertexIDs.data(), F1.data());
+                precice.readBlockScalarData(G1_ID, vertexSize, vertexIDs.data(), G1.data());
+            }
+#else
+        while (t < _t_end) {
+#endif
             // Apply BCs
             for (auto &i : _boundaries) {
                 i->apply(_field);
                 i->apply_temperature(_field);
             }
+#ifdef PRECICE
+            for (auto &i : _coupled_boundaries) {
+                i->apply_dirichlet_velocity(_field, U1, V1);
+                i->apply_temperature(_field, _TI);
+            }
+#endif
 
             // Calculate Temperatures
             _field.calculate_temperatures(_grid);
             Communication::communicate(_field.t_matrix(), _grid.domain(), _rank);
 
             // Calculate Fluxes
-            _field.calculate_fluxes(_grid, _energy_eq);
+            _field.calculate_fluxes(_grid, 1);
             Communication::communicate(_field.f_matrix(), _grid.domain(), _rank);
             Communication::communicate(_field.g_matrix(), _grid.domain(), _rank);
+
+#ifdef PRECICE
+            for (auto &i : _coupled_boundaries) {
+                i->apply_dirichlet_flux(_field, F1, G1);
+            }
+#endif
 
             // Calculate RHS of PPE
             _field.calculate_rs(_grid);
@@ -409,23 +642,25 @@ void Case::simulate() {
                 for (auto &i : _boundaries) {
                     i->apply_pressure(_field);
                 }
+
+#ifdef PRECICE
+                for (auto &i : _coupled_boundaries) {
+                    i->apply_dirichlet_pressure(_field, P1);
+                }
+#endif
+
                 res = _pressure_solver->solve(_field, _grid, _boundaries);
-                it++;
 
                 // Sum reduction over all domains
                 res = Communication::reduce_sum(res);
 
                 number_fluid_cells = _grid.fluid_cells().size();
+                number_fluid_cells =
+                    Communication::reduce_sum(number_fluid_cells); // Sum of fluid cells over all domains
+                res = std::sqrt(res / number_fluid_cells);         // Final residual
 
-                // Sum of fluid cells over all domains
-                number_fluid_cells = Communication::reduce_sum(number_fluid_cells);
-
-                res = res / number_fluid_cells;
-
-                // Final residual (Each process will have the same residual after this)
-                res = std::sqrt(res);
-                // communicate pressures
-                Communication::communicate(_field.p_matrix(), _grid.domain(), _rank);
+                Communication::communicate(_field.p_matrix(), _grid.domain(), _rank); // communicate pressures
+                it++;
             }
 
             // Calculate Velocities U and V
@@ -443,7 +678,6 @@ void Case::simulate() {
                               << " completed] Writing Data at t=" << t << "s\n"
                               << "\n\n";
                 }
-                    
             }
 
             // Writing simulation data in a log file
@@ -456,24 +690,270 @@ void Case::simulate() {
             // Printing info and checking for errors once in 10 runs of the loop
             if (counter == 10) {
                 counter = 0;
-                if (_rank == 0){
+                if (_rank == 0) {
                     std::cout << std::left << "Simulation Time[s] = " << std::setw(7) << t
                               << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3)
                               << it << "\tSOR Residual = " << std::setw(7) << res << "\n";
                 }
-                    
+
                 // Check for unphysical behaviour
                 if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0);
             }
             counter++;
 
+#ifdef PRECICE
+            if (precice.isWriteDataRequired(dt)) {
+                _field.get_border_U(1, U2);
+                _field.get_border_V(1, V2);
+                _field.get_border_P(1, P2);
+                _field.get_border_F(1, F2);
+                _field.get_border_G(1, G2);
+                precice.writeBlockScalarData(U2_ID, vertexSize, vertexIDs.data(), U2.data());
+                precice.writeBlockScalarData(V2_ID, vertexSize, vertexIDs.data(), V2.data());
+                precice.writeBlockScalarData(P2_ID, vertexSize, vertexIDs.data(), P2.data());
+                precice.writeBlockScalarData(F2_ID, vertexSize, vertexIDs.data(), F2.data());
+                precice.writeBlockScalarData(G2_ID, vertexSize, vertexIDs.data(), G2.data());
+            }
+            precice_dt = precice.advance(dt);
+#endif
             // Updating current time
             t = t + dt;
 
             // Calculate Adaptive Time step
             dt = _field.calculate_dt_e(_grid);
             dt = Communication::reduce_min(dt);
+#ifdef PRECICE
+            dt = std::min(dt, precice_dt);
+#endif
         }
+
+#ifdef PRECICE
+    // finalizing precice
+    precice.finalize();
+#endif  
+    } else {
+
+        if (_rank == 0) std::cout << "ELECTROMAGNETIC EQUATION ON" << std::endl;
+
+#ifdef PRECICE
+        const std::string solver_name("EM_Solver");
+        const std::string mesh_name("EM_Pump-Mesh");
+
+        // constructing precice object
+        precice::SolverInterface precice(solver_name, _config_file_name, _rank, _size);
+
+        int dim = precice.getDimensions();
+        int meshID = precice.getMeshID("EM_Pump-Mesh");
+        int vertexSize = _grid.coupled_cells().size(); // number of vertices at wet surface
+        // determine vertexSize
+        std::vector<double> coords(vertexSize * dim); // coords of coupling vertices
+
+        int count = 0;
+        for (const auto &elem : _grid.coupled_cells()) {
+            int i = elem->i() - 1;
+            int j = elem->j() - 1;
+
+            coords[count] = i * _grid.dx() + _x_offset;
+            coords[count + 1] = j * _grid.dy() + _y_offset;
+            count += 2;
+        }
+
+        // determine coordinates
+        std::vector<int> vertexIDs(vertexSize);
+        precice.setMeshVertices(meshID, vertexSize, coords.data(), vertexIDs.data());
+
+        int U1_ID = precice.getDataID("X_Velocity1", meshID);
+        int V1_ID = precice.getDataID("Y_Velocity1", meshID);
+        int P1_ID = precice.getDataID("Pressure1", meshID);
+        int F1_ID = precice.getDataID("X_Flux1", meshID);
+        int G1_ID = precice.getDataID("Y_Flux1", meshID);
+        int U2_ID = precice.getDataID("X_Velocity2", meshID);
+        int V2_ID = precice.getDataID("Y_Velocity2", meshID);
+        int P2_ID = precice.getDataID("Pressure2", meshID);
+        int F2_ID = precice.getDataID("X_Flux2", meshID);
+        int G2_ID = precice.getDataID("Y_Flux2", meshID);
+
+        std::vector<double> U1(vertexSize);
+        std::vector<double> V1(vertexSize);
+        std::vector<double> P1(vertexSize);
+        std::vector<double> F1(vertexSize);
+        std::vector<double> G1(vertexSize);
+        std::vector<double> U2(vertexSize);
+        std::vector<double> V2(vertexSize);
+        std::vector<double> P2(vertexSize);
+        std::vector<double> F2(vertexSize);
+        std::vector<double> G2(vertexSize);
+
+#endif
+
+        // Solve for Potential
+        double res = 1000.;
+        while (res >= 1e-6) {
+
+            for (auto &i : _potential_boundaries) {
+                i->apply_potential(_field);
+            }
+
+            res = _pressure_solver->solve_potential(_field, _grid, _potential_boundaries); // Local sum
+            res = Communication::reduce_sum(res); // Sum reduction over all domains
+            number_fluid_cells = _grid.fluid_cells().size();
+            number_fluid_cells = Communication::reduce_sum(number_fluid_cells); // Sum of fluid cells over all domains
+            res = std::sqrt(res / number_fluid_cells);                          // Final residual
+            Communication::communicate(_field.phi_matrix(), _grid.domain(), _rank);
+        }
+
+        // Calculate Electric Fields
+        _field.calculate_electric_fields(_grid);
+        Communication::communicate(_field.ex_matrix(), _grid.domain(), _rank);
+        Communication::communicate(_field.ey_matrix(), _grid.domain(), _rank);
+
+        _field.calculate_em_forces(_grid);
+        Communication::communicate(_field.fx_matrix(), _grid.domain(), _rank);
+        Communication::communicate(_field.fy_matrix(), _grid.domain(), _rank);
+
+#ifdef PRECICE
+        // initializing precice
+        double precice_dt = precice.initialize();
+        dt = std::min(dt, precice_dt);
+
+        while (precice.isCouplingOngoing()) {
+            if (precice.isReadDataAvailable()) {
+                precice.readBlockScalarData(U2_ID, vertexSize, vertexIDs.data(), U2.data());
+                precice.readBlockScalarData(V2_ID, vertexSize, vertexIDs.data(), V2.data());
+                precice.readBlockScalarData(P2_ID, vertexSize, vertexIDs.data(), P2.data());
+                precice.readBlockScalarData(F2_ID, vertexSize, vertexIDs.data(), F2.data());
+                precice.readBlockScalarData(G2_ID, vertexSize, vertexIDs.data(), G2.data());
+            }
+#else
+        while (t < _t_end) {
+#endif
+
+            //Pass time to field
+            _field.elapsed_t=t;
+
+            // Apply BCs
+            for (auto &i : _boundaries) {
+                i->apply(_field);
+            }
+
+#ifdef PRECICE
+            for (auto &i : _coupled_boundaries) {
+                i->apply_dirichlet_velocity(_field, U2, V2);
+            }
+#endif
+
+            // Calculate Fluxes
+            _field.calculate_fluxes(_grid, 2);
+            Communication::communicate(_field.f_matrix(), _grid.domain(), _rank);
+            Communication::communicate(_field.g_matrix(), _grid.domain(), _rank);
+
+#ifdef PRECICE
+            for (auto &i : _coupled_boundaries) {
+                i->apply_dirichlet_flux(_field, F2, G2);
+            }
+#endif
+
+            //  Calculate RHS of PPE
+            _field.calculate_rs(_grid);
+
+            // Perform SOR Iterations
+            int it = 0;
+            res = 1000.;
+            while (it <= _max_iter && res >= _tolerance) {
+                for (auto &i : _boundaries) {
+                    i->apply_pressure(_field);
+                }
+
+#ifdef PRECICE
+                for (auto &i : _coupled_boundaries) {
+                    i->apply_dirichlet_pressure(_field, P2);
+                }
+#endif
+
+                res = _pressure_solver->solve(_field, _grid, _boundaries); // Local sum
+                res = Communication::reduce_sum(res);                      // Sum reduction over all domains
+                number_fluid_cells = _grid.fluid_cells().size();
+                number_fluid_cells =
+                    Communication::reduce_sum(number_fluid_cells); // Sum of fluid cells over all domains
+                res = std::sqrt(res / number_fluid_cells);         // Final residual
+                Communication::communicate(_field.p_matrix(), _grid.domain(), _rank);
+                it++;
+            }
+
+            // Calculate Velocities U and V
+            _field.calculate_velocities(_grid);
+            // Exchange velocities
+            Communication::communicate(_field.u_matrix(), _grid.domain(), _rank);
+            Communication::communicate(_field.v_matrix(), _grid.domain(), _rank);
+
+            // Generating VTK files
+            output_counter += dt;
+            if (output_counter >= _output_freq) {
+                output_vtk(timestep++);
+                output_counter = 0;
+                if (_rank == 0) {
+                    std::cout << "\n[" << static_cast<int>((t / _t_end) * 100) << "%"
+                              << " completed] Writing Data at t=" << t << "s\n";
+                }
+            }
+
+            // Writing simulation data in a log file
+            if (_rank == 0) {
+                output_file << std::left << "Simulation Time[s] = " << std::setw(7) << t
+                            << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3) << it
+                            << "\tSOR Residual = " << std::setw(7) << res << "\n";
+            }
+
+            // Printing info and checking for errors once in 5 runs of the loop
+            if (counter == 10) {
+                counter = 0;
+                if (_rank == 0) {
+                    std::cout << std::left << "Simulation Time[s] = " << std::setw(7) << t
+                              << "\tTime Step[s] = " << std::setw(7) << dt << "\tSOR Iterations = " << std::setw(3)
+                              << it << "\tSOR Residual = " << std::setw(7) << res << "\n";
+                }
+
+                // Check for unphysical behaviour
+                if (check_err(_field, _grid.imax(), _grid.jmax())) exit(0);
+            }
+            counter++;
+
+#ifdef PRECICE
+            if (precice.isWriteDataRequired(dt)) {
+                _field.get_border_U(_grid.imax(), U1);
+                _field.get_border_U(_grid.imax(), U1);
+                _field.get_border_V(_grid.imax(), V1);
+                _field.get_border_P(_grid.imax(), P1);
+                _field.get_border_F(_grid.imax(), F1);
+                _field.get_border_G(_grid.imax(), G1);
+
+                precice.writeBlockScalarData(U1_ID, vertexSize, vertexIDs.data(), U1.data());
+                precice.writeBlockScalarData(V1_ID, vertexSize, vertexIDs.data(), V1.data());
+                precice.writeBlockScalarData(P1_ID, vertexSize, vertexIDs.data(), P1.data());
+                precice.writeBlockScalarData(F1_ID, vertexSize, vertexIDs.data(), F1.data());
+                precice.writeBlockScalarData(G1_ID, vertexSize, vertexIDs.data(), G1.data());
+            }
+#endif
+
+            // Updating current time
+            t = t + dt;
+
+#ifdef PRECICE
+            precice_dt = precice.advance(dt);
+#endif
+
+            //  Calculate Adaptive Time step
+            dt = _field.calculate_dt(_grid);
+            dt = Communication::reduce_min(dt);
+
+#ifdef PRECICE
+            dt = std::min(dt, precice_dt);
+#endif
+        }
+
+#ifdef PRECICE
+        precice.finalize();
+#endif
     }
 
     // Storing values at the last time step
@@ -491,8 +971,8 @@ void Case::output_vtk(int timestep) {
     double dx = _grid.dx();
     double dy = _grid.dy();
 
-    double x = _grid.domain().imin * dx;
-    double y = _grid.domain().jmin * dy;
+    double x = _grid.domain().imin * dx + _x_offset;
+    double y = _grid.domain().jmin * dy + _y_offset;
 
     { y += dy; }
     { x += dx; }
@@ -500,7 +980,7 @@ void Case::output_vtk(int timestep) {
     double z = 0;
 
     for (int col = 0; col < _grid.domain().size_y + 1; col++) {
-        x = _grid.domain().imin * dx;
+        x = _grid.domain().imin * dx + _x_offset;
         { x += dx; }
         for (int row = 0; row < _grid.domain().size_x + 1; row++) {
             points->InsertNextPoint(x, y, z);
@@ -541,6 +1021,21 @@ void Case::output_vtk(int timestep) {
     Temperature->SetName("temperature");
     Temperature->SetNumberOfComponents(1);
 
+    // Potential Array
+    vtkDoubleArray *Potential = vtkDoubleArray::New();
+    Potential->SetName("electric_potential");
+    Potential->SetNumberOfComponents(1);
+
+    // Electric field Array
+    vtkDoubleArray *EField = vtkDoubleArray::New();
+    EField->SetName("electric_field");
+    EField->SetNumberOfComponents(3);
+
+    // EM Force Array
+    vtkDoubleArray *EMForce = vtkDoubleArray::New();
+    EMForce->SetName("em_force");
+    EMForce->SetNumberOfComponents(3);
+
     // Print pressure and temperature from bottom to top
     for (int j = 1; j < _grid.domain().size_y + 1; j++) {
         for (int i = 1; i < _grid.domain().size_x + 1; i++) {
@@ -574,6 +1069,36 @@ void Case::output_vtk(int timestep) {
 
         // Add Temperature to Structured Grid
         structuredGrid->GetCellData()->AddArray(Temperature);
+    }
+
+    if (_em_eq == true) {
+        float e_field[3], em_force[3];
+        e_field[2] = 0;
+        em_force[2] = 0;
+        // Print Potential, e_field and em_force array
+        for (int j = 0; j < _grid.domain().size_y + 1; j++) {
+            for (int i = 0; i < _grid.domain().size_x + 1; i++) {
+                e_field[0] = _field.ex(i, j);
+                e_field[1] = _field.ey(i, j);
+                em_force[0] = _field.fx(i, j);
+                em_force[1] = _field.fy(i, j);
+
+                EField->InsertNextTuple(e_field);
+                EMForce->InsertNextTuple(em_force);
+            }
+        }
+
+        for (int j = 1; j < _grid.domain().size_y + 1; j++) {
+            for (int i = 1; i < _grid.domain().size_x + 1; i++) {
+                double potential = _field.phi(i, j);
+                Potential->InsertNextTuple(&potential);
+            }
+        }
+
+        // Add potential, e_field and em_force to Structured Grid
+        structuredGrid->GetCellData()->AddArray(Potential);
+        structuredGrid->GetPointData()->AddArray(EField);
+        structuredGrid->GetPointData()->AddArray(EMForce);
     }
 
     // Add Pressure to Structured Grid

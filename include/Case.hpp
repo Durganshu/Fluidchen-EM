@@ -3,6 +3,11 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <mpi.h>
+
+#ifdef PRECICE
+#include <precice/SolverInterface.hpp>
+#endif
 
 #include "Boundary.hpp"
 #include "Discretization.hpp"
@@ -60,9 +65,15 @@ class Case {
     std::string _geom_name{"NONE"};
     /// Relative input file path
     std::string _prefix;
-
+  
+#ifdef PRECICE
+    /// Precice Configuration File
+    std::string _config_file_name;
+#endif
     /// Simulation time
     double _t_end;
+    /// Time interval where the EM force is ramped 
+    double _ramp_dt;
     /// Solution file outputting frequency
     double _output_freq;
     Fields _field;
@@ -70,10 +81,21 @@ class Case {
     Discretization _discretization;
     std::unique_ptr<PressureSolver> _pressure_solver;
     std::vector<std::unique_ptr<Boundary>> _boundaries;
+    std::vector<std::unique_ptr<PotentialBoundary>> _potential_boundaries;
+    std::vector<std::unique_ptr<CoupledBoundary>> _coupled_boundaries;
 
     /// Set to true to enable energy equations
     bool _energy_eq = false;
 
+    /// Input Temperature
+    double _TI;
+
+    /// Set to true to enable electro-magnetic equations
+    bool _em_eq = false;
+
+    /// Coupling variable
+    bool _couple = false;
+    
     /// Parallelizing variables
     int _rank = 0;
     int _iproc=1;
@@ -85,6 +107,10 @@ class Case {
 
     /// Maximum number of iterations for the solver
     int _max_iter;
+
+    /// Offset of geometry from origin
+    double _x_offset=0;
+    double _y_offset=0;
 
     /**
      * @brief Creating file names from given input data file

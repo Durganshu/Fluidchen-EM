@@ -1,0 +1,95 @@
+<?xml version="1.0"?>
+
+<precice-configuration>
+
+  <solver-interface dimensions="2">
+
+    <data:scalar name="X_Velocity1" />
+    <data:scalar name="Y_Velocity1" />
+    <data:scalar name="Pressure1" />
+    <data:scalar name="X_Velocity2" />
+    <data:scalar name="Y_Velocity2" />
+    <data:scalar name="Pressure2" />
+    <data:scalar name="X_Flux1" />
+    <data:scalar name="X_Flux2" />
+    <data:scalar name="Y_Flux1" />
+    <data:scalar name="Y_Flux2" />
+
+    <mesh name="FluidMesh">
+      <use-data name="X_Velocity1" />
+      <use-data name="Y_Velocity1" />
+      <use-data name="Pressure1" />
+      <use-data name="X_Velocity2" />
+      <use-data name="Y_Velocity2" />
+      <use-data name="Pressure2" />
+      <use-data name="X_Flux1" />
+      <use-data name="X_Flux2" />
+      <use-data name="Y_Flux1" />
+      <use-data name="Y_Flux2" />
+    </mesh>
+
+    <mesh name="EM_Pump-Mesh">
+      <use-data name="X_Velocity1" />
+      <use-data name="Y_Velocity1" />
+      <use-data name="Pressure1" />
+      <use-data name="X_Velocity2" />
+      <use-data name="Y_Velocity2" />
+      <use-data name="Pressure2" />
+      <use-data name="X_Flux1" />
+      <use-data name="X_Flux2" />
+      <use-data name="Y_Flux1" />
+      <use-data name="Y_Flux2" />
+    </mesh>
+
+    <participant name="FluidSolver">
+      <use-mesh name="FluidMesh" provide="yes" />
+      <use-mesh name="EM_Pump-Mesh" from="EM_Solver" />
+      <read-data name="X_Velocity1" mesh="FluidMesh" />
+      <read-data name="Y_Velocity1" mesh="FluidMesh" />
+      <read-data name="Pressure1" mesh="FluidMesh" />
+      <write-data name="Pressure2" mesh="FluidMesh" />
+      <write-data name="X_Velocity2" mesh="FluidMesh" />
+      <write-data name="Y_Velocity2" mesh="FluidMesh" />
+      <read-data name="X_Flux1" mesh="FluidMesh" />
+      <write-data name="X_Flux2" mesh="FluidMesh"/>
+      <read-data name="Y_Flux1" mesh="FluidMesh"/>
+      <write-data name="Y_Flux2" mesh="FluidMesh" />
+      <mapping:nearest-neighbor direction="read" from="EM_Pump-Mesh" to="FluidMesh" constraint="conservative" />
+      <mapping:nearest-neighbor direction="write" from="FluidMesh" to="EM_Pump-Mesh" constraint="conservative" />
+    </participant>
+
+    <participant name="EM_Solver">
+      <use-mesh name="EM_Pump-Mesh" provide="yes" />
+      <read-data name="X_Velocity2" mesh="EM_Pump-Mesh" />
+      <read-data name="Y_Velocity2" mesh="EM_Pump-Mesh" />
+      <read-data name="Pressure2" mesh="EM_Pump-Mesh" />
+      <write-data name="Pressure1" mesh="EM_Pump-Mesh" />
+      <write-data name="X_Velocity1" mesh="EM_Pump-Mesh" />
+      <write-data name="Y_Velocity1" mesh="EM_Pump-Mesh" />
+      <write-data name="X_Flux1" mesh="EM_Pump-Mesh" />
+      <read-data name="X_Flux2" mesh="EM_Pump-Mesh"/>
+      <write-data name="Y_Flux1" mesh="EM_Pump-Mesh"/>
+      <read-data name="Y_Flux2" mesh="EM_Pump-Mesh" />
+    </participant>
+
+    <m2n:sockets from="EM_Solver" to="FluidSolver" />
+
+    <coupling-scheme:serial-explicit>
+      <participants first="EM_Solver" second="FluidSolver" />
+      <max-time value="0.1" />
+      <time-window-size value="0.0005" />
+      <exchange data="X_Velocity1" mesh="EM_Pump-Mesh" from="EM_Solver" to="FluidSolver" />
+      <exchange data="Y_Velocity1" mesh="EM_Pump-Mesh" from="EM_Solver" to="FluidSolver" />
+      <exchange data="Pressure1" mesh="EM_Pump-Mesh" from="EM_Solver" to="FluidSolver" />
+      <exchange data="Pressure2" mesh="EM_Pump-Mesh" from="FluidSolver" to="EM_Solver" />
+      <exchange data="X_Velocity2" mesh="EM_Pump-Mesh" from="FluidSolver" to="EM_Solver" />
+      <exchange data="Y_Velocity2" mesh="EM_Pump-Mesh" from="FluidSolver" to="EM_Solver" />
+      <exchange data="X_Flux1" mesh="EM_Pump-Mesh" from="EM_Solver" to="FluidSolver" />
+      <exchange data="Y_Flux1" mesh="EM_Pump-Mesh" from="EM_Solver" to="FluidSolver" />
+      <exchange data="X_Flux2" mesh="EM_Pump-Mesh" from="FluidSolver" to="EM_Solver" />
+      <exchange data="Y_Flux2" mesh="EM_Pump-Mesh" from="FluidSolver" to="EM_Solver" />
+    </coupling-scheme:serial-explicit>
+
+  </solver-interface>
+
+</precice-configuration>
