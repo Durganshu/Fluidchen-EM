@@ -2,7 +2,7 @@
   <img width="650" height="492" src="FluidchenEMLogo.png">
 </div>
 
-Fluidchen EM is a CFD-EM Solver developed for the CFD Lab taught at TUM Informatics, Chair of Scientific Computing in Computer Science.
+Fluidchen EM is a Computational Fluid Dynamics Solver developed for the course CFD Lab; taught at TUM Informatics, Chair of Scientific Computing in Computer Science.
 
 It is capable of running diferent types of Fluid and Electromagnetohydrdynamics problems, which include:
 - Lid-driven cavity
@@ -14,7 +14,7 @@ It is capable of running diferent types of Fluid and Electromagnetohydrdynamics 
 - Rayleigh-Benard Convection
 - EM Pump
 
-Finally, with the help of preCICE, the solver can be coupled with another solver.
+With the help of preCICE, the solver can also be coupled with another solver and also with itself.
 
 The solver can run sequentially as well as in parallel (using MPI).
 
