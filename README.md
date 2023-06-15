@@ -2,9 +2,7 @@
   <img width="650" height="492" src="FluidchenEMLogo.png">
 </div>
 
-Fluidchen EM is a Computational Fluid Dynamics Solver developed for the course CFD Lab; taught at TUM Informatics, Chair of Scientific Computing in Computer Science.
-
-It is capable of running diferent types of Fluid and Electromagnetohydrdynamics problems, which include:
+Fluidchen EM is a Computational Fluid Dynamics Solver, capable of running different types of Fluid and Electromagnetohydrdynamics problems, which include:
 - Lid-driven cavity
 - Plane shear flow
 - The Karman Vortex Street
