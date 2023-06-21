@@ -48,8 +48,8 @@ If this is your first interaction with preCICE, we recommend going through the d
 Having installed and configured all the dependencies and wanna start quickly with the solver? Follow these steps in succession:
 
 ```shell
-git clone https://gitlab.lrz.de/durganshu/group-i-cfd-lab.git
-cd group-i-cfd-lab
+git clone https://github.com/Durganshu/Fluidchen-EM.git
+cd Fluidchen-EM
 mkdir build && cd build
 cmake ..
 make
